@@ -1,0 +1,913 @@
+% =====================================================================
+%  第 13 章 · 优化理论 / Optimization —— 现代工程之核心
+%  一元、多元、凸、约束、线性规划、SGD、Adam
+%  小故事：Karmarkar 算法 1984 —— 内点法革命
+%  Aha：ChatGPT 训练 = Adam 优化器 + 千亿参数 —— 全书的终章
+% =====================================================================
+
+\chapter{优化理论 / Optimization —— 现代工程之核心}
+\label{ch:opt}
+
+\begin{quote}\itshape
+\textbf{1947 年——George Dantzig 发明单纯形法——用于美国空军后勤调度}。\\
+\textbf{1984 年——Narendra Karmarkar 在 Bell Labs 提出内点法——把线性规划速度提高了 50 倍}。\\
+\textbf{1951 年——Robbins \& Monro 提出随机近似算法——半个世纪后变成 SGD}。\\
+\textbf{2014 年——Kingma \& Ba 在 ICLR 提出 Adam——10 年后训练出了 ChatGPT}。\\[6pt]
+\textbf{这一章——\textbf{全书的终章}——讲一件事}：\\
+\textbf{现代工程——本质上——是一场\textbf{找最优}的游戏}。\\
+\textbf{从飞机外形到神经网络权重——从航线调度到芯片布线}——\\
+\textbf{背后跑的——都是优化算法}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{我大学时学"优化"}——\textbf{是在《运筹学》课上}——\textbf{老师讲了三周单纯形法的手工算表}——\textbf{讲了拉格朗日乘子法的证明}——\textbf{讲了 KKT 条件的四个公式}。
+
+\textbf{考试我考了 88 分}。\textbf{然后我把它忘了}。
+
+\textbf{硕士第二年}——\textbf{我做 LQR 控制器设计}——\textbf{我要解一个二次型优化问题}——\textbf{我打开 Python}：
+
+\begin{lstlisting}[language=Python]
+from scipy.optimize import minimize
+result = minimize(loss, x0, method='BFGS')
+\end{lstlisting}
+
+\textbf{一行代码——做完了优化}。
+
+\textbf{博士第一年}——\textbf{我训练第一个神经网络}——\textbf{打开 PyTorch}：
+
+\begin{lstlisting}[language=Python]
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+for x, y in dataloader:
+    loss = criterion(model(x), y)
+    loss.backward()
+    optimizer.step()
+\end{lstlisting}
+
+\textbf{六行代码——训练了一个有 50 万参数的网络}。
+
+\textbf{那一刻我才反应过来}——\textbf{我本科学的"单纯形手算"}——\textbf{这辈子工业里再没用过一次}。\textbf{真正用的——是\textbf{这几个名字}}：
+
+\begin{itemize}
+\item \textbf{Gradient Descent}（梯度下降）——\textbf{所有优化算法的鼻祖}
+\item \textbf{Newton / BFGS}（拟牛顿法）——\textbf{中小规模问题的王者}
+\item \textbf{SGD / Adam}（随机梯度 / 自适应矩）——\textbf{深度学习的引擎}
+\item \textbf{KKT 条件}——\textbf{所有约束优化的"判别式"}
+\end{itemize}
+
+\textbf{这一章}——\textbf{把"优化"这件事——从一元最小值——一直讲到 ChatGPT 训练}。\textbf{这是整本书的\textbf{climax}}——\textbf{所有前面的章节——梯度（第 2 章）、Hessian（第 7 章）、随机过程（第 10 章）、数值（第 12 章）}——\textbf{都在这一章里\textbf{汇合}}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{优化 = 找一个让目标函数最小的点}。\\
+\textbf{无约束时——梯度为零；有约束时——KKT 条件}。\\
+\textbf{大数据时——逐样本估计梯度（SGD）；非凸时——加动量、加自适应学习率（Adam）}。\\[6pt]
+\textbf{English}: Optimization is finding the point that minimizes an objective. Unconstrained: gradient equals zero. Constrained: KKT conditions. Large-scale data: estimate the gradient per sample (SGD). Non-convex landscape: add momentum and adaptive learning rates (Adam).
+\end{tcolorbox}
+
+记住这一句话——\textbf{这一章已经讲完了一半}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{运筹学 / 最优化方法（国内教材）}
+
+\textbf{钱颂迪《运筹学》、《最优化方法》（高等教育出版社）}——\textbf{中国工科最常用的优化教材}。
+
+\textbf{优点}：单纯形、对偶、KKT、动态规划——\textbf{该有的都有}。
+
+\textbf{缺点}：
+
+\begin{enumerate}
+\item \textbf{算法部分是 60 年代的}——\textbf{讲单纯形的"枢轴选择"细节}——\textbf{这件事 LP solver 已经做了 30 年了}
+\item \textbf{完全没有 SGD / Adam}——\textbf{现代 ML 优化器一个都没讲}
+\item \textbf{凸分析点到为止}——\textbf{Slater 条件、对偶间隙——这些工业里真正用的反而少讲}
+\end{enumerate}
+
+\subsection{Boyd \& Vandenberghe《Convex Optimization》}
+
+\textbf{Stanford 的 Stephen Boyd}——\textbf{全球凸优化的圣经}——\textbf{免费 PDF + 公开课}（EE364）——\textbf{我自学的就是这本}。
+
+\textbf{优点}：\textbf{凸性 + 对偶 + 内点法}——\textbf{讲到工业可用的深度}。\textbf{第 6 章"逼近与拟合"}——\textbf{是机器学习损失函数设计的真正源头}。
+
+\textbf{缺点}：\textbf{不讲 SGD}（成书时 deep learning 尚未爆发）。
+
+\subsection{Nocedal \& Wright《Numerical Optimization》}
+
+\textbf{无约束优化的圣经}——\textbf{讲 BFGS、L-BFGS、信赖域}——\textbf{讲到能写 solver 的深度}。
+
+\textbf{适合谁}：\textbf{要做数值优化研究 / 写 solver 的人}。
+
+\subsection{Goodfellow et al.《Deep Learning》第 8 章}
+
+\textbf{"深度模型中的优化"}——\textbf{讲 SGD、Momentum、AdaGrad、RMSProp、Adam}——\textbf{这是工业 ML 工程师真正翻的章节}。
+
+\subsection{我的策略}
+
+\textbf{本章做四件事}：
+
+\begin{enumerate}
+\item \textbf{把无约束优化讲成一条进化线}：\textbf{Gradient $\to$ Newton $\to$ BFGS $\to$ SGD $\to$ Adam}——\textbf{每一步为什么必须出现}
+\item \textbf{把凸性讲成"为什么 ML 工程师爱它"}——\textbf{凸 = 局部最优即全局最优 = 算法收敛有保证}
+\item \textbf{把约束优化收成一个公式}：\textbf{KKT}——\textbf{然后告诉你为什么 SVM 是这个公式的最美应用}
+\item \textbf{把 Aha 讲到震撼}：\textbf{ChatGPT 训练 = Adam + 千亿参数 + 万张 GPU——三个月}——\textbf{这是优化理论 70 年的总和成就}
+\end{enumerate}
+
+\begin{tcolorbox}[storybox={\Large 小故事：Karmarkar 算法（1984）与 AT\&T 内点法风波}]
+\textbf{1984 年 4 月——Bell Labs 的 28 岁印度裔数学家 Narendra Karmarkar——发表了一篇 10 页的论文}：\textbf{《A new polynomial-time algorithm for linear programming》}。
+
+\medskip
+
+\textbf{这篇论文做了一件让所有人震惊的事}——\textbf{它说}：
+
+\begin{quote}
+\textbf{"我有一个算法——它不沿着多面体的棱走（单纯形法的做法）——它\textbf{从内部直接穿过去}——它的复杂度是 $O(n^{3.5}L)$ ——比单纯形法的最坏情况快得多——而且实测在大规模线性规划上——\textbf{快 50 倍}。"}
+\end{quote}
+
+\textbf{这就是\textbf{内点法（interior-point method）}的诞生}。
+
+\medskip
+
+\textbf{$\bullet$ 单纯形法（1947, Dantzig）}——沿着可行域的顶点跳——\textbf{每一步都在边界上}——平均很快——\textbf{但最坏情况是指数级}（Klee-Minty 1972）
+
+\textbf{$\bullet$ 椭球法（1979, Khachiyan）}——\textbf{首个多项式时间算法}——但常数太大——\textbf{实战慢得没法用}——\textbf{学术意义大于工业意义}
+
+\textbf{$\bullet$ Karmarkar 内点法（1984）}——\textbf{多项式时间 + 工业实战快}——\textbf{第一个"理论与实践双赢"的 LP 算法}
+
+\medskip
+
+\textbf{然后——风波来了}。
+
+\medskip
+
+\textbf{AT\&T（Bell Labs 的母公司）做了一件让学术界炸锅的事}——\textbf{它把 Karmarkar 算法\textbf{申请了专利}}（US Patent 4,744,028, 1988）——\textbf{并把它包装成商业产品 KORBX——卖给空军 890 万美元}。
+
+\medskip
+
+\textbf{学术界愤怒了}——\textbf{"数学算法怎么能申请专利？"}——\textbf{这是有史以来\textbf{第一个数学算法专利}}——\textbf{开了一个让所有人都不舒服的先例}。
+
+\medskip
+
+\textbf{反向效果是}——\textbf{学术界为了"绕开 Karmarkar 专利"——疯狂研究新的内点法变种}——\textbf{结果催生了\textbf{一整个内点法学派}}——\textbf{Mehrotra predictor-corrector（1992）、primal-dual interior point（1993）}——\textbf{这些反而成了今天 CPLEX、Gurobi、Mosek 等商业 solver 的核心}。
+
+\medskip
+
+\textbf{Karmarkar 专利于 2006 年到期}。\textbf{今天——所有大规模 LP / QP / SOCP / SDP——背后都跑着内点法}。
+
+\medskip
+
+\textbf{这件事给我们的启示}：\textbf{一个 28 岁印度青年的 10 页论文——把一个 40 年的工业问题——重写了一遍}。\textbf{数学的力量——往往就来自这种"换一个看问题的角度"}。
+\end{tcolorbox}
+
+\section{§1 一元优化 / Univariate Optimization}
+
+\textbf{先从最简单的开始}：\textbf{找一个一元函数 $f(x)$ 的最小值}。
+
+\subsection{一阶必要条件}
+
+\textbf{中学就学过}：\textbf{$f$ 在 $x^*$ 取得极小} $\Rightarrow$ $f'(x^*) = 0$。
+
+\textbf{但反过来不成立}——\textbf{$f'(x^*) = 0$ 不一定是最小}（可能是极大、可能是鞍点）。\textbf{加二阶条件}：$f''(x^*) > 0$ $\Rightarrow$ 严格极小。
+
+\textbf{这是一切优化的起点}——\textbf{多元的"梯度为零 + Hessian 正定"——只是它的高维版本}。
+
+\subsection{黄金分割搜索 / Golden Section Search}
+
+\textbf{当 $f$ 不可导}（或导数难算）——\textbf{怎么找最小}？
+
+\textbf{思路}：\textbf{如果 $f$ 在 $[a, b]$ 上是\textbf{单峰}的}——\textbf{就用"缩区间"的策略}。
+
+\textbf{算法}（设黄金比 $\phi = \frac{\sqrt 5 - 1}{2} \approx 0.618$）：
+
+\begin{enumerate}
+\item 取 $x_1 = a + (1-\phi)(b-a)$、$x_2 = a + \phi(b-a)$
+\item 若 $f(x_1) < f(x_2)$ $\Rightarrow$ 最小值在 $[a, x_2]$——更新 $b = x_2$
+\item 否则——最小值在 $[x_1, b]$——更新 $a = x_1$
+\item 重复——\textbf{每次区间缩小约 38.2\%}
+\end{enumerate}
+
+\textbf{为什么是 0.618？}——\textbf{因为黄金比有"自相似性"}——\textbf{下一轮可以\textbf{复用一个点}的函数值}——\textbf{每轮只需算 1 次 $f$（而不是 2 次）}。
+
+\textbf{收敛速度}：\textbf{线性}——\textbf{每 $n$ 步把区间缩小 $\phi^n$ 倍}。
+
+\subsection{Newton 法（一元）}
+
+\textbf{当 $f$ 二阶可导}——\textbf{Newton 法是金标准}。
+
+\textbf{思路}：\textbf{在 $x_k$ 处用二阶 Taylor 展开近似 $f$}：
+
+\begin{equation}
+f(x) \approx f(x_k) + f'(x_k)(x - x_k) + \tfrac{1}{2} f''(x_k)(x - x_k)^2
+\end{equation}
+
+\textbf{这个二次近似的最小值}：\textbf{对 $x$ 求导令为零}——\textbf{得到}：
+
+\begin{equation}
+\boxed{\, x_{k+1} = x_k - \frac{f'(x_k)}{f''(x_k)} \,}
+\end{equation}
+
+\textbf{这就是一元 Newton 法的迭代公式}。
+
+\textbf{收敛速度}：\textbf{二次}——\textbf{每一步误差平方缩小}——\textbf{比黄金分割快无穷倍}。
+
+\begin{example}[Newton 找 $f(x) = x^2 - 4x + 3$ 的最小值]
+$f'(x) = 2x - 4$，$f''(x) = 2$。Newton 迭代：
+\[
+x_{k+1} = x_k - \frac{2x_k - 4}{2} = 2.
+\]
+\textbf{一步就到}（因为 $f$ 本身是二次的——Newton 法在二次函数上一步收敛）。\textbf{这就是"Newton 法用二次近似——所以二次函数上一步到位"的几何直觉}。
+\end{example}
+
+\textbf{Newton 法的弱点}：
+
+\begin{itemize}
+\item \textbf{要算 $f''$}——一元还好——高维就是 $n \times n$ 的 Hessian 矩阵——$n=10^6$ 时根本算不动
+\item \textbf{$f''(x_k) \le 0$ 时方向反了}——\textbf{你可能反而朝最大值跑}——\textbf{这是 Newton 在非凸问题上的致命伤}
+\end{itemize}
+
+\textbf{这就引出了下一节——\textbf{多元 + 无约束 + 替代 Hessian}——这是整个 20 世纪优化研究的主线}。
+
+\section{§2 多元无约束优化 / Multivariate Unconstrained}
+
+\textbf{设 $f: \mathbb{R}^n \to \mathbb{R}$ 光滑}。\textbf{要找 $\bm{x}^* = \arg\min_{\bm x} f(\bm x)$}。
+
+\textbf{一阶必要条件}：$\nabla f(\bm x^*) = \bm 0$（梯度为零）。
+
+\textbf{二阶充分条件}：$\nabla f(\bm x^*) = \bm 0$ 且 $\nabla^2 f(\bm x^*) \succ 0$（Hessian 正定）。
+
+\subsection{Gradient Descent / 梯度下降}
+
+\textbf{最直觉的算法}——\textbf{Cauchy 1847 年提出}——\textbf{沿\textbf{负梯度}方向走一步}：
+
+\begin{equation}
+\boxed{\, \bm x_{k+1} = \bm x_k - \alpha_k \nabla f(\bm x_k) \,}
+\end{equation}
+
+\textbf{$\alpha_k > 0$ 是\textbf{步长}（learning rate）}。
+
+\textbf{为什么是负梯度方向？}——\textbf{因为梯度指向 $f$ 增长最快的方向——负梯度就是下降最快的方向}。
+
+\textbf{步长怎么选？}——\textbf{三种策略}：
+
+\begin{enumerate}
+\item \textbf{固定步长 $\alpha_k = \alpha$}：\textbf{简单——但太大发散——太小慢}
+\item \textbf{线搜索 line search}：\textbf{每步沿负梯度方向解 $\min_\alpha f(\bm x_k - \alpha \nabla f)$}（Armijo / Wolfe 条件）
+\item \textbf{自适应 adaptive}：\textbf{根据梯度历史动态调整}——\textbf{Adam 的精髓}
+\end{enumerate}
+
+\textbf{收敛速度}：
+
+\begin{itemize}
+\item \textbf{凸 + Lipschitz 梯度}：$O(1/k)$
+\item \textbf{强凸}：\textbf{线性 $O(\rho^k)$}——\textbf{$\rho = (\kappa - 1)/(\kappa+1)$——$\kappa$ 是条件数}
+\end{itemize}
+
+\textbf{致命伤}：\textbf{条件数 $\kappa$ 大时\textbf{超慢}}。\textbf{这就是著名的"\textbf{zigzag 现象}"}——\textbf{在长扁的峡谷里来回跳——一直走不到底}。
+
+\subsection{Newton 法（多元）}
+
+\textbf{二阶 Taylor 展开}：
+
+\begin{equation}
+f(\bm x) \approx f(\bm x_k) + \nabla f(\bm x_k)^\top (\bm x - \bm x_k) + \tfrac{1}{2}(\bm x - \bm x_k)^\top \nabla^2 f(\bm x_k) (\bm x - \bm x_k)
+\end{equation}
+
+\textbf{对 $\bm x$ 求梯度令为零}：
+
+\begin{equation}
+\boxed{\, \bm x_{k+1} = \bm x_k - [\nabla^2 f(\bm x_k)]^{-1} \nabla f(\bm x_k) \,}
+\end{equation}
+
+\textbf{这是\textbf{多元 Newton 法}}。
+
+\textbf{优点}：\textbf{二次收敛}——\textbf{$\kappa$ 大的问题它不怕}（Hessian 自动"预条件化"了梯度）。
+
+\textbf{缺点}：
+
+\begin{itemize}
+\item \textbf{算 Hessian}：$n^2/2$ 个二阶偏导——\textbf{$n=10^6$ 时是 $5\times 10^{11}$ 个数}——\textbf{装不下}
+\item \textbf{解 $\nabla^2 f \cdot \bm d = -\nabla f$}：$O(n^3)$——\textbf{$n=10^6$ 时是 $10^{18}$ 次运算}——\textbf{也算不动}
+\item \textbf{Hessian 非正定时}：\textbf{方向反了——可能朝鞍点甚至极大跑}
+\end{itemize}
+
+\textbf{所以 Newton 法的真正用武之地}：\textbf{$n \le 1000$ 的中小规模 + 强凸问题}。\textbf{大规模 / 非凸——必须找替代品}。
+
+\subsection{Quasi-Newton / 拟牛顿法}
+
+\textbf{Quasi-Newton 的思想——四个字}：\textbf{不算 Hessian——猜 Hessian}。
+
+\textbf{具体地——用迭代过程中的\textbf{梯度变化}来\textbf{估计} Hessian 的逆 $H_k \approx [\nabla^2 f]^{-1}$}。
+
+\textbf{迭代}：
+
+\begin{equation}
+\bm x_{k+1} = \bm x_k - \alpha_k H_k \nabla f(\bm x_k)
+\end{equation}
+
+\textbf{然后用 $\bm s_k = \bm x_{k+1} - \bm x_k$、$\bm y_k = \nabla f_{k+1} - \nabla f_k$——更新 $H_k \to H_{k+1}$}——\textbf{满足"\textbf{Secant 条件}" $H_{k+1} \bm y_k = \bm s_k$}（多元中值定理的近似）。
+
+\subsection{BFGS / 拟牛顿的王者}
+
+\textbf{1970 年}——\textbf{Broyden、Fletcher、Goldfarb、Shanno \textbf{独立}提出同一个更新公式}——\textbf{以四人首字母命名}：
+
+\begin{equation}
+H_{k+1} = \left(I - \frac{\bm s_k \bm y_k^\top}{\bm y_k^\top \bm s_k}\right) H_k \left(I - \frac{\bm y_k \bm s_k^\top}{\bm y_k^\top \bm s_k}\right) + \frac{\bm s_k \bm s_k^\top}{\bm y_k^\top \bm s_k}
+\end{equation}
+
+\textbf{看着吓人——其实只用矩阵乘法 + 向量外积}——\textbf{每步 $O(n^2)$}（不是 $O(n^3)$）。
+
+\textbf{性质}：\textbf{保持 $H_k$ 对称正定 + 满足 Secant 条件 + 在二次函数上 $n$ 步收敛}。
+
+\textbf{这是\texttt{scipy.optimize.minimize(method='BFGS')} 的默认选择}——\textbf{$n \le 10^4$ 的工业问题——BFGS 几乎是最优解}。
+
+\textbf{L-BFGS（Limited-memory BFGS, 1989）}——\textbf{只存最近 $m$ 步的 $(\bm s, \bm y)$（典型 $m=10$）}——\textbf{内存 $O(mn)$ 而非 $O(n^2)$}——\textbf{这才让 BFGS 能扩展到 $n=10^6$}——\textbf{今天 \texttt{scipy} 的 \texttt{L-BFGS-B} 就是}。
+
+\begin{tcolorbox}[essbox={无约束优化算法谱系}]
+\begin{tabular}{lll}
+\toprule
+\textbf{算法} & \textbf{每步代价} & \textbf{典型 $n$} \\
+\midrule
+Gradient Descent & $O(n)$ + 梯度 & $10^9$（深度学习） \\
+Newton & $O(n^3)$ + Hessian & $10^3$ \\
+BFGS & $O(n^2)$ + 梯度 & $10^4$ \\
+L-BFGS & $O(mn)$ + 梯度 & $10^6$ \\
+SGD & $O(\text{batch})$ + 梯度 & $10^{11}$（GPT 级） \\
+Adam & $O(\text{batch})$ + 梯度 & $10^{11}$（GPT 级） \\
+\bottomrule
+\end{tabular}
+\end{tcolorbox}
+
+\section{§3 凸优化基础 / Convex Optimization}
+
+\textbf{为什么凸优化值得单独讲？}——\textbf{因为它是"\textbf{算法保证收敛}"的最大一族}。\textbf{非凸 = 你永远不知道找到的是不是真最小}；\textbf{凸 = \textbf{局部最优即全局最优}}。
+
+\subsection{凸集 / Convex Set}
+
+\begin{definition}[凸集]
+集合 $C \subseteq \mathbb{R}^n$ 是\textbf{凸}的——若对任意 $\bm x, \bm y \in C$ 和 $\lambda \in [0,1]$：
+\[
+\lambda \bm x + (1-\lambda) \bm y \in C
+\]
+\textbf{几何意义}：\textbf{连接 $C$ 中任两点的线段——仍在 $C$ 中}。
+\end{definition}
+
+\textbf{常见凸集}：
+
+\begin{itemize}
+\item \textbf{超平面}：$\{\bm x : \bm a^\top \bm x = b\}$
+\item \textbf{半空间}：$\{\bm x : \bm a^\top \bm x \le b\}$
+\item \textbf{多面体}：\textbf{有限个半空间的交}——\textbf{线性规划的可行域}
+\item \textbf{球}：$\{\bm x : \|\bm x - \bm x_0\| \le r\}$
+\item \textbf{半正定锥}：$\mathbb{S}^n_+$——\textbf{SDP 的可行域}
+\end{itemize}
+
+\textbf{凸集的交是凸集}——\textbf{这是所有"组合约束"都能保持凸性的根本原因}。
+
+\subsection{凸函数 / Convex Function}
+
+\begin{definition}[凸函数]
+$f: \mathbb{R}^n \to \mathbb{R}$ 是\textbf{凸}的——若 dom $f$ 是凸集，且对任意 $\bm x, \bm y$ 和 $\lambda \in [0,1]$：
+\[
+f(\lambda \bm x + (1-\lambda) \bm y) \le \lambda f(\bm x) + (1-\lambda) f(\bm y)
+\]
+\textbf{几何意义}：\textbf{函数图像\textbf{下凹}（碗状）}——\textbf{任两点的连线在函数曲面\textbf{之上}}。
+\end{definition}
+
+\textbf{凸函数的判别}：
+
+\begin{itemize}
+\item \textbf{一阶}：$f(\bm y) \ge f(\bm x) + \nabla f(\bm x)^\top (\bm y - \bm x)$——\textbf{切平面永远在函数下方}
+\item \textbf{二阶}：$\nabla^2 f(\bm x) \succeq 0$——\textbf{Hessian 半正定}
+\end{itemize}
+
+\textbf{常见凸函数}：\textbf{$\|x\|$（任何范数）、$e^x$、$-\log x$、$x^p$（$p \ge 1$ 或 $p \le 0$）、$\bm x^\top Q \bm x$（$Q \succeq 0$）}。
+
+\textbf{机器学习里几乎所有"显式"损失函数都设计成凸的}：
+
+\begin{itemize}
+\item \textbf{平方误差} $\|A\bm x - \bm b\|^2$：\textbf{凸}
+\item \textbf{交叉熵 / 逻辑回归损失}：\textbf{凸}
+\item \textbf{SVM hinge loss}：\textbf{凸}
+\item \textbf{L1 / L2 正则}：\textbf{凸}
+\end{itemize}
+
+\textbf{但是}——\textbf{神经网络的整体损失是\textbf{非凸}的}（因为隐藏层的复合非线性）——\textbf{这是深度学习"理论难、实践却 work"的根源}。
+
+\subsection{凸优化的核心定理}
+
+\begin{theorem}[凸优化的全局最优性]
+设 $f$ 凸——$C$ 凸——考虑 $\min_{\bm x \in C} f(\bm x)$。则：
+\begin{enumerate}
+\item \textbf{任一局部最小都是全局最小}
+\item \textbf{若 $f$ 严格凸——最小点唯一}
+\item \textbf{KKT 条件\textbf{既是必要的也是充分的}}
+\end{enumerate}
+\end{theorem}
+
+\textbf{这就是 Boyd 反复强调的}：\textbf{"\textbf{凸 vs. 非凸——是优化中比线性 vs. 非线性更深刻的分界}"}。
+
+\section{§4 约束优化 / Constrained Optimization}
+
+\textbf{现实问题都有约束}：\textbf{资源有限、变量有界、平衡条件}。
+
+\textbf{标准形式}：
+\begin{equation}
+\min_{\bm x} f(\bm x) \quad \text{s.t.} \quad g_i(\bm x) \le 0, \ i=1,\dots,m; \quad h_j(\bm x) = 0, \ j=1,\dots,p
+\end{equation}
+
+\subsection{Lagrange 乘子法（等式约束）}
+
+\textbf{先看只有等式约束}：$\min f(\bm x)$ s.t. $h(\bm x) = 0$。
+
+\textbf{构造\textbf{Lagrangian}}：
+\begin{equation}
+\mathcal{L}(\bm x, \lambda) = f(\bm x) + \lambda h(\bm x)
+\end{equation}
+
+\textbf{最优条件}：\textbf{对 $\bm x$ 和 $\lambda$ 同时求偏导令为零}：
+\begin{equation}
+\nabla_{\bm x} \mathcal{L} = \nabla f + \lambda \nabla h = \bm 0, \quad \nabla_\lambda \mathcal{L} = h(\bm x) = 0
+\end{equation}
+
+\textbf{几何意义}（来自第 2 章的梯度）：\textbf{在最优点——$\nabla f$ 与 $\nabla h$ 平行}——\textbf{即 $f$ 的等值线与约束曲面\textbf{相切}}——\textbf{此时再沿约束移动 $f$ 不再下降}。
+
+\subsection{KKT 条件（不等式约束）}
+
+\textbf{再加不等式约束}：$g_i(\bm x) \le 0$。\textbf{Lagrangian}：
+\begin{equation}
+\mathcal{L}(\bm x, \bm \mu, \bm \lambda) = f(\bm x) + \sum_i \mu_i g_i(\bm x) + \sum_j \lambda_j h_j(\bm x)
+\end{equation}
+
+\begin{theorem}[KKT 必要条件]
+若 $\bm x^*$ 是局部最优 + 约束规范条件成立——存在 $\bm \mu^* \ge 0$、$\bm \lambda^*$ 使得：
+\begin{align}
+&\nabla f(\bm x^*) + \sum_i \mu_i^* \nabla g_i(\bm x^*) + \sum_j \lambda_j^* \nabla h_j(\bm x^*) = \bm 0 & \text{（稳定性）}\\
+&g_i(\bm x^*) \le 0, \quad h_j(\bm x^*) = 0 & \text{（原始可行）}\\
+&\mu_i^* \ge 0 & \text{（对偶可行）}\\
+&\mu_i^* g_i(\bm x^*) = 0 \quad \forall i & \text{（互补松弛）}
+\end{align}
+\end{theorem}
+
+\textbf{第四个——\textbf{互补松弛}——是 KKT 的灵魂}：
+
+\textbf{要么约束在最优点\textbf{激活}（$g_i = 0$）——此时乘子 $\mu_i$ 可以非零}；\\
+\textbf{要么约束\textbf{未激活}（$g_i < 0$）——此时乘子必须为零}（$\mu_i = 0$）。
+
+\textbf{物理意义}：\textbf{$\mu_i$ 是"约束的\textbf{影子价格}"——只有真正"卡住"的约束才有价格}。
+
+\begin{example}[KKT 在 SVM 中的应用]
+\textbf{支持向量机的对偶形式}（第 8 章详讲）——\textbf{KKT 互补松弛告诉我们}：\textbf{$\mu_i > 0$ 的样本——就是\textbf{支持向量}（在分类边界上）}；\textbf{$\mu_i = 0$ 的样本——离边界还远——对模型\textbf{无影响}}。\textbf{这就是 SVM 名字的来源——\textbf{只有少数支持向量决定了一切}}——\textbf{KKT 是这个性质的数学根源}。
+\end{example}
+
+\section{§5 线性规划 + 单纯形法 / Linear Programming}
+
+\textbf{线性规划}（LP）——\textbf{优化里的"hello world"}——\textbf{目标和约束\textbf{都是线性的}}：
+
+\begin{equation}
+\min_{\bm x} \bm c^\top \bm x \quad \text{s.t.} \quad A \bm x = \bm b, \ \bm x \ge \bm 0
+\end{equation}
+
+\subsection{几何直觉}
+
+\textbf{可行域 $\{\bm x : A\bm x = \bm b, \bm x \ge 0\}$ 是一个\textbf{多面体}（polytope）}——\textbf{目标 $\bm c^\top \bm x$ 在它上面取极值}。
+
+\textbf{关键定理}：\textbf{LP 的最优解（若存在）必在多面体的某个\textbf{顶点}（vertex）取得}。\textbf{因为线性函数在凸集上的极值——必在\textbf{极点}上}。
+
+\subsection{单纯形法 / Simplex (Dantzig 1947)}
+
+\textbf{思想}——\textbf{在顶点之间走}：
+
+\begin{enumerate}
+\item \textbf{从一个顶点开始}（基本可行解 BFS）
+\item \textbf{找一个"相邻"顶点——使目标值更小}（枢轴变换）
+\item \textbf{重复——直到没有更好的邻居}——\textbf{当前顶点即最优}
+\end{enumerate}
+
+\textbf{优点}：\textbf{实战极快}——\textbf{大多数问题平均时间 $O(m \log n)$ 级别}。
+
+\textbf{缺点}：\textbf{最坏指数级}——\textbf{Klee-Minty 1972 构造的反例上\textbf{需要访问所有 $2^n$ 个顶点}}。
+
+\subsection{内点法 / Interior Point (Karmarkar 1984)}
+
+\textbf{思想}——\textbf{从可行域的\textbf{内部}穿过去}：\textbf{用\textbf{障碍函数}（barrier）$-\sum_i \log x_i$ 把约束"嵌进"目标}——\textbf{然后用 Newton 法解一系列无约束子问题}。
+
+\textbf{复杂度}：\textbf{$O(n^{3.5} L)$——多项式}。
+
+\textbf{对比}：
+
+\begin{tcolorbox}[essbox={LP 算法对比}]
+\begin{tabular}{lll}
+\toprule
+\textbf{方法} & \textbf{最坏复杂度} & \textbf{实战速度} \\
+\midrule
+单纯形 & 指数 & 平均很快 \\
+椭球（1979） & 多项式 & \textbf{慢得没法用} \\
+内点（Karmarkar） & 多项式 & \textbf{大规模问题最快} \\
+\bottomrule
+\end{tabular}
+\end{tcolorbox}
+
+\textbf{今天的工业 solver}：\textbf{CPLEX、Gurobi、Mosek}——\textbf{都同时实现了单纯形 + 内点}——\textbf{自动根据问题大小选择}。\textbf{开源版}：\textbf{HiGHS、SciPy 的 \texttt{linprog}}。
+
+\section{§6 随机梯度下降 SGD / Stochastic Gradient Descent}
+
+\textbf{这一节——开始进入现代机器学习的世界}。
+
+\subsection{为什么需要 SGD？}
+
+\textbf{深度学习的损失函数}：\textbf{对训练集 $N$ 个样本求平均}：
+\begin{equation}
+\mathcal{L}(\bm \theta) = \frac{1}{N} \sum_{i=1}^N \ell_i(\bm \theta)
+\end{equation}
+
+\textbf{标准梯度下降}：
+\begin{equation}
+\bm \theta_{k+1} = \bm \theta_k - \alpha \cdot \frac{1}{N} \sum_{i=1}^N \nabla \ell_i(\bm \theta_k)
+\end{equation}
+
+\textbf{问题}：\textbf{$N = 10^9$（ImageNet）或 $N = 10^{12}$（GPT 训练语料）时}——\textbf{每步要算 $10^{12}$ 个梯度才能更新一次参数}——\textbf{显存装不下 + 时间等不起}。
+
+\subsection{SGD 的诞生}
+
+\textbf{Robbins \& Monro 1951 年}——\textbf{在"随机近似"论文里}——\textbf{提出了一个革命性想法}：
+
+\textbf{不算全量梯度——\textbf{每步随机抽一个样本 $i_k$——用 $\nabla \ell_{i_k}$ 代替整体均值}}：
+\begin{equation}
+\boxed{\, \bm \theta_{k+1} = \bm \theta_k - \alpha_k \nabla \ell_{i_k}(\bm \theta_k) \,}
+\end{equation}
+
+\textbf{这就是\textbf{随机梯度下降 SGD}}。
+
+\textbf{为什么 work？}——\textbf{因为 $\mathbb{E}_i[\nabla \ell_i] = \nabla \mathcal{L}$}——\textbf{\textbf{单样本梯度是全量梯度的无偏估计}}（第 10 章的随机思想——在这里全面爆发）。
+
+\textbf{噪声大}——\textbf{但只要步长 $\alpha_k$ 满足 Robbins-Monro 条件}：
+\begin{equation}
+\sum_k \alpha_k = \infty, \quad \sum_k \alpha_k^2 < \infty
+\end{equation}
+\textbf{SGD 几乎必然收敛到稳定点}（强凸下还能给出收敛率）。
+
+\subsection{Mini-batch SGD}
+
+\textbf{现代实践}：\textbf{折中——抽 $B$ 个样本算平均梯度}（$B = 32$ 到 $4096$）：
+\begin{equation}
+\bm \theta_{k+1} = \bm \theta_k - \alpha_k \cdot \frac{1}{B} \sum_{i \in \mathcal{B}_k} \nabla \ell_i(\bm \theta_k)
+\end{equation}
+
+\textbf{三大好处}：
+\begin{enumerate}
+\item \textbf{方差比单样本小 $B$ 倍}——梯度估计更准
+\item \textbf{GPU 友好}——\textbf{batch 维度可\textbf{并行}计算}
+\item \textbf{比全量快——比单样本稳}——\textbf{工业默认配置}
+\end{enumerate}
+
+\subsection{Momentum / 动量法}
+
+\textbf{SGD 在峡谷里也会 zigzag}——\textbf{解决方案}：\textbf{加\textbf{动量}}（Polyak 1964）：
+\begin{align}
+\bm v_{k+1} &= \beta \bm v_k + \nabla \ell_{i_k}(\bm \theta_k) \\
+\bm \theta_{k+1} &= \bm \theta_k - \alpha \bm v_{k+1}
+\end{align}
+
+\textbf{$\bm v$ 是"速度"——它是历史梯度的\textbf{指数加权平均}}（$\beta = 0.9$ 典型）——\textbf{相当于给优化器\textbf{加了惯性}}——\textbf{震荡方向自然抵消——主方向叠加加速}。
+
+\textbf{Nesterov accelerated gradient}（NAG, 1983）——\textbf{在 momentum 的基础上"先看后跳"}——\textbf{凸问题上证明了 $O(1/k^2)$ 的最优收敛率}。
+
+\section{§7 二阶方法 + Adam 优化器 / Second-order Methods and Adam}
+
+\subsection{为什么神经网络需要 Adam？}
+
+\textbf{深度网络的损失曲面有三个噩梦}：
+
+\begin{enumerate}
+\item \textbf{尺度极不均匀}：\textbf{不同参数的梯度大小相差 100 万倍}（embedding 层 vs. 输出层）
+\item \textbf{鞍点遍布}：\textbf{高维空间里\textbf{鞍点比极小点多得多}}（Dauphin et al. 2014）
+\item \textbf{梯度噪声大}：\textbf{batch 太小时 SGD 抖得厉害}
+\end{enumerate}
+
+\textbf{解决思路}：\textbf{给每个参数\textbf{自适应学习率}}。
+
+\subsection{AdaGrad（2011）}
+
+\textbf{Duchi、Hazan、Singer 提出}——\textbf{累计每个参数的梯度平方}：
+\begin{equation}
+G_{k,i} = \sum_{t=1}^k g_{t,i}^2, \quad \theta_{k+1, i} = \theta_{k,i} - \frac{\alpha}{\sqrt{G_{k,i} + \varepsilon}} g_{k,i}
+\end{equation}
+
+\textbf{效果}：\textbf{梯度大的参数——学习率自动变小；梯度小的——保持大}。
+
+\textbf{缺点}：\textbf{$G$ 单调累积——后期学习率\textbf{消失到零}}——\textbf{长训练崩溃}。
+
+\subsection{RMSProp（2012, Hinton 讲义未发表）}
+
+\textbf{修补 AdaGrad}——\textbf{把"累计"改成"指数加权平均"}：
+\begin{equation}
+G_{k,i} = \rho G_{k-1,i} + (1-\rho) g_{k,i}^2, \quad \theta_{k+1,i} = \theta_{k,i} - \frac{\alpha}{\sqrt{G_{k,i} + \varepsilon}} g_{k,i}
+\end{equation}
+
+\textbf{$\rho = 0.99$ 典型}。\textbf{学习率不会消失}——\textbf{在 RNN 训练上首次大放异彩}。
+
+\subsection{Adam（2014）}
+
+\textbf{Kingma \& Ba 在 ICLR 2015 发表}——\textbf{把 momentum 和 RMSProp \textbf{合并}}：
+
+\begin{align}
+\bm m_k &= \beta_1 \bm m_{k-1} + (1-\beta_1) \bm g_k & \text{（一阶矩 / 动量）} \\
+\bm v_k &= \beta_2 \bm v_{k-1} + (1-\beta_2) \bm g_k^2 & \text{（二阶矩 / 梯度平方）} \\
+\hat{\bm m}_k &= \bm m_k / (1 - \beta_1^k) & \text{（偏差修正）} \\
+\hat{\bm v}_k &= \bm v_k / (1 - \beta_2^k) & \text{（偏差修正）} \\
+\bm \theta_{k+1} &= \bm \theta_k - \alpha \cdot \hat{\bm m}_k / (\sqrt{\hat{\bm v}_k} + \varepsilon)
+\end{align}
+
+\textbf{典型超参}：$\beta_1 = 0.9$，$\beta_2 = 0.999$，$\varepsilon = 10^{-8}$，$\alpha = 10^{-3}$。
+
+\textbf{Adam 是"二阶方法的近似"}——\textbf{$\hat{\bm v}$ 是 Hessian 对角的 RMS 估计}——\textbf{$\hat{\bm m}/\sqrt{\hat{\bm v}}$ 相当于"\textbf{对角化的 Newton 步}"——但只用一阶信息}。
+
+\textbf{Adam 几乎是 2015 年之后所有深度学习论文的默认优化器}——\textbf{包括 BERT、GPT、ViT、Stable Diffusion}。
+
+\subsection{AdamW（2019）}
+
+\textbf{Loshchilov \& Hutter 发现 Adam 的 L2 正则被"自适应学习率"扭曲}——\textbf{改用"\textbf{解耦权重衰减}"}：
+\begin{equation}
+\bm \theta_{k+1} = \bm \theta_k - \alpha \cdot \hat{\bm m}_k / (\sqrt{\hat{\bm v}_k} + \varepsilon) - \alpha \lambda \bm \theta_k
+\end{equation}
+
+\textbf{这是 GPT-3 / GPT-4 / Llama 训练的实际配置}。
+
+\section{§8 应用：神经网络训练 + 工程设计 + 资源分配}
+
+\textbf{优化无处不在}——\textbf{这一节给三个最具代表性的应用}。
+
+\subsection{应用 1：神经网络训练（climax）}
+
+\textbf{把第 10 章的随机思想 + 本章的优化思想——拼起来}：
+
+\begin{enumerate}
+\item \textbf{前向传播}：\textbf{输入 $\bm x \to$ 网络 $\to$ 预测 $\hat{\bm y}$}
+\item \textbf{算损失}：$\ell = \text{CrossEntropy}(\hat{\bm y}, \bm y)$
+\item \textbf{反向传播}：\textbf{链式法则——算 $\nabla_{\bm \theta} \ell$}（第 2 章的链式法则——在这里规模化）
+\item \textbf{优化一步}：\textbf{Adam 更新 $\bm \theta$}
+\item \textbf{重复 $10^6$ 次——\textbf{模型学会了}}
+\end{enumerate}
+
+\subsection{应用 2：工程设计 —— 飞机翼形优化}
+
+\textbf{Boeing 787 的翼形}——\textbf{用 CFD（计算流体力学）+ 伴随法（adjoint method）算梯度 + L-BFGS 优化}——\textbf{把阻力降低 5\%——每架飞机每年省 200 万美元燃油}。
+
+\subsection{应用 3：资源分配 —— 调度与运筹}
+
+\textbf{Amazon 的仓储调度、Uber 的派单、电力公司的发电机组合（unit commitment）}——\textbf{全部归结为大规模整数 LP / MILP}——\textbf{用 Gurobi 解}——\textbf{每天为这些公司节省数亿美元}。
+
+\section{Python 模块：\texttt{optimization.py}}
+
+\textbf{本章的 Python 模块}——\textbf{把以上算法都实现一遍}（教学版——非工业级）：
+
+\begin{lstlisting}[language=Python]
+"""optimization.py —— Chapter 13 companion module.
+Educational implementations of optimization algorithms.
+"""
+import numpy as np
+
+# ---------- 1. Golden Section Search (univariate) ----------
+def golden_section(f, a, b, tol=1e-6, max_iter=100):
+    """Find min of unimodal f on [a, b] using golden section."""
+    phi = (np.sqrt(5) - 1) / 2  # ~0.618
+    x1 = b - phi * (b - a)
+    x2 = a + phi * (b - a)
+    f1, f2 = f(x1), f(x2)
+    for _ in range(max_iter):
+        if b - a < tol:
+            break
+        if f1 < f2:
+            b, x2, f2 = x2, x1, f1
+            x1 = b - phi * (b - a)
+            f1 = f(x1)
+        else:
+            a, x1, f1 = x1, x2, f2
+            x2 = a + phi * (b - a)
+            f2 = f(x2)
+    return (a + b) / 2
+
+# ---------- 2. Gradient Descent ----------
+def gradient_descent(f, grad_f, x0, lr=1e-2, tol=1e-6, max_iter=10000):
+    """Vanilla gradient descent for f: R^n -> R."""
+    x = np.asarray(x0, dtype=float)
+    history = [x.copy()]
+    for k in range(max_iter):
+        g = grad_f(x)
+        if np.linalg.norm(g) < tol:
+            break
+        x = x - lr * g
+        history.append(x.copy())
+    return x, history
+
+# ---------- 3. Newton's Method ----------
+def newton(f, grad_f, hess_f, x0, tol=1e-8, max_iter=100):
+    """Newton's method (requires Hessian)."""
+    x = np.asarray(x0, dtype=float)
+    for k in range(max_iter):
+        g = grad_f(x)
+        if np.linalg.norm(g) < tol:
+            break
+        H = hess_f(x)
+        d = np.linalg.solve(H, g)
+        x = x - d
+    return x
+
+# ---------- 4. BFGS ----------
+def bfgs(f, grad_f, x0, tol=1e-6, max_iter=500):
+    """BFGS quasi-Newton."""
+    x = np.asarray(x0, dtype=float)
+    n = len(x)
+    H = np.eye(n)  # approximation to inverse Hessian
+    g = grad_f(x)
+    for k in range(max_iter):
+        if np.linalg.norm(g) < tol:
+            break
+        d = -H @ g
+        # Backtracking line search (Armijo)
+        alpha = 1.0
+        while f(x + alpha * d) > f(x) + 1e-4 * alpha * g @ d:
+            alpha *= 0.5
+            if alpha < 1e-10:
+                break
+        x_new = x + alpha * d
+        g_new = grad_f(x_new)
+        s = x_new - x
+        y = g_new - g
+        rho = 1.0 / (y @ s + 1e-12)
+        I = np.eye(n)
+        H = (I - rho * np.outer(s, y)) @ H @ (I - rho * np.outer(y, s)) \
+            + rho * np.outer(s, s)
+        x, g = x_new, g_new
+    return x
+
+# ---------- 5. SGD ----------
+def sgd(grad_sample, x0, n_samples, lr=1e-2, epochs=10, batch_size=32):
+    """Stochastic gradient descent.
+    grad_sample(x, i): gradient of loss on sample i.
+    """
+    x = np.asarray(x0, dtype=float)
+    history = []
+    for epoch in range(epochs):
+        idx = np.random.permutation(n_samples)
+        for start in range(0, n_samples, batch_size):
+            batch = idx[start:start + batch_size]
+            g = np.mean([grad_sample(x, i) for i in batch], axis=0)
+            x = x - lr * g
+        history.append(x.copy())
+    return x, history
+
+# ---------- 6. Adam ----------
+def adam(grad_sample, x0, n_samples,
+         lr=1e-3, beta1=0.9, beta2=0.999, eps=1e-8,
+         epochs=10, batch_size=32):
+    """Adam optimizer (Kingma & Ba 2014)."""
+    x = np.asarray(x0, dtype=float)
+    m = np.zeros_like(x)
+    v = np.zeros_like(x)
+    t = 0
+    for epoch in range(epochs):
+        idx = np.random.permutation(n_samples)
+        for start in range(0, n_samples, batch_size):
+            batch = idx[start:start + batch_size]
+            g = np.mean([grad_sample(x, i) for i in batch], axis=0)
+            t += 1
+            m = beta1 * m + (1 - beta1) * g
+            v = beta2 * v + (1 - beta2) * g * g
+            m_hat = m / (1 - beta1 ** t)
+            v_hat = v / (1 - beta2 ** t)
+            x = x - lr * m_hat / (np.sqrt(v_hat) + eps)
+    return x
+
+# ---------- 7. Linear Programming via scipy ----------
+def solve_lp(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None, bounds=None):
+    """Wrapper around scipy.optimize.linprog (HiGHS by default)."""
+    from scipy.optimize import linprog
+    return linprog(c, A_ub=A_ub, b_ub=b_ub,
+                   A_eq=A_eq, b_eq=b_eq,
+                   bounds=bounds, method='highs')
+
+# ---------- 8. Lagrangian-based equality-constrained QP ----------
+def quadratic_eq_constrained(Q, c, A, b):
+    """Solve min 0.5 x'Qx + c'x  s.t. Ax = b via KKT system."""
+    n, m = Q.shape[0], A.shape[0]
+    KKT = np.block([[Q, A.T], [A, np.zeros((m, m))]])
+    rhs = np.concatenate([-c, b])
+    sol = np.linalg.solve(KKT, rhs)
+    x, lam = sol[:n], sol[n:]
+    return x, lam
+\end{lstlisting}
+
+\section{Aha 时刻：ChatGPT 训练 = Adam + 千亿参数}
+
+\textbf{现在}——\textbf{我们到达本书最后一个 Aha——也是全书的\textbf{climax}}。
+
+\begin{tcolorbox}[ahabox={\Large Aha：ChatGPT 训练 —— 优化理论 70 年的总和成就}]
+\textbf{2022 年 11 月 30 日}——\textbf{OpenAI 发布 ChatGPT}——\textbf{5 天内用户破百万——2 个月破 1 亿}——\textbf{人类历史上增长最快的消费产品}。
+
+\medskip
+
+\textbf{这个对话引擎背后——是一个有 \textbf{1750 亿参数} 的 Transformer 神经网络（GPT-3 规模）}——\textbf{它是怎么训练出来的}？
+
+\medskip
+
+\textbf{一句话——\textbf{Adam 优化器 + 反向传播 + 万张 GPU + 三个月}}。
+
+\medskip
+
+\textbf{展开来说}：
+
+\begin{enumerate}
+\item \textbf{目标函数}（第 11 章的最大似然）：\textbf{在 3000 亿个 token 的语料上最大化条件概率 $p(\text{next token} \mid \text{previous tokens})$}——\textbf{等价于最小化\textbf{交叉熵损失}}：
+\[
+\mathcal{L}(\bm \theta) = -\frac{1}{N} \sum_{i=1}^N \log p_{\bm \theta}(y_i \mid x_i)
+\]
+
+\item \textbf{优化变量}：\textbf{$\bm \theta \in \mathbb{R}^{1.75 \times 10^{11}}$}——\textbf{1750 亿个权重}——\textbf{装在 \textbf{GPU 集群}上——一张 80GB 的 A100 只能存\textbf{半层}的参数}
+
+\item \textbf{梯度计算}（第 2 章的链式法则——大规模化）：\textbf{反向传播算 $\nabla_{\bm \theta} \mathcal{L}$}——\textbf{用\textbf{自动微分}（autograd）——一次前向 + 一次反向 = 一次梯度}
+
+\item \textbf{优化步}：\textbf{AdamW——逐参数自适应学习率 + 解耦权重衰减}——\textbf{超参}：\textbf{lr=$6\times 10^{-5}$，$\beta_1=0.9$，$\beta_2=0.95$（GPT-3 配置）}
+
+\item \textbf{batch size}：\textbf{320 万 token}（远超传统 mini-batch）——\textbf{大 batch 降低噪声 + 充分利用 GPU 并行}
+
+\item \textbf{总训练量}：\textbf{$3 \times 10^{23}$ FLOPs}（GPT-3）——\textbf{相当于 1000 块 V100 GPU 跑\textbf{34 天}}
+
+\item \textbf{学习率调度}：\textbf{warmup（前 1\% 步线性升温） + cosine decay（剩余步余弦下降）}——\textbf{所有大模型都这么用}
+
+\item \textbf{梯度裁剪 + 混合精度}：\textbf{$\|\nabla\| > 1.0$ 时裁剪——FP16 训练降低显存 2 倍}
+\end{enumerate}
+
+\medskip
+
+\textbf{$\bullet$ 这一切的核心}——\textbf{是 1951 年 Robbins 和 Monro 在《Annals of Math Stat》上发表的\textbf{随机近似}方法}（SGD 的起源）。
+
+\textbf{$\bullet$ 加上 1964 年 Polyak 的\textbf{动量法}}。
+
+\textbf{$\bullet$ 加上 2014 年 Kingma 和 Ba 的 \textbf{Adam}}（两个博士生在 ICLR 的一篇会议论文）。
+
+\textbf{$\bullet$ 加上 1986 年 Rumelhart、Hinton、Williams 的\textbf{反向传播}}（梯度的自动微分实现）。
+
+\medskip
+
+\textbf{这四个想法——加上 2017 年 Google 提出的 \textbf{Transformer 架构}}——\textbf{加上 Nvidia 二十年的 \textbf{GPU 硬件}}——\textbf{在 2020 年代汇合}——\textbf{催生了人类历史上\textbf{第一个能像人一样对话}的机器}。
+
+\medskip
+
+\textbf{ChatGPT 之所以会"思考"——并不是它\textbf{懂}什么}——\textbf{它只是\textbf{把损失函数最小化得太好了}}——\textbf{以至于\textbf{下一个 token 的预测分布}——逼近了\textbf{人类知识的真实分布}}。
+
+\medskip
+
+\textbf{换句话说}——\textbf{ChatGPT = \textbf{在 1750 亿维空间里的一次梯度下降}}。
+
+\medskip
+
+\textbf{这就是\textbf{优化理论的力量}}——\textbf{一个 200 年前 Cauchy 想出的"沿负梯度走一步"的简单想法}——\textbf{在万张 GPU + 千亿参数的尺度上}——\textbf{学会了写诗、写代码、做数学、当律师顾问}。
+
+\medskip
+
+\textbf{这就是为什么本书最后一章——必须是优化}。\textbf{所有前面的章节都在为它\textbf{铺垫}}：
+
+\begin{itemize}
+\item \textbf{第 1 章的极限}——\textbf{是梯度的极限定义}
+\item \textbf{第 2 章的偏导}——\textbf{是反向传播的链式法则}
+\item \textbf{第 7 章的特征分解}——\textbf{是 Adam 自适应学习率的 Hessian 近似}
+\item \textbf{第 10 章的随机过程}——\textbf{是 SGD 的概率保证}
+\item \textbf{第 12 章的数值方法}——\textbf{是浮点 GPU 计算的根基}
+\end{itemize}
+
+\medskip
+
+\textbf{优化——是工科数学的\textbf{终极归宿}}。\textbf{学到这里——你已经站在 AI 时代的数学高地上了}。
+\end{tcolorbox}
+
+\textbf{这与我们在 \textbf{physics-rendu 第 21 章}的回响——\textbf{神经网络训练 = 高维空间里的\textbf{物理动力学}}（损失曲面 = 能量曲面、SGD = 朗之万动力学、batch noise = 热涨落）——构成了\textbf{数学与物理在 AI 时代的双线汇合}}。
+
+\section{练习 / Exercises}
+
+\begin{enumerate}
+\item \textbf{Newton 法}：用 Newton 法求 $f(x) = x^4 - 4x^2 + 3$ 的极小点——\textbf{用 \texttt{newton} 函数验证}。
+\item \textbf{BFGS vs. Newton}：在 Rosenbrock 函数 $f(x,y) = (1-x)^2 + 100(y-x^2)^2$ 上比较——\textbf{BFGS、Newton、Gradient Descent 各需多少步收敛}。
+\item \textbf{KKT}：手算 $\min x^2 + y^2$ s.t. $x + y = 1$ 的最优点（用 Lagrangian）。
+\item \textbf{LP}：用 \texttt{scipy.optimize.linprog} 解\textbf{食堂配餐问题}（最低成本满足热量与蛋白质约束）。
+\item \textbf{SGD vs. Adam}：在 MNIST 逻辑回归上比较——\textbf{画 loss 曲线}——\textbf{Adam 早期下降是否更快}？
+\item \textbf{凸性判别}：判断 $f(x) = \log(\sum_i e^{x_i})$（\textbf{log-sum-exp}）是否凸——\textbf{它在 softmax 中扮演什么角色}？
+\item \textbf{动量}：在 ill-conditioned 二次函数上比较\textbf{有无 momentum 的 SGD}——\textbf{画轨迹}。
+\item \textbf{Adam 拆解}：在 PyTorch 里手写 Adam（不调 \texttt{torch.optim.Adam}）——\textbf{在一个小网络上跑通——验证与官方实现等价}。
+\end{enumerate}
+
+\section{回顾 / Recap}
+
+\begin{tcolorbox}[essbox={本章一句话总结}]
+\textbf{优化 = 找极小点}。\textbf{无约束}：\textbf{Gradient $\to$ Newton $\to$ BFGS $\to$ SGD $\to$ Adam}——\textbf{越往后越能处理大规模 + 非凸}。\textbf{有约束}：\textbf{KKT 是一切的判别式}。\textbf{现代 AI 的核心——是 \textbf{Adam + 千亿参数}——这是 200 年优化理论 + 70 年随机近似 + 10 年深度学习的总和}。
+\end{tcolorbox}
+
+\textbf{至此}——\textbf{这本书的正文部分写完了}。\textbf{从第 1 章 Newton 的瘟疫之年——到第 13 章 ChatGPT 的训练}——\textbf{我们走过了 360 年的工科数学}。
+
+\textbf{下一章}（第 14 章，可选）：\textbf{离散数学——图论、组合优化、密码学的入门}——\textbf{为想做 CS 方向的同学准备}。
+
+\textbf{但如果你只想做 AI / 控制 / 信号处理 / 通信——\textbf{你已经够用了}}。
+
+\textbf{祝你——\textbf{打通任督二脉}}。
+
+\clearpage

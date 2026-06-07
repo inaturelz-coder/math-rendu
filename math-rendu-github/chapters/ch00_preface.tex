@@ -1,0 +1,234 @@
+% =====================================================================
+%  第 0 章 · 序言 / Preface
+%  Why Bridge Engineering Mathematics
+% =====================================================================
+
+\chapter*{序言：为什么要打通工科数学}
+\addcontentsline{toc}{chapter}{序言：为什么要打通工科数学}
+\markboth{序言}{为什么要打通工科数学}
+
+\section*{一段个人前情}
+
+我读大一的时候——第一学期的高等数学，期中考完，全班 36 个人，挂了 11 个。
+
+老师讲极限的 $\varepsilon\text{-}\delta$，讲了三周。讲完之后我问同寝室的舍友：你听懂了吗？他说没有。我说我也没有。我们互相安慰：先背下来再说，反正期末考的不是这个，考的是题目。
+
+后来我才明白——那个学期我们浪费的不是三周，是\textbf{整本高等数学的入场券}。我们没听懂极限——所以导数只是"那个 $\frac{f(x+h)-f(x)}{h}$ 的极限"——一个我们也不真懂的东西，再用一个不真懂的东西取极限——能信吗？信不了——但考试还是过了。
+
+\medskip
+
+到了大三做毕业设计，我要解一个二阶 ODE。我打开《高等数学》——翻到 ODE 那一章——里面写了"分离变量法、待定系数法、特征方程法"——三种方法都给了。我试着套——套不上。
+
+为什么？因为教材的例题是 $y'' + 4y = 0$，参数是漂亮的整数。我的方程是 $y'' + 0.83 y' + 12.7 y = \sin(3.1 t)$。教材说"令 $y = e^{rt}$，代入求 $r$"——可我代入完之后，$r$ 是个复数——教材没继续讲了。
+
+我那天晚上盯着这个方程看了三个小时——最后用 Python 的 \texttt{scipy.integrate.odeint} 一行代码把它数值解了。
+
+\textbf{大学四年的数学——在毕业设计前那个晚上——被一行 \texttt{scipy} 取代。}
+
+\medskip
+
+这是个隐喻——但它不只是隐喻。\textbf{中国工科生的数学教育——和真实工程世界——存在三道断层}。这本书就是为这三道断层而写。
+
+\section*{工科数学的三道断点}
+
+\subsection*{断点 1：从高中到大学}
+
+高中数学像"算术"——\textbf{操作明确、答案唯一、训练题海}。
+
+大学数学突然变成"\textbf{$\varepsilon\text{-}\delta$ + 链式法则 + 多重积分 + 矩阵}"——\textbf{概念抽象、计算冗长、考题逼人}。
+
+大一下学期——\textbf{$30\%\sim 40\%$ 的学生数学就掉队了}——剩下的 60\% 也只是在"硬刷题"。等到大二学《线性代数》——他们已经不知道矩阵是什么——只知道"上三角，下三角，行列式按某一行展开"。
+
+\textbf{断点 1 的本质}——不是难——是"\textbf{从直觉学习到符号操作的切换}"——而国内教材几乎\textbf{完全跳过了直觉这一步}。
+
+\subsection*{断点 2：从大学到研究生 / 工程岗}
+
+大学数学讲的是"\textbf{解出闭合解}"——研究生 / 工程岗用的是"\textbf{数值算}"。
+
+\textbf{大学教 $y'' + 4y = \cos(2t)$}——这种方程有共振——很美——但工程里 \textbf{99\% 的方程没有共振}——\textbf{99\% 的方程没有闭合解}——必须数值。
+
+\textbf{大学教矩阵的本征值 $A\bm{v}=\lambda\bm{v}$}——给你一个 $3\times 3$ 矩阵让你手算 $\det(A-\lambda I)=0$。
+
+\textbf{研究生 / 工业用的是 $1000\times 1000$ 矩阵}——\textbf{你必须用 \texttt{numpy.linalg.eig}}——\textbf{手算的方法你一辈子都不会再用}。
+
+\textbf{断点 2 的本质}——大学数学和工业数学——\textbf{是两套不同的数学}——但教材里只有第一套——\textbf{第二套你必须自学}。
+
+\subsection*{断点 3：经典数学 vs 现代工程}
+
+\textbf{现代工程的数学发生了一次革命}——大约从 \textbf{2010 年}（深度学习兴起）开始——\textbf{加速到 2020 年（ChatGPT 训练）}。
+
+具体表现：
+
+\begin{itemize}
+\item \textbf{线性代数从"辅助课"变成"主菜"}——21 世纪所有 AI / ML / 数据科学都跑在矩阵上
+\item \textbf{优化从"运筹学小话题"变成"核心引擎"}——SGD / Adam / 损失函数曲面成为日常
+\item \textbf{概率从"实验数据分析"变成"模型本身"}——贝叶斯、生成模型、扩散模型
+\item \textbf{数值方法从"工程师小工具"变成"科研主力"}——\texttt{numpy} + \texttt{scipy} + \texttt{PyTorch}
+\end{itemize}
+
+但\textbf{中国大学的工科数学教材}——\textbf{基本停留在 1990 年代}——同济高数、线代、概率论——\textbf{三本书加起来——讲 SVD 的不超过一段话——讲梯度下降的没有一章——讲 PageRank 的根本没有}。
+
+\textbf{断点 3 的本质}——\textbf{教材跟不上工业}——\textbf{老师跟不上时代}——学生学完之后\textbf{对现代工程世界几乎一无所知}——必须补课。
+
+\medskip
+
+\textbf{这本书的目的——就是打通这三个断点。}
+
+\section*{为什么书名叫"打通任督二脉"}
+
+\textbf{中国读者都懂这个梗}——\textbf{武侠小说里}——\textbf{一旦"打通任督二脉"——内力大增、武功跨越式提升}。\textbf{数学也是这样}——\textbf{一旦你"打通"了几条核心脉络——所有应用数学都豁然开朗}。
+
+\textbf{但"任督二脉"四个字}——\textbf{字面上就告诉你}：\textbf{是\textbf{两条}脉}——\textbf{不是六条}——\textbf{不是十条}——\textbf{就两条}。
+
+\textbf{数学的这两条脉是什么}？——\textbf{大学数学教学早就给了答案}：
+
+\begin{center}
+\fbox{\parbox{0.85\textwidth}{\centering
+\textbf{\large 任脉 = 分析 Analysis} \quad / \quad \textbf{\large 督脉 = 代数 Algebra}\\[6pt]
+\textit{连续 vs 离散 \quad / \quad 极限 vs 结构 \quad / \quad 变化率 vs 变换}
+}}
+\end{center}
+
+\textbf{任脉}贯穿\textbf{Ch 1-5, 9-11}——\textbf{覆盖所有"连续"的数学}：微积分、矢量分析、ODE/PDE、复变、概率统计。
+
+\textbf{督脉}贯穿\textbf{Ch 6-8}——\textbf{覆盖所有"线性结构"的数学}：矩阵入门、本征值核心、SVD/PCA/PageRank 应用。
+
+\textbf{Ch 12 数值方法}与\textbf{Ch 13 优化}——\textbf{是任督相通的两章}——\textbf{ML 训练公式 $\theta_{t+1}=\theta_t-\eta\nabla L(\theta_t)$ 就在这里}——\textbf{用分析的梯度求解代数的最小化}。
+
+\textbf{为什么是分析 / 代数的二分}——\textbf{有四个理由}：
+
+\begin{enumerate}
+\item \textbf{数学史的天然分界}——\textbf{17 世纪 Newton/Leibniz 开启分析}；\textbf{19 世纪中叶 Cayley 开启线代}——\textbf{各自独立发展 200 年}
+\item \textbf{教学路径的天然分界}——\textbf{大一上 = 高数（分析）}；\textbf{大一下 / 大二上 = 线代（代数）}——\textbf{中国所有工科客观就是两段}
+\item \textbf{研究语言的天然分界}——\textbf{所有应用数学问题}——\textbf{要么用分析（极限 / 积分 / 微分方程）}——\textbf{要么用代数（矩阵 / 本征值）}——\textbf{要么两者混合（数值线代）}
+\item \textbf{"二脉"字面}——\textbf{书名说二就是二}——\textbf{列六条线从根上和书名打架}
+\end{enumerate}
+
+\textbf{打通任脉}——\textbf{把任何工程问题翻译成微分方程或积分}。\textbf{打通督脉}——\textbf{把任何高维问题翻译成矩阵和本征值}。\textbf{打通"任督二脉"}——\textbf{知道它们在 Ch 12/13 怎么相遇}——\textbf{这就是 ML、AI、数据科学的全部数学骨架}。
+
+\section*{这本书的方法论：7 件套 + 贯通}
+
+每一章——我用同一个\textbf{7 件套结构}：
+
+\begin{enumerate}
+\item \textbf{写在前面}——为什么要学这一章 / 我个人的体会
+\item \textbf{一句话本质}——这一章如果只能记一句话，记哪句
+\item \textbf{教材里你看到的}——同济 / Stewart / Zill 怎么讲——它们的优缺点
+\item \textbf{直觉}——这个数学到底在做什么——几何 / 物理 / 工程意义
+\item \textbf{数学}——必要的公式、定理、推导——\textbf{节制}
+\item \textbf{Aha 例子}——一个工业级真实场景——让你说"原来如此"
+\item \textbf{代码与思考题}——Python 模块的 demo + 6 道思考题
+\end{enumerate}
+
+\textbf{加一个"小故事盒"}——每章半页——讲这个数学是怎么诞生的——\textbf{Newton 在瘟疫之年}、\textbf{Fourier 被法国学院拒稿三次}、\textbf{Larry Page 的博士论文}——数学不是凭空冒出来的——\textbf{是某些人在某个时代，解决某个问题}。
+
+\section*{风格定调：参考吴军《数学之美》}
+
+\textbf{我不想写}：
+
+\begin{itemize}
+\item 同济风格——题海 + 应试 + 缺乏直觉
+\item Zill 风格——英文 + 偏理论 + 翻译腔
+\item 网红科普——标题党 + 浅薄 + 段子
+\item 哲学随笔——务虚 + 不接地气
+\end{itemize}
+
+\textbf{我想写的是}（参考吴军《数学之美》）：
+
+\begin{itemize}
+\item 从工程问题切入——不是"概念→应用"，而是"问题→数学"
+\item 公式量节制——必要才出现，不堆砌
+\item 故事 + 人物 + 历史——数学不是凭空发明
+\item 接地气——中国工程师的语言习惯
+\item 克制的优雅——不浮夸、不嬉笑
+\item 应用导向——Google / 微软 / AI 公司的真实场景
+\end{itemize}
+
+气质参照——\textbf{像一位老工程师在咖啡馆给后辈讲数学}——严肃但不严厉——\textbf{偶尔幽默}——但每章只一两处——\textbf{多了就过度}。
+
+\section*{这本书的目标读者}
+
+\textbf{核心读者}：
+
+\begin{itemize}
+\item 工科本科生（机械、电子、土木、化工、计算机、材料、能源……）
+\item 跨学科研究生（物理转 AI、化学转计算、生物转生信……）
+\item 在职工程师（基础不牢 / 想转 ML / 想做科研）
+\item 数学焦虑者（高考数学就没学好——但工作里又躲不掉）
+\end{itemize}
+
+\textbf{不适合的读者}：
+
+\begin{itemize}
+\item 想看严格证明的人——请去读 Apostol / Rudin / Folland
+\item 想刷考研真题的人——请去买李永乐 / 张宇
+\item 想纯学应用的人——请去看 \texttt{numpy} 文档
+\end{itemize}
+
+\textbf{本书的定位}——\textbf{介于"严格"与"应用"之间——介于"理论"与"代码"之间}——一本\textbf{贯通式}的工科数学讲义。
+
+\section*{与《打通物理任督二脉》的关系}
+
+这是"\textbf{打通系列}"的第二弹。
+
+\begin{itemize}
+\item \textbf{品牌呼应}——同样的"7 件套" + 数值实验 + 双语 + GitHub 开源
+\item \textbf{风格继承}——同一位作者——同样的"老工程师在咖啡馆"气质
+\item \textbf{内容独立}——本书数学为主体——\textbf{物理只作为应用之一}——\textbf{你不需要先读物理版}
+\item \textbf{交叉引用}——本书 Ch 8 量子比特 $\leftrightarrow$ 物理版 Ch 17；本书 Ch 13 优化 $\leftrightarrow$ 物理版 Ch 21
+\end{itemize}
+
+\textbf{建议阅读顺序}：
+
+\begin{itemize}
+\item 工科生 / 工程师——\textbf{直接读本书}
+\item 物理学生——先读物理版 Ch 0（数学预备）——再来读本书 Ch 6-8 + Ch 13
+\item AI / ML 从业者——重点读本书 Ch 6-8 + Ch 10-11 + Ch 13
+\end{itemize}
+
+\section*{怎么用这本书}
+
+\textbf{完整阅读（4-6 周）}——Ch 0 $\to$ Ch 1-13——按顺序——每章 1-2 个晚上。
+
+\textbf{速成路径}：
+
+\begin{tabular}{ll}
+\toprule
+\textbf{目标} & \textbf{重点章节} \\
+\midrule
+补线代 & Ch 6-8（3 章） \\
+补 ML 数学 & Ch 6-8 + Ch 10-11 + Ch 13 \\
+补现代数学 & Ch 8 + Ch 10 + Ch 12-13 \\
+补 PDE & Ch 4-5 + Ch 12 \\
+补优化 & Ch 13 \\
+\bottomrule
+\end{tabular}
+
+\textbf{代码并行}——每章 §7 给出 Python 模块的 5-6 个 demo——\textbf{边读边跑}——\textbf{不跑就白读}。
+
+\textbf{思考题}——每章 6 道——\textbf{留给自己想}——书末\textbf{不给答案}——这是工程师的习惯：\textbf{答案在代码里、在论文里、在和同事的讨论里}——\textbf{不在书后的"答案部分"}。
+
+\section*{诚实声明：这本书不是什么}
+
+\begin{itemize}
+\item \textbf{不是}严格的数学教材——想看证明，请读 Apostol、Rudin、Folland
+\item \textbf{不是}考研辅导书——不会教你怎么对付李永乐
+\item \textbf{不是}百科全书——\textbf{有意省略很多内容}：测度论、张量分析、群论、变分法、随机过程、信息论——这些留给\textbf{后续专题书}
+\item \textbf{不是}"零基础学数学"——你至少需要\textbf{高中数学的基础}
+\item \textbf{不是}"一周速成数学"——\textbf{不存在这种东西}——\textbf{6 周是合理的}
+\end{itemize}
+
+\section*{最后一句}
+
+这本书在 2027 年上半年完成。
+
+\medskip
+
+\textbf{数学是活的}——\textbf{但它需要有人来贯通}。
+
+\medskip
+
+\hfill Li Zhou
+\hfill 2027 春
+
+\clearpage

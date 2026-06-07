@@ -1,0 +1,498 @@
+% =====================================================================
+%  第 1 章 · 微积分入门 / Calculus I
+%  极限、导数、积分、应用
+%  小故事：Newton 与瘟疫之年
+%  Aha：短信流量预测
+% =====================================================================
+
+\chapter{微积分入门 / Calculus I}
+\label{ch:calc1}
+
+\begin{quote}\itshape
+1665 年，伦敦闹瘟疫。剑桥大学停课。年轻的牛顿回到林肯郡的老家躲避。\\
+这个 22 岁的青年——闲在家里——在那一年发明了三件大事：\\
+\textbf{微积分、万有引力、光学}。\\
+我们这一章——就讲他在那个瘟疫之年想清楚的第一件事：\textbf{导数}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{我刚学微积分时}——和大多数人一样——\textbf{我背的是公式}。
+
+$\sin'(x) = \cos(x)$。$\int x^n \, dx = \frac{x^{n+1}}{n+1}$。链式法则、分部积分、换元。
+
+\textbf{大一上半学期}——\textbf{我整整考了 91 分}——但你问我导数是什么——我说不上来。我会算——但我\textbf{不懂}。
+
+到了\textbf{大三}——我做毕业设计——\textbf{需要预测一个温度信号的"上升速度"}——我打开 Python：
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+dy_dx = np.gradient(y, x)
+\end{lstlisting}
+
+\textbf{一行代码——做完了导数}。
+
+那一刻我才反应过来——\textbf{我大一背的所有求导公式}——在工业里——\textbf{我一个都没用过}。
+
+\textbf{真正用的是}：
+
+\begin{itemize}
+\item 导数是\textbf{变化率}——\textbf{$\Delta y / \Delta x$ 的极限}
+\item 导数是\textbf{斜率}——\textbf{切线的斜率}
+\item 导数是\textbf{速度}——位置 $\to$ 速度 $\to$ 加速度
+\item 导数告诉我们\textbf{何时增、何时减、何时到顶}——这就是\textbf{极值}
+\end{itemize}
+
+\textbf{这一章就把这四件事说清楚}——\textbf{再多的求导公式}——\textbf{都是这四件事的变体}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{导数是变化率——积分是累积量——它们互为逆运算（微积分基本定理）}。\\[6pt]
+\textbf{English}: The derivative is a rate of change; the integral is an accumulated quantity; they are inverse operations (the Fundamental Theorem of Calculus).
+\end{tcolorbox}
+
+记住这一句话——\textbf{这一章已经讲完了一半}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{同济《高等数学》}
+
+同济大学应用数学系主编的\textbf{《高等数学》（第七版）}——是中国 90\% 工科生的\textbf{第一本大学数学教材}。
+
+它的章节是这样的：
+
+\begin{itemize}
+\item 第一章：函数与极限（$\varepsilon\text{-}\delta$ 定义）
+\item 第二章：导数与微分
+\item 第三章：微分中值定理与导数的应用
+\item 第四章：不定积分
+\item 第五章：定积分
+\item 第六章：定积分的应用
+\end{itemize}
+
+\textbf{优点}：完整、严格、覆盖国内考研所有考点。
+
+\textbf{缺点}：
+
+\begin{enumerate}
+\item \textbf{$\varepsilon\text{-}\delta$ 放在第一章}——把 90\% 的学生劝退在起跑线
+\item \textbf{题量巨大 + 偏怪}——大量"凑微分"、"三角换元"——\textbf{工业里这辈子都用不到}
+\item \textbf{应用部分少}——只有"求面积、求体积、求功"——\textbf{现代工程一个都不沾}
+\end{enumerate}
+
+\subsection{Stewart《Calculus》}
+
+\textbf{Stewart} 的《Calculus》是\textbf{美国大学的国民微积分}——\textbf{1200 页}——\textbf{彩色印刷}——\textbf{每章都有 100 道题}。
+
+它比同济好的地方：\textbf{图多、应用多、写得活}。
+
+它的缺点：\textbf{1200 页太长了}——\textbf{你读不完}——\textbf{而且它讲的是美国人的应用（高尔夫球弹道、糖果销量）}——\textbf{中国工程师看着隔膜}。
+
+\subsection{Zill《Advanced Engineering Mathematics》}
+
+\textbf{Zill} 是工科研究生用的——\textbf{偏理论 + 偏 PDE}——\textbf{不适合入门}。
+
+\subsection{我的策略}
+
+\textbf{本章不会重复同济和 Stewart 的内容}——\textbf{它们都已经够全了}。
+
+\textbf{本章只做三件事}：
+
+\begin{enumerate}
+\item \textbf{把直觉讲清楚}——为什么导数 = 切线斜率——为什么积分 = 面积——\textbf{这是同济不讲的}
+\item \textbf{把基本定理讲透}——\textbf{微分和积分是逆运算}——\textbf{这是整本微积分的中心}
+\item \textbf{把 Aha 例子讲到能跑代码}——\textbf{短信流量预测}——\textbf{用 Python 的 \texttt{numpy.gradient}}
+\end{enumerate}
+
+\begin{tcolorbox}[storybox={\Large 小故事：Newton 与瘟疫之年}]
+\textbf{1665 年}——\textbf{伦敦闹瘟疫}——\textbf{剑桥大学停课}。
+22 岁的 \textbf{Isaac Newton}（刚拿到学士学位）——\textbf{回到林肯郡 Woolsthorpe 的老家}——\textbf{在那里待了 18 个月}。
+
+\medskip
+
+那 18 个月——他\textbf{独自一人}——\textbf{想清楚了三件事}：
+
+\begin{enumerate}
+\item \textbf{微积分}（他叫"流数法"，fluxions）——\textbf{为了算行星运动}
+\item \textbf{万有引力}——\textbf{为了解释 Kepler 三大定律}
+\item \textbf{光的分解}（用棱镜实验）——\textbf{为了解释颜色}
+\end{enumerate}
+
+\medskip
+
+\textbf{在德国}——\textbf{Gottfried Leibniz}——\textbf{独立发明了同样的东西}——\textbf{用了不同的符号}（$dx, dy, \int$——这是我们今天用的版本）。
+
+\textbf{Newton 和 Leibniz 后来为"谁先发明的"吵了 30 年}——\textbf{学术界的第一场国际口水仗}。
+
+\medskip
+
+\textbf{微积分不是凭空发明的}——\textbf{它是为了解决"行星怎么绕太阳运动"这个 2000 年没人能算清的问题}。
+
+\textbf{17 世纪没有 Python}——\textbf{没有计算器}——\textbf{只有羽毛笔}——他们\textbf{用纯思想}搞出了让\textbf{人类登月}的数学工具。
+
+\medskip
+
+你今天学的每一招——\textbf{背后都有这样一群人}。
+\end{tcolorbox}
+
+\section{直觉 / Intuition}
+
+\subsection{极限：让"无穷小"变成"任意小"}
+
+\textbf{极限的核心思想——一句话}：
+
+\begin{quote}
+\textbf{"我想要的精度——我能做到。"}\\[4pt]
+\itshape "Whatever precision you want, I can achieve."
+\end{quote}
+
+举例：$\lim_{x \to 2} x^2 = 4$。这句话的意思——\textbf{不是} "$x^2$ 在 $x=2$ 处等于 4"（虽然确实等于）——\textbf{而是} "无论你想让 $x^2$ 离 4 多近——我都能让 $x$ 离 2 足够近，就达到了"。
+
+\textbf{这就是 $\varepsilon\text{-}\delta$ 的本质}——\textbf{你给我 $\varepsilon$（你想要的精度）——我给你 $\delta$（我能达到的范围）}——\textbf{这是一种"挑战与回应"的游戏}。
+
+\textbf{同济教材的错误}——把 $\varepsilon\text{-}\delta$ \textbf{当成一个"严格定义"塞给学生}——\textbf{没说它是干什么的}——\textbf{学生当然懵}。
+
+\textbf{真正的故事是}：
+
+\begin{itemize}
+\item Newton / Leibniz 时代——大家用"无穷小量 $dx$"算微积分——但\textbf{无穷小到底是什么——没人说得清}
+\item Bishop Berkeley 1734 年写文章批评——\textbf{"你们的 dx 一会儿是 0 一会儿不是 0——这是数学还是巫术？"}
+\item 整整 100 年——数学家无法回应这个质疑——他们\textbf{知道公式对、不知道为什么对}
+\item 直到 1820 年代——\textbf{Cauchy} 引入 $\varepsilon\text{-}\delta$——\textbf{Bolzano 和 Weierstrass 完善}——\textbf{终于把"无穷小"这个概念用"任意小"代替}
+\end{itemize}
+
+\textbf{$\varepsilon\text{-}\delta$ 不是为了折磨大一新生发明的}——\textbf{是为了回应 Berkeley 的质疑、为了让 200 年来"半懂半不懂"的微积分获得严格基础}。
+
+\subsection{导数 = 切线斜率 / 变化率}
+
+\textbf{导数的定义}：
+
+\begin{equation}
+f'(x_0) = \lim_{\Delta x \to 0} \frac{f(x_0 + \Delta x) - f(x_0)}{\Delta x}
+\end{equation}
+
+\textbf{这个公式的几何意义}（图意，请脑补）：
+
+\begin{itemize}
+\item 取 $x_0$ 附近的两点 $(x_0, f(x_0))$ 和 $(x_0 + \Delta x, f(x_0 + \Delta x))$
+\item 它们的连线——\textbf{割线}——斜率为 $\frac{f(x_0+\Delta x) - f(x_0)}{\Delta x}$
+\item 让 $\Delta x \to 0$——\textbf{两点合并成一点}——\textbf{割线变成切线}
+\item \textbf{切线的斜率——就是导数 $f'(x_0)$}
+\end{itemize}
+
+\textbf{物理意义}：\textbf{位置 $\to$ 速度 $\to$ 加速度}——\textbf{这是微积分发明的第一个动机}。
+
+\begin{example}[导数的多重身份]
+\textbf{同一个公式 $\frac{dy}{dx}$——在不同领域有不同名字}：
+\begin{itemize}
+\item 数学：\textbf{斜率 / 变化率}
+\item 物理：\textbf{速度 / 加速度 / 力}（如果 $y$ 是位置）
+\item 化学：\textbf{反应速率 / 浓度变化率}
+\item 经济：\textbf{边际成本 / 边际收益}
+\item 信号处理：\textbf{瞬时频率 / 上升沿斜率}
+\item ML：\textbf{梯度 / 损失下降方向}
+\end{itemize}
+\textbf{它们是同一个东西}——\textbf{不同领域起了不同名字}——\textbf{这就是数学的力量}。
+\end{example}
+
+\subsection{积分 = 累积量 / 面积}
+
+\textbf{积分的两个面孔}：
+
+\textbf{不定积分}：$\int f(x) \, dx = F(x) + C$——\textbf{"反求导"}——找一个 $F$ 使得 $F'=f$。
+
+\textbf{定积分}：$\int_a^b f(x) \, dx = \lim_{n\to\infty} \sum_{i=1}^n f(x_i^*) \Delta x$——\textbf{"加起来取极限"}——直观上是\textbf{$f(x)$ 在 $[a,b]$ 上与 $x$ 轴围的有向面积}。
+
+\textbf{为什么这两个东西用同一个符号 $\int$ ？}——\textbf{因为它们等价}——\textbf{这就是微积分基本定理}。
+
+\subsection{微积分基本定理 / Fundamental Theorem of Calculus}
+
+\begin{theorem}[微积分基本定理]
+若 $f$ 在 $[a,b]$ 上连续，$F$ 是 $f$ 的原函数（即 $F'=f$），则
+\begin{equation}
+\int_a^b f(x) \, dx = F(b) - F(a)
+\end{equation}
+\end{theorem}
+
+\textbf{这是整本微积分的"任督二脉"}——\textbf{它把"求面积（积分）"和"求斜率（导数）"连成了一件事}。
+
+\textbf{为什么这件事这么重要}？
+
+\textbf{在 Newton 之前}——\textbf{阿基米德}（公元前 250 年）就会算抛物线下面的面积——\textbf{用穷竭法}——\textbf{每算一个图形要花几页纸的工作}。
+
+\textbf{Newton 和 Leibniz 之后}——\textbf{只需要找到原函数 $F$——做一个减法 $F(b)-F(a)$——就完了}。
+
+\textbf{2000 年的难题——被一个定理简化成一个减法}——\textbf{这就是它的伟大}。
+
+\section{数学 / The Math}
+
+\subsection{极限的 $\varepsilon\text{-}\delta$ 定义}
+
+\begin{definition}[函数极限]
+设 $f(x)$ 在 $x_0$ 的某个去心邻域内有定义。称 $\lim_{x\to x_0} f(x) = L$，若
+\[
+\forall \varepsilon > 0,\ \exists \delta > 0,\ \text{使得 } 0<|x-x_0|<\delta \Rightarrow |f(x)-L|<\varepsilon.
+\]
+\end{definition}
+
+\textbf{我不展开这个定义的应用}——\textbf{在工程里你几乎用不到它}——\textbf{你需要知道的只是：极限是"逼近"——但不一定相等}。
+
+\textbf{重要极限}（背熟这几个就够了）：
+\begin{align}
+\lim_{x \to 0} \frac{\sin x}{x} &= 1 \\
+\lim_{x \to 0} \frac{1 - \cos x}{x^2} &= \frac{1}{2} \\
+\lim_{x \to \infty} \left(1 + \frac{1}{x}\right)^x &= e
+\end{align}
+
+\subsection{导数的运算法则}
+
+\textbf{记住四件事——你能求 95\% 工程函数的导数}：
+
+\begin{enumerate}
+\item \textbf{加法}：$(f+g)' = f' + g'$
+\item \textbf{乘法}：$(fg)' = f'g + fg'$
+\item \textbf{链式法则}：$\frac{d}{dx}f(g(x)) = f'(g(x)) \cdot g'(x)$ —— \textbf{ML 反向传播的核心}
+\item \textbf{除法}：$\left(\frac{f}{g}\right)' = \frac{f'g - fg'}{g^2}$
+\end{enumerate}
+
+\textbf{基本函数的导数}（这些是肌肉记忆——必须熟）：
+\begin{align}
+\frac{d}{dx}x^n &= n x^{n-1} \\
+\frac{d}{dx}e^x &= e^x \\
+\frac{d}{dx}\ln x &= \frac{1}{x} \\
+\frac{d}{dx}\sin x &= \cos x \\
+\frac{d}{dx}\cos x &= -\sin x
+\end{align}
+
+\textbf{隐函数求导}：方程 $F(x,y)=0$——直接对 $x$ 两边求导——把 $y$ 当成 $x$ 的函数——\textbf{$y' = -F_x/F_y$}。
+
+\subsection{积分技巧（节制版）}
+
+\textbf{同济花了 50 页讲积分技巧}——\textbf{我只讲三个}——\textbf{其余都让 \texttt{sympy.integrate} 去算}。
+
+\textbf{换元法}：$\int f(g(x)) g'(x) \, dx = \int f(u) \, du$（其中 $u = g(x)$）
+
+\textbf{分部积分}：$\int u \, dv = uv - \int v \, du$ —— \textbf{记口诀"反对幂指三"}（反三角、对数、幂函数、指数、三角函数——按这个顺序选 $u$）。
+
+\textbf{有理函数}：用部分分式分解 —— \textbf{现代版}：直接 \texttt{sympy.apart()}。
+
+\begin{remark}[工业现实]
+\textbf{99\% 的工程积分都是数值积分}——\textbf{\texttt{scipy.integrate.quad}——一行代码——比手算靠谱十倍}。\\
+\textbf{手算积分的能力——只在两个地方有用}：
+\begin{itemize}
+\item \textbf{考试}（包括考研、博士入学）
+\item \textbf{你要发现一个新公式}——这时数值算不出"封闭形式"——必须手算
+\end{itemize}
+\textbf{大部分工程师——一辈子都不会再用第二种}。
+\end{remark}
+
+\subsection{微积分基本定理：完整版}
+
+\begin{theorem}[微积分基本定理（两部分）]
+设 $f$ 在 $[a,b]$ 上连续。
+\begin{enumerate}
+\item（第一部分）令 $F(x) = \int_a^x f(t) \, dt$，则 $F'(x) = f(x)$。
+\item（第二部分）若 $G$ 是 $f$ 的任一原函数，则 $\int_a^b f(x) \, dx = G(b) - G(a)$。
+\end{enumerate}
+\end{theorem}
+
+\textbf{证明的核心思想（不严格）}：
+
+考虑 $F(x+h) - F(x) = \int_x^{x+h} f(t) \, dt$。当 $h$ 小时，$f$ 在 $[x, x+h]$ 上几乎是常数 $f(x)$——所以这个积分 $\approx f(x) \cdot h$。两边除以 $h$ 并取极限——得到 $F'(x) = f(x)$。
+
+\textbf{这个证明的画面——记下来——比公式重要}。
+
+\section{Aha 例子：短信流量预测 / Aha: SMS Traffic Forecasting}
+
+\textbf{场景}：你在中国移动总部做数据工程师。每天早上 9 点——\textbf{运营部门给你一组数据}：\textbf{昨天每分钟的短信发送量}。
+
+数据是这样的（部分）：
+
+\begin{center}
+\begin{tabular}{cc}
+\toprule
+时间（分钟） & 短信量 \\
+\midrule
+08:59 & 12,034 \\
+09:00 & 12,847 \\
+09:01 & 14,201 \\
+09:02 & 16,932 \\
+09:03 & 19,500 \\
+$\vdots$ & $\vdots$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{问题}：
+
+\begin{enumerate}
+\item \textbf{今天的高峰会出现在什么时候？}（导数的应用——找极值）
+\item \textbf{今天一共会发多少条短信？}（积分的应用——累积量）
+\item \textbf{流量上升最快的时刻是什么时候？}（二阶导数——拐点）
+\end{enumerate}
+
+\textbf{为什么这三个问题用微积分？}——\textbf{因为它们都是"变化率"或"累积量"的问题}——\textbf{这就是微积分的母语}。
+
+\begin{tcolorbox}[ahabox={Aha: 微积分就是数据工程师的日常}]
+\textbf{你以为微积分是"算 $\int \sin^3 x \cos^2 x \, dx$"}——\textbf{那是同济在折磨你}。
+
+\medskip
+
+\textbf{真实的工业微积分是这样的}：
+
+\begin{enumerate}
+\item 给你一个\textbf{离散的时间序列}（每分钟的数据）
+\item 你需要找\textbf{极值}（高峰期 / 低谷期）——\textbf{用一阶导数}
+\item 你需要找\textbf{拐点}（增速最快的时刻）——\textbf{用二阶导数}
+\item 你需要算\textbf{累积量}（今日总流量）——\textbf{用数值积分}
+\end{enumerate}
+
+\medskip
+
+\textbf{核心 API 就两个}——\textbf{\texttt{numpy.gradient}} 和 \textbf{\texttt{numpy.trapz}}——\textbf{你大学学的 300 个求导公式}——\textbf{在这两个 API 面前——一个都用不上}。
+
+\medskip
+
+但这不是说大学学的没用——\textbf{你必须知道"导数 = 变化率"——你才能反应过来"找高峰用一阶导数"}——\textbf{API 不会自己告诉你这件事}。
+
+\medskip
+
+\textbf{这就是"打通"的意义——把课本里的概念，和工业的 API，连成同一件事}。
+\end{tcolorbox}
+
+\textbf{解决问题的 Python 代码}：
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+
+# 1. 读数据（假设已加载为 t, sms_count）
+t = np.arange(0, 1440)              # 一天的每分钟 (0-1439)
+sms = load_sms_data()               # 长度 1440 的数组
+
+# 2. 一阶导数：变化率（每分钟流量的变化速度）
+rate = np.gradient(sms, t)
+
+# 3. 找高峰：rate == 0 且 rate 由正变负 → 极大值
+peaks = np.where(np.diff(np.sign(rate)) < 0)[0]
+print("高峰时刻 (分钟):", peaks)
+print("高峰流量:", sms[peaks])
+
+# 4. 二阶导数：增速变化（找上升最快的时刻）
+acceleration = np.gradient(rate, t)
+fastest_rise = np.argmax(acceleration)
+print("上升最快的时刻:", fastest_rise, "分钟")
+
+# 5. 数值积分：今日总流量
+total = np.trapz(sms, t)
+print("今日总短信量:", int(total))
+\end{lstlisting}
+
+\textbf{这段代码——\textbf{20 行}——\textbf{解决了一个真实的运营问题}}。
+
+它背后用到的微积分概念：
+
+\begin{itemize}
+\item \texttt{np.gradient}——\textbf{中心差分逼近导数}——\textbf{原理是导数定义的离散化}
+\item \texttt{np.trapz}——\textbf{梯形法逼近积分}——\textbf{原理是 Riemann 和 + 取极限}
+\item \textbf{找极值}——\textbf{用一阶导数变号}——\textbf{这是大一就学的内容}
+\end{itemize}
+
+\textbf{你看}——\textbf{大学学的没浪费}——\textbf{它在 \texttt{numpy} 的源码里}——\textbf{在你做决策的脑子里}——\textbf{只是不在你算 $\int \sin^3 x \, dx$ 的草稿纸上了}。
+
+\section{现代视角：自动微分与 ML / Modern: Autodiff and ML}
+
+\textbf{微积分的现代形态——叫"自动微分"（automatic differentiation, autodiff）}。
+
+\textbf{这是 21 世纪的微积分革命}——\textbf{比 Newton 那次更"工业"}。
+
+\subsection{什么是自动微分}
+
+考虑函数
+\[
+f(x) = \sin(x^2) \cdot e^x
+\]
+
+用手算它的导数——\textbf{要用乘法法则 + 链式法则}——3 行公式：
+\[
+f'(x) = 2x \cos(x^2) e^x + \sin(x^2) e^x
+\]
+
+\textbf{自动微分的思路}——\textbf{不用人推公式}——\textbf{让计算机用链式法则一步步往下传}：
+
+\begin{lstlisting}[language=Python]
+import torch
+x = torch.tensor(1.5, requires_grad=True)
+f = torch.sin(x**2) * torch.exp(x)
+f.backward()
+print(x.grad)  # 直接给出 f'(1.5)
+\end{lstlisting}
+
+\textbf{两行——完事}。
+
+\subsection{为什么这件事改变了一切}
+
+\textbf{深度学习里的损失函数}——是\textbf{几百万个参数的函数}——\textbf{手算导数完全不可能}。
+
+\textbf{有了 autodiff}——\textbf{反向传播}——\textbf{随机梯度下降}——\textbf{才有了 ChatGPT 这样的模型}。
+
+\textbf{这就是为什么我说——21 世纪的微积分发生了第二次革命}：
+
+\begin{itemize}
+\item \textbf{Newton 1665}——\textbf{发明了微积分}
+\item \textbf{Cauchy 1820}——\textbf{严格化了微积分}
+\item \textbf{2010 年后}——\textbf{自动化了微积分}——\textbf{让 1 万亿参数的模型可以训练}
+\end{itemize}
+
+\textbf{你今天打开 PyTorch 调一个 \texttt{loss.backward()}}——\textbf{背后是 Newton + Leibniz + Cauchy + 现代 PL 设计的合谋}。
+
+\section{代码与思考 / Code and Exercises}
+
+\subsection{配套模块 \texttt{calculus\_intro.py}}
+
+GitHub 上的 \texttt{modules/calculus\_intro.py} 包含\textbf{6 个 demo}：
+
+\begin{enumerate}
+\item \texttt{demo\_limit()}——可视化 $\lim_{x\to 0} \sin(x)/x = 1$ 的"逼近"过程
+\item \texttt{demo\_derivative()}——比较解析导数 vs 数值导数（\texttt{np.gradient}）
+\item \texttt{demo\_integral()}——比较解析积分 vs 数值积分（trapz vs Simpson vs quad）
+\item \texttt{demo\_FTC()}——验证微积分基本定理：$\frac{d}{dx}\int_a^x f(t)\,dt = f(x)$
+\item \texttt{demo\_sms\_traffic()}——本章 Aha 例子：完整的短信流量分析
+\item \texttt{demo\_autodiff()}——用 PyTorch 做自动微分——和 \texttt{sympy} 的解析结果对比
+\end{enumerate}
+
+\textbf{使用}：
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/inaturelz-coder/math-rendu
+cd math-rendu
+pip install -r requirements.txt
+python modules/calculus_intro.py
+\end{lstlisting}
+
+\subsection{思考题 / Exercises}
+
+\begin{enumerate}
+\item \textbf{[直觉]} 用一句话向你高中的同桌解释"导数"——不许用公式。
+\item \textbf{[计算]} 求 $f(x) = x^x$ 的导数。提示：先两边取对数。
+\item \textbf{[应用]} 一辆车在 $[0, 10]$ 秒内位置为 $s(t) = 3t^2 + 5t$（米）。它在第 5 秒的速度和加速度各是多少？
+\item \textbf{[代码]} 写一个 Python 函数 \texttt{numerical\_derivative(f, x, h=1e-5)}——用中心差分实现。和 \texttt{numpy.gradient} 比较精度。
+\item \textbf{[历史]} 查一查：为什么 Leibniz 的 $dx, dy, \int$ 符号最终胜过了 Newton 的"流数"记号？
+\item \textbf{[现代]} 用 PyTorch 计算 $f(x) = x^4 - 3x^3 + 2x$ 在 $x=1.5$ 的一阶和二阶导数。和手算结果对比。
+\end{enumerate}
+
+\section{本章小结 / Chapter Summary}
+
+\begin{tcolorbox}[essbox={本章核心}]
+\begin{itemize}
+\item \textbf{极限}——"我想要的精度——我能做到"——$\varepsilon\text{-}\delta$ 是"挑战与回应"的游戏
+\item \textbf{导数}——变化率——切线斜率——速度——梯度——\textbf{它们是同一个东西}
+\item \textbf{积分}——累积量——面积——\textbf{它和导数是逆运算}（微积分基本定理）
+\item \textbf{现代}——\textbf{99\% 的工程微积分是数值微积分}——\textbf{\texttt{np.gradient + np.trapz}}
+\item \textbf{未来}——自动微分（autodiff）+ 反向传播——\textbf{ML 的核心数学}
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{下一章——多元微积分}——\textbf{我们从"一维"走到"多维"}——\textbf{并第一次遇到"梯度"——这个 ML 训练的核心概念}。
+
+\clearpage

@@ -1,0 +1,408 @@
+% =====================================================================
+%  第 2 章 · 多元微积分 / Calculus II
+%  偏导、全微分、重积分、Lagrange 乘数法
+%  小故事：Lagrange 与拿破仑时代的优化问题
+%  Aha：外卖配送优化（多变量梯度下降）
+% =====================================================================
+
+\chapter{多元微积分 / Calculus II}
+\label{ch:calc2}
+
+\begin{quote}\itshape
+\textbf{Joseph-Louis Lagrange} 是\textbf{法国大革命之后、拿破仑时代}的数学家。
+他活到 1813 年——\textbf{见证了大革命、督政府、拿破仑称帝、滑铁卢的前夜}。
+
+在那个动荡的年代——他写了一本《\textit{解析力学}》——\textbf{把整个牛顿力学，用变分原理 + 多元微积分重新写了一遍}。
+
+我们这一章——讲的就是他用过的工具：\textbf{偏导、梯度、Lagrange 乘数法}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{多元微积分是工程师的"日常数学"}——\textbf{比一元微积分日常 100 倍}。
+
+为什么？因为\textbf{真实世界没有"一元"问题}：
+
+\begin{itemize}
+\item \textbf{温度} 是 $(x, y, z, t)$ 的函数——\textbf{四元}
+\item \textbf{应力} 是 $(x, y, z)$ 的张量——\textbf{每个分量都是三元}
+\item \textbf{神经网络} 的损失 $L(\theta_1, \theta_2, \ldots, \theta_N)$——\textbf{$N=10^9$ 元}
+\end{itemize}
+
+\textbf{一元微积分是给数学家的}——\textbf{多元微积分才是给工程师的}。
+
+\textbf{这一章的核心}——\textbf{把"导数"推广到"梯度"——把"求面积"推广到"求体积 / 求质量 / 求电荷"}。
+
+\textbf{并且——我们第一次遇到\textbf{梯度} $\nabla f$}——\textbf{这是接下来所有章节的"母语"}——\textbf{Ch 3 矢量分析、Ch 13 优化、整个 ML——全都建立在这上面}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{梯度 $\nabla f$——是函数上升最快的方向}；\textbf{多重积分——是把"累积"从线段推广到区域、体积、高维空间}。\\[6pt]
+\textbf{English}: The gradient $\nabla f$ points in the direction of steepest ascent; multiple integrals generalize accumulation from intervals to regions, volumes, and higher-dimensional domains.
+\end{tcolorbox}
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{同济《高等数学（下册）》}
+
+第八章到第十一章——共\textbf{120 页}——讲多元微积分。
+
+\textbf{优点}：覆盖全——\textbf{偏导、全微分、重积分、曲线积分、曲面积分}全都有。
+
+\textbf{缺点}：
+
+\begin{enumerate}
+\item \textbf{符号繁琐}——$\frac{\partial}{\partial x}, \frac{\partial}{\partial y}, \frac{\partial^2}{\partial x \partial y}$——\textbf{学生看着头大}
+\item \textbf{几乎不提\textbf{梯度}}——只在习题里偶尔出现"方向导数"——\textbf{这是最严重的遗漏}
+\item \textbf{Lagrange 乘数法\textbf{用 1 页讲完}}——\textbf{然后给 5 道考研真题}——\textbf{几何意义完全没讲}
+\end{enumerate}
+
+\subsection{Stewart 的版本}
+
+Stewart 把这部分写得\textbf{活灵活现}——\textbf{有大量"温度场""压力场"的可视化}——\textbf{这是同济不及的}。
+
+\subsection{我的策略}
+
+\begin{enumerate}
+\item \textbf{把梯度 $\nabla f$ 提到第一位}——\textbf{它是这一章的灵魂}
+\item \textbf{Lagrange 乘数法用几何直觉讲}——\textbf{不只是公式}
+\item \textbf{Aha 例子用"外卖配送优化"}——\textbf{多变量梯度下降的真实场景}
+\end{enumerate}
+
+\begin{tcolorbox}[storybox={\Large 小故事：Lagrange 与拿破仑时代}]
+\textbf{Joseph-Louis Lagrange}（1736-1813）——\textbf{意大利人——成名于柏林——晚年定居巴黎}。
+
+\medskip
+
+他在 1788 年出版《\textbf{解析力学}》——\textbf{这是力学史上的一座丰碑}。\textbf{Hamilton} 后来说："这本书是数学的\textbf{史诗}。"
+
+\medskip
+
+\textbf{Lagrange 解决了什么问题}？
+
+\medskip
+
+\textbf{Newton 力学}的写法是——\textbf{对每一个粒子写 $F=ma$}——\textbf{对 $N$ 个粒子要写 $3N$ 个方程}——\textbf{遇到约束（绳子、铰链）要单独处理}。
+
+\medskip
+
+\textbf{Lagrange 的洞察}——\textbf{用"广义坐标" $q_1, q_2, \ldots$ 代替笛卡尔坐标}——\textbf{用一个标量函数 $L = T - V$（拉格朗日量）代替力的矢量分析}——\textbf{从此约束变成"消元"——力学变成"求极值"}。
+
+\medskip
+
+\textbf{这背后用到的核心工具——就是"多元函数求极值——可能带约束"}——\textbf{也就是 Lagrange 乘数法}。
+
+\medskip
+
+\textbf{Lagrange 一生没结婚}（晚年才在拿破仑撮合下结了第二次）——\textbf{他在大革命中差点被杀}（数学家拉瓦锡就被送上断头台）——\textbf{他靠拿破仑的赏识活到 77 岁}——\textbf{死后葬入先贤祠}。
+
+\medskip
+
+\textbf{拿破仑说过}：\textit{"Lagrange 是数学界的金字塔。"}
+
+\medskip
+
+\textbf{你今天用的 Lagrangian、Lagrange 乘数法、Euler-Lagrange 方程}——\textbf{都源于这位 18 世纪末的意大利人——在巴黎的小公寓里——一个人想了几十年}。
+\end{tcolorbox}
+
+\section{直觉 / Intuition}
+
+\subsection{多元函数：等高线与曲面}
+
+考虑二元函数 $z = f(x, y)$。\textbf{它的"图"是一个曲面}——而不是一条曲线。
+
+\textbf{怎么画一个三维曲面在二维纸上}？——\textbf{用等高线}：
+
+\begin{itemize}
+\item 把曲面切成"水平片" $z = c$（$c$ 是常数）
+\item 每一片在 $xy$ 平面上的投影——\textbf{就是一条等高线}
+\item 等高线\textbf{越密}——\textbf{曲面越陡}
+\end{itemize}
+
+\textbf{地形图、温度图、电势图}——\textbf{都是等高线}——\textbf{这是工程师最常见的"多元函数可视化"}。
+
+\subsection{偏导数：把其他变量当常数}
+
+\begin{definition}[偏导数]
+\[
+\frac{\partial f}{\partial x}(x_0, y_0) = \lim_{h \to 0} \frac{f(x_0+h, y_0) - f(x_0, y_0)}{h}
+\]
+\end{definition}
+
+\textbf{直觉}：\textbf{把 $y$ 固定}——\textbf{$f$ 就变成 $x$ 的一元函数}——\textbf{对它求导}。
+
+\textbf{几何意义}：\textbf{$\partial f / \partial x$ 是"沿 $x$ 方向切曲面"得到的曲线在那一点的斜率}。
+
+\subsection{梯度 \texorpdfstring{$\nabla f$}{∇f}：本章的灵魂}
+
+\begin{definition}[梯度]
+$n$ 元函数 $f(x_1, \ldots, x_n)$ 的梯度是矢量：
+\[
+\nabla f = \left( \frac{\partial f}{\partial x_1}, \frac{\partial f}{\partial x_2}, \ldots, \frac{\partial f}{\partial x_n} \right)
+\]
+\end{definition}
+
+\textbf{三大性质}（每一条都要记住）：
+
+\begin{enumerate}
+\item \textbf{方向}：$\nabla f$ 指向 $f$ \textbf{上升最快}的方向
+\item \textbf{大小}：$|\nabla f|$ 是 $f$ 在那个方向的\textbf{变化率}
+\item \textbf{正交}：$\nabla f$ 在每一点上\textbf{垂直于过那点的等高线}
+\end{enumerate}
+
+\textbf{第三条特别重要}——\textbf{这是 Lagrange 乘数法的几何基础}。
+
+\subsection{方向导数}
+
+沿单位矢量 $\bm{u}$ 方向的导数：
+\[
+D_{\bm{u}} f = \nabla f \cdot \bm{u}
+\]
+
+\textbf{这告诉我们一件事}：\textbf{所有方向的变化率——都是梯度在那个方向的投影}。\textbf{梯度是"方向变化率的母体"}。
+
+\subsection{全微分}
+
+\begin{equation}
+df = \frac{\partial f}{\partial x} dx + \frac{\partial f}{\partial y} dy + \cdots = \nabla f \cdot d\bm{r}
+\end{equation}
+
+\textbf{物理意义}（热力学里你天天见）：
+
+\[
+dU = T \, dS - P \, dV \quad \text{（热力学第一定律）}
+\]
+
+\textbf{这是 $U(S, V)$ 的全微分}——\textbf{$T = \partial U / \partial S$（温度）}——\textbf{$P = -\partial U / \partial V$（压强）}——\textbf{热力学的整个机器就在这里}。
+
+\subsection{Lagrange 乘数法：约束下的极值}
+
+\textbf{问题}：求 $f(x,y)$ 的极值——\textbf{在约束 $g(x,y) = 0$ 下}。
+
+\textbf{几何直觉}：
+
+\begin{itemize}
+\item $f$ 的等高线——\textbf{一族曲线}
+\item 约束曲线 $g=0$——\textbf{一条曲线}
+\item \textbf{在 $g=0$ 上的极值点}——\textbf{必然是 $f$ 的等高线与 $g=0$ 相切的点}
+\item \textbf{相切——意味着两条曲线的法向量平行}——\textbf{$\nabla f = \lambda \nabla g$}
+\end{itemize}
+
+\textbf{这就是 Lagrange 乘数法的本质}——\textbf{把"约束极值"变成"梯度平行"}。
+
+\textbf{解法}：解方程组
+\[
+\nabla f = \lambda \nabla g, \quad g = 0
+\]
+
+\section{数学 / The Math}
+
+\subsection{链式法则（多元版）}
+
+设 $z = f(x, y)$，$x = x(t), y = y(t)$。那么
+\[
+\frac{dz}{dt} = \frac{\partial f}{\partial x} \frac{dx}{dt} + \frac{\partial f}{\partial y} \frac{dy}{dt}
+\]
+
+\textbf{矩阵版}：若 $\bm{z} = \bm{f}(\bm{x})$ 是 $\mathbb{R}^n \to \mathbb{R}^m$ 的映射，则\textbf{Jacobian 矩阵}
+\[
+J = \frac{\partial \bm{z}}{\partial \bm{x}} = \begin{pmatrix}
+\frac{\partial z_1}{\partial x_1} & \cdots & \frac{\partial z_1}{\partial x_n} \\
+\vdots & & \vdots \\
+\frac{\partial z_m}{\partial x_1} & \cdots & \frac{\partial z_m}{\partial x_n}
+\end{pmatrix}
+\]
+
+\textbf{ML 的反向传播——本质上就是 Jacobian 矩阵的乘法链}。
+
+\subsection{重积分：从面积到体积}
+
+\textbf{二重积分}：
+\[
+\iint_D f(x,y) \, dA = \lim_{\|P\|\to 0} \sum f(x_i, y_i) \Delta A_i
+\]
+
+\textbf{物理意义}：\textbf{$f$ 是面密度——$\iint f \, dA$ 是总质量}。
+
+\textbf{计算手段}——\textbf{化为累次积分}（Fubini 定理）：
+\[
+\iint_D f \, dA = \int_a^b \left( \int_{y_1(x)}^{y_2(x)} f(x, y) \, dy \right) dx
+\]
+
+\textbf{坐标变换}（极坐标、球坐标）——\textbf{必须乘上 Jacobian}：
+\[
+dx \, dy = r \, dr \, d\theta \quad \text{(极坐标)}
+\]
+
+\subsection{Hessian 矩阵：二阶导数的推广}
+
+对 $f(x_1, \ldots, x_n)$，定义\textbf{Hessian 矩阵}
+\[
+H_{ij} = \frac{\partial^2 f}{\partial x_i \partial x_j}
+\]
+
+\textbf{它告诉我们函数曲面在某点的"曲率"}：
+
+\begin{itemize}
+\item $H$ 正定 $\Rightarrow$ \textbf{局部极小值}（碗形）
+\item $H$ 负定 $\Rightarrow$ \textbf{局部极大值}（馒头形）
+\item $H$ 不定 $\Rightarrow$ \textbf{鞍点}（马鞍形）
+\end{itemize}
+
+\textbf{Newton 优化法的核心}：用 $H^{-1} \nabla f$ 作为"二阶下降方向"——\textbf{见第 13 章}。
+
+\section{Aha 例子：外卖配送优化 / Aha: Food Delivery Optimization}
+
+\textbf{场景}：你在美团做算法工程师。系统有 $N$ 个骑手——每个骑手位置 $(x_i, y_i)$——\textbf{你要决定每个骑手该往哪个新订单冲}。
+
+\textbf{目标}：\textbf{最小化总配送时间}。
+
+\textbf{建模}：
+
+\begin{itemize}
+\item 订单位置 $(a, b)$
+\item 第 $i$ 个骑手到订单的时间 $t_i = d_i / v_i$（距离/速度）
+\item 总成本（简化）：$C = \sum_i t_i \cdot p_i$，其中 $p_i$ 是\textbf{你分配给骑手 $i$ 的概率}
+\item 约束：$\sum p_i = 1, \quad p_i \geq 0$
+\end{itemize}
+
+\textbf{这是一个带约束的多元优化问题}——\textbf{Lagrange 乘数法上场}。
+
+\begin{tcolorbox}[ahabox={Aha: 多元微积分就是 ML 的全部}]
+\textbf{ML 的训练过程——一句话总结}：
+
+\medskip
+
+\textbf{找一个 $\theta$，使损失函数 $L(\theta_1, \theta_2, \ldots, \theta_N)$ 最小。}
+
+\medskip
+
+\textbf{怎么找}？——\textbf{梯度下降}：
+\[
+\theta_{t+1} = \theta_t - \eta \nabla L(\theta_t)
+\]
+
+\medskip
+
+\textbf{这里的 $\nabla L$——就是本章讲的"梯度"}——\textbf{$\eta$ 是学习率}——\textbf{你大学学的偏导数、链式法则、Jacobian——全在这里}。
+
+\medskip
+
+\textbf{所以你大学的多元微积分——不是"为了考试发明的"}——\textbf{是 ML 的全部数学根基}。
+
+\medskip
+
+\textbf{你不学好这一章——你就看不懂 PyTorch 的源码}——\textbf{你不学好这一章——你就理解不了为什么 Adam 优化器要"自适应学习率"}——\textbf{你不学好这一章——21 世纪的工程对你就是个黑盒}。
+
+\medskip
+
+\textbf{这就是为什么我说——多元微积分比一元微积分日常 100 倍}。
+\end{tcolorbox}
+
+\textbf{解决方法（简化版）}：
+
+设我们想最小化 $C(p_1, \ldots, p_N) = \sum_i t_i p_i$，约束 $\sum p_i = 1$。
+
+\textbf{Lagrangian}：
+\[
+\mathcal{L} = \sum_i t_i p_i + \lambda \left( \sum_i p_i - 1 \right)
+\]
+
+\textbf{对每个 $p_i$ 求偏导}：$\partial \mathcal{L} / \partial p_i = t_i + \lambda = 0$——\textbf{所有 $t_i$ 相等}。
+
+\textbf{现实里}——$t_i$ 通常不等——\textbf{所以最优解是 $p_i = \delta(i = i^*)$}——\textbf{把订单全分给时间最短的骑手}。
+
+\textbf{这听起来废话}——但\textbf{真实工业场景里}——\textbf{$t_i$ 是不确定的（堵车、骑手繁忙度）}——\textbf{所以要加入概率/期望}——\textbf{这就是为什么美团的算法不是"最短距离原则"——而是一个复杂的多元优化}。
+
+\textbf{Python 实现}（用 \texttt{scipy.optimize.minimize}）：
+
+\begin{lstlisting}[language=Python]
+from scipy.optimize import minimize
+import numpy as np
+
+N = 10
+t = np.random.uniform(5, 30, N)  # 10 个骑手的预估时间
+
+# 目标函数
+def cost(p):
+    return np.sum(t * p)
+
+# 约束：和为 1
+cons = {'type': 'eq', 'fun': lambda p: np.sum(p) - 1}
+# 非负约束
+bnds = [(0, 1) for _ in range(N)]
+
+p0 = np.ones(N) / N  # 初始猜测
+res = minimize(cost, p0, constraints=cons, bounds=bnds)
+print("最优分配:", res.x)
+print("最优成本:", res.fun)
+\end{lstlisting}
+
+\textbf{20 行——解决了一个真实的运筹问题}。
+
+\section{现代视角：神经网络与梯度 / Modern: NN and Gradients}
+
+\subsection{神经网络的损失函数：百万维的山地}
+
+一个中等规模的神经网络——\textbf{参数数 $N \approx 10^7 \sim 10^9$}。
+
+它的损失函数 $L(\theta_1, \ldots, \theta_N)$——\textbf{是一个 $10^7$ 维空间中的函数}。
+
+\textbf{我们无法可视化它}——\textbf{但我们知道它的梯度 $\nabla L$ 仍然存在}——\textbf{它仍然指向上升最快的方向}。
+
+\textbf{梯度下降}——\textbf{每次沿 $-\nabla L$ 走一小步}——\textbf{走到一个"局部低点"}——\textbf{这就是训练}。
+
+\subsection{Adam 优化器：自适应学习率}
+
+\textbf{Adam}（2014, Kingma \& Ba）——\textbf{现代 ML 训练最常用的优化器}——\textbf{它在普通梯度下降上加了两个改进}：
+
+\begin{itemize}
+\item \textbf{Momentum}——用过去几步梯度的\textbf{加权平均}——避免"震荡"
+\item \textbf{自适应学习率}——根据每个参数的\textbf{梯度方差}调整步长
+\end{itemize}
+
+\textbf{Adam 的"自适应"——就是多元微积分的"分量"概念}——\textbf{每个 $\theta_i$ 都有自己的学习率 $\eta_i$}。
+
+\textbf{Adam 训练了 ChatGPT}——\textbf{训练了 AlphaGo}——\textbf{训练了所有你听说过的 AI 系统}——\textbf{它本质上——是多元微积分的现代化}。
+
+\section{代码与思考 / Code and Exercises}
+
+\subsection{配套模块 \texttt{multi\_calc.py}}
+
+\begin{enumerate}
+\item \texttt{demo\_partial\_derivatives()}——可视化 $\partial f / \partial x$ 和 $\partial f / \partial y$
+\item \texttt{demo\_gradient\_field()}——画 $f(x,y) = x^2 + y^2$ 的等高线与梯度场
+\item \texttt{demo\_total\_differential()}——验证热力学全微分 $dU = TdS - PdV$
+\item \texttt{demo\_lagrange()}——用 Lagrange 乘数法求约束极值——和 scipy 对比
+\item \texttt{demo\_delivery\_optimization()}——本章 Aha 例子
+\item \texttt{demo\_double\_integral()}——数值二重积分（\texttt{scipy.integrate.dblquad}）
+\end{enumerate}
+
+\subsection{思考题 / Exercises}
+
+\begin{enumerate}
+\item \textbf{[直觉]} 用一句话解释：\textbf{为什么 $\nabla f$ 垂直于等高线？}（不用公式）
+\item \textbf{[计算]} 求 $f(x,y,z) = x^2 y - yz + e^{xz}$ 在点 $(1, 2, 0)$ 的梯度。
+\item \textbf{[应用]} 用 Lagrange 乘数法求：在椭圆 $x^2/4 + y^2/9 = 1$ 上离原点最远的点。
+\item \textbf{[代码]} 写一个 \texttt{gradient\_descent} 函数——对 $f(x,y) = (x-3)^2 + (y+1)^2$ 找极小值。
+\item \textbf{[历史]} 查一查：为什么 Lagrange 不用"乘数法"这个名字——这个名字是后人给的？
+\item \textbf{[ML]} 用 PyTorch 计算 $f(x, y) = \sin(xy) + x^2$ 在 $(1, \pi/2)$ 的梯度。和手算对比。
+\end{enumerate}
+
+\section{本章小结 / Chapter Summary}
+
+\begin{tcolorbox}[essbox={本章核心}]
+\begin{itemize}
+\item \textbf{偏导} = 固定其他变量、对单变量求导
+\item \textbf{梯度 $\nabla f$} = 上升最快方向 = 等高线的法向 = ML 训练的方向
+\item \textbf{全微分} = $df = \nabla f \cdot d\bm{r}$ = 热力学第一定律的写法
+\item \textbf{重积分} = 把累积从一维推广到多维 = 总质量 / 总电荷 / 总能量
+\item \textbf{Lagrange 乘数法} = 约束极值 = $\nabla f = \lambda \nabla g$ = 等高线与约束曲线相切
+\item \textbf{Hessian} = 多元二阶导数 = 曲面的"曲率" = 决定极小 / 极大 / 鞍点
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{下一章——矢量分析}——\textbf{我们让梯度遇到"散度"和"旋度"——这是电磁学、流体、弹性的共用语言}。
+
+\clearpage

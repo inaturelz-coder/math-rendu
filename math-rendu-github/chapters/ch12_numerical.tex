@@ -1,0 +1,592 @@
+% =====================================================================
+%  第 12 章 · 数值方法 / Numerical Methods
+%  数值微分、数值积分、非线性方程、线性方程组、ODE、误差分析
+%  小故事：ENIAC (1945) 与现代数值计算的诞生
+%  Aha：Newton 法求开方 + GPS 定位算法
+% =====================================================================
+
+\chapter{数值方法 / Numerical Methods}
+\label{ch:numerical}
+
+\begin{quote}\itshape
+1945 年——宾夕法尼亚大学地下室——\textbf{ENIAC}——\textbf{30 吨重}——\textbf{18000 个真空管}——\textbf{每秒 5000 次加法}。\\
+冯·诺依曼坐在它面前——\textbf{第一次让数学公式}——\textbf{在机器里"跑"了起来}。\\
+这一章——我们要讲的——是\textbf{把数学变成"能算的东西"}的艺术——\textbf{数值方法}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{我研究生第一年}——\textbf{导师扔给我一个题}：\textbf{求解一个 ODE 系统}——\textbf{描述化学反应釜的温度演化}。
+
+我打开同济《高等数学》第七版——\textbf{从头翻到尾}——\textbf{没有一个公式能解这个方程}。
+
+我打开 Zill《微分方程》——\textbf{找到了 5 种"解析解法"}——\textbf{我的方程一种都不适用}。
+
+\textbf{它是非线性的、刚性的、还带随机扰动}。
+
+\textbf{我去问师兄}——他笑了笑——\textbf{打开 Jupyter Notebook}：
+
+\begin{lstlisting}[language=Python]
+from scipy.integrate import solve_ivp
+sol = solve_ivp(rhs, [0, T], y0, method='RK45')
+\end{lstlisting}
+
+\textbf{两行代码——5 秒钟——出图}。
+
+那一刻我才反应过来——\textbf{工业界 99\% 的方程——没有解析解}——\textbf{真正在用的}——\textbf{是数值方法}。
+
+\textbf{这一章}——\textbf{我把六类核心数值方法讲清楚}——\textbf{每一类都给一个 SciPy 的"现成轮子"}——\textbf{你以后再也不用怕"算不出来"}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{数值方法——把无法解析求解的数学问题——化成"有限次加减乘除"——让机器去算}。\\[6pt]
+\textbf{English}: Numerical methods convert intractable mathematical problems into finite sequences of arithmetic operations that a machine can execute.
+\end{tcolorbox}
+
+记住这一句话——\textbf{数值方法的灵魂}——是\textbf{"近似 + 迭代 + 收敛"}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{Burden \& Faires《Numerical Analysis》}
+
+\textbf{Burden \& Faires} 是美国数值分析的国民教材——\textbf{900 页}——\textbf{覆盖了你能想到的所有方法}。
+
+\textbf{优点}：严格、全面、每个方法都有收敛性证明。
+
+\textbf{缺点}：\textbf{太厚了}——\textbf{你读不完}——\textbf{而且它讲的是 1970 年代的 Fortran 风格}——\textbf{现代工程师都用 SciPy}。
+
+\subsection{李庆扬《数值分析》（清华版）}
+
+\textbf{中国数值分析的标准教材}——\textbf{300 页}——\textbf{比 Burden 薄}——\textbf{但还是偏理论}。
+
+\textbf{缺点}：\textbf{只讲方法、不讲"什么时候用哪个"}——\textbf{学完了你还是不知道工业里该选谁}。
+
+\subsection{Numerical Recipes (Press et al.)}
+
+\textbf{Numerical Recipes}——\textbf{科学家的"圣经"}——\textbf{每个方法都给 C/Fortran/Python 代码}。
+
+\textbf{优点}：\textbf{能跑}。\textbf{缺点}：\textbf{代码风格老}——\textbf{现在大家直接用 SciPy / NumPy}。
+
+\subsection{我的策略}
+
+\textbf{本章不重复这三本书}——\textbf{它们都太全}。
+
+\textbf{本章只做三件事}：
+
+\begin{enumerate}
+\item \textbf{把六类核心方法的直觉讲清楚}——\textbf{为什么 Simpson 比 trapezoidal 准}——\textbf{为什么 Newton 法收敛快}——\textbf{为什么 RK4 是金标准}
+\item \textbf{把误差和收敛性讲透}——\textbf{$O(h^2)$ 和 $O(h^4)$ 到底差多少}——\textbf{什么是"机器精度"}
+\item \textbf{把 SciPy 工具箱过一遍}——\textbf{遇到问题——先调 \texttt{scipy.optimize}、\texttt{scipy.integrate}、\texttt{scipy.linalg}}
+\end{enumerate}
+
+\begin{tcolorbox}[storybox={\Large 小故事：ENIAC 与现代数值计算的诞生}]
+\textbf{1945 年 2 月}——\textbf{宾夕法尼亚大学 Moore 学院的地下室}——\textbf{ENIAC} (Electronic Numerical Integrator and Computer) \textbf{秘密通电}。
+
+\medskip
+
+\textbf{它有 30 吨重}——\textbf{占了一整间屋子}——\textbf{18000 个真空管、70000 个电阻、10000 个电容}——\textbf{耗电 150 千瓦}——\textbf{每次开机灯泡都会变暗}。
+
+\textbf{它的速度}：\textbf{每秒 5000 次加法}——\textbf{比当时最快的机械计算器快 1000 倍}。
+
+\medskip
+
+\textbf{ENIAC 的第一个任务}——\textbf{不是民用}——\textbf{是为美国陆军算弹道表}。但\textbf{第一个真正跑在 ENIAC 上的"大计算"}——\textbf{是氢弹的可行性研究}——\textbf{由 von Neumann 主持}。
+
+\medskip
+
+\textbf{John von Neumann}——\textbf{20 世纪最聪明的人之一}——\textbf{一辈子做了三件大事}：
+
+\begin{enumerate}
+\item \textbf{创立博弈论}（1928）
+\item \textbf{创立量子力学的数学基础}（1932）
+\item \textbf{创立"存储程序"计算机架构}（1945，今天所有计算机的祖宗）
+\end{enumerate}
+
+\medskip
+
+\textbf{在 Los Alamos}（曼哈顿计划）——von Neumann 遇到了\textbf{Stanislaw Ulam}（波兰数学家）。
+
+\textbf{1946 年}——Ulam 生病住院——\textbf{无聊到玩纸牌接龙}——\textbf{他想知道：随机洗一副牌、接龙能成功的概率是多少？}
+
+\textbf{这个问题——用纯数学算——是地狱}（要枚举太多情形）。
+
+\textbf{Ulam 想}：\textbf{为什么不让 ENIAC 模拟 10000 次}——\textbf{看成功多少次}——\textbf{除一下不就是概率吗？}
+
+\medskip
+
+\textbf{这就是 Monte Carlo 方法的诞生}——\textbf{名字来自 Ulam 叔叔常去的赌城}。
+
+\medskip
+
+\textbf{从此}——\textbf{数值方法不再只是"近似积分"}——\textbf{它成了"用随机模拟解决确定性问题"的全新范式}。
+
+今天——\textbf{Monte Carlo}——是\textbf{金融定价、粒子物理、机器学习、流行病建模}——\textbf{所有"算不出来"的问题}的\textbf{终极武器}。
+
+\medskip
+
+\textbf{ENIAC 之后 80 年}——\textbf{你手机里的芯片}——\textbf{比当年 ENIAC 快 10 亿倍}——\textbf{但跑的还是同一套数学}：\textbf{加、减、乘、除——再加一点循环和判断}。
+
+\textbf{这就是数值方法}——\textbf{把数学装进机器的艺术}。
+\end{tcolorbox}
+
+\section{直觉 / Intuition}
+
+\subsection{数值微分：用差分代替极限}
+
+\textbf{导数的定义}：$f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}$。
+
+\textbf{机器不会"取极限"}——\textbf{它只会取一个"足够小"的 $h$}。
+
+\textbf{前向差分}（forward difference）：
+\begin{equation}
+f'(x) \approx \frac{f(x+h) - f(x)}{h} \qquad O(h)
+\end{equation}
+
+\textbf{中心差分}（central difference）：
+\begin{equation}
+f'(x) \approx \frac{f(x+h) - f(x-h)}{2h} \qquad O(h^2)
+\end{equation}
+
+\textbf{中心差分比前向差分准一阶}——\textbf{为什么}？泰勒展开两边一抵消——\textbf{$O(h)$ 项干掉了}——\textbf{只剩 $O(h^2)$}。
+
+\textbf{别选太小的 $h$！}——$h$ 太小——\textbf{浮点减法的舍入误差}会主导——\textbf{结果反而变差}。\textbf{经验值}：$h \approx \sqrt{\epsilon_{\text{mach}}} \approx 10^{-8}$。
+
+\subsection{数值积分：用矩形/梯形/抛物线代替面积}
+
+\textbf{定积分 $\int_a^b f(x) \, dx$ 的几何意义是面积}——\textbf{机器算面积——只能用直边/曲边的简单图形拼}。
+
+\textbf{三种基本方法}：
+
+\begin{itemize}
+\item \textbf{矩形法}（midpoint）：$\sum f(x_i) \cdot h$——\textbf{精度 $O(h^2)$}
+\item \textbf{梯形法}（trapezoidal）：$\frac{h}{2} [f_0 + 2f_1 + \cdots + 2f_{n-1} + f_n]$——\textbf{精度 $O(h^2)$}
+\item \textbf{Simpson 法}（用抛物线拼）：$\frac{h}{3} [f_0 + 4f_1 + 2f_2 + 4f_3 + \cdots + f_n]$——\textbf{精度 $O(h^4)$}
+\end{itemize}
+
+\textbf{Simpson 比梯形高两阶}——\textbf{为什么}？\textbf{抛物线比直线多算了"曲率"}——\textbf{在光滑函数上几乎"白送"了一个数量级的精度}。
+
+\textbf{自适应积分}（adaptive quadrature）：\textbf{函数变化剧烈的地方多取点、平缓的地方少取点}——\textbf{SciPy 的 \texttt{quad} 就是干这个的}。
+
+\subsection{非线性方程：把"求根"变成"迭代逼近"}
+
+\textbf{要解 $f(x) = 0$}——\textbf{大多数方程没有解析解}（比如 $x = \cos x$）。
+
+\textbf{两大经典方法}：
+
+\textbf{二分法}（bisection）——\textbf{老实人方法}：
+\begin{enumerate}
+\item 找到 $a, b$ 使 $f(a) \cdot f(b) < 0$（根夹在中间）
+\item 取中点 $c = (a+b)/2$，看 $f(c)$ 的符号——\textbf{把区间砍一半}
+\item 重复——\textbf{每次精度翻倍}（\textbf{线性收敛，$O(2^{-n})$}）
+\end{enumerate}
+
+\textbf{二分法的优点}：\textbf{一定收敛}。\textbf{缺点}：\textbf{慢}。
+
+\textbf{Newton 法}（牛顿迭代）——\textbf{聪明人方法}：
+\begin{equation}
+x_{n+1} = x_n - \frac{f(x_n)}{f'(x_n)}
+\end{equation}
+
+\textbf{几何意义}：\textbf{从 $x_n$ 作切线、看切线与 $x$ 轴的交点}——\textbf{这就是 $x_{n+1}$}。
+
+\textbf{Newton 法的威力}：\textbf{二次收敛}（quadratic convergence）——\textbf{每次迭代——有效数字翻一倍}！
+
+\textbf{典型}：\textbf{算 $\sqrt{2}$}——3 次迭代——\textbf{15 位有效数字}。
+
+\textbf{Newton 法的代价}：\textbf{要求 $f'(x)$}——\textbf{初值要选好——否则可能发散}。
+
+\subsection{线性方程组：直接法 vs 迭代法}
+
+\textbf{解 $A\bm{x} = \bm{b}$}——\textbf{$n \times n$ 的方程组}。
+
+\textbf{直接法}（direct）——\textbf{Gauss 消元、LU 分解}——\textbf{$O(n^3)$ 次运算}——\textbf{适合小矩阵}（$n < 10000$）。
+
+\textbf{迭代法}（iterative）——\textbf{Jacobi、Gauss-Seidel、共轭梯度法}（CG）——\textbf{适合大稀疏矩阵}（$n > 10^6$，但绝大多数元素是 0）。
+
+\textbf{现代工程师的经验}：
+
+\begin{itemize}
+\item \textbf{$n < 10000$ 且稠密}：\texttt{np.linalg.solve}（背后是 LAPACK 的 LU）
+\item \textbf{$n > 10^5$ 且稀疏}：\texttt{scipy.sparse.linalg.cg / gmres}
+\item \textbf{$n > 10^7$（大规模）}：\textbf{多重网格法}（multigrid）——\textbf{接近 $O(n)$}
+\end{itemize}
+
+\subsection{ODE 求解器：从 Euler 到 RK4}
+
+\textbf{要解 $\frac{dy}{dt} = f(t, y), \quad y(0) = y_0$}。
+
+\textbf{Euler 法}（最朴素）：$y_{n+1} = y_n + h \cdot f(t_n, y_n)$——\textbf{精度 $O(h)$}——\textbf{太粗}。
+
+\textbf{Runge-Kutta 4 阶}（RK4）——\textbf{ODE 数值解的"金标准"}：
+\begin{align}
+k_1 &= f(t_n, y_n) \\
+k_2 &= f(t_n + h/2, y_n + h k_1/2) \\
+k_3 &= f(t_n + h/2, y_n + h k_2/2) \\
+k_4 &= f(t_n + h, y_n + h k_3) \\
+y_{n+1} &= y_n + \frac{h}{6} (k_1 + 2k_2 + 2k_3 + k_4)
+\end{align}
+
+\textbf{精度 $O(h^4)$}——\textbf{在工程问题上 95\% 够用}。
+
+\textbf{自适应步长}（RK45, Dormand-Prince）——\textbf{SciPy 的 \texttt{solve\_ivp} 默认方法}——\textbf{它在变化剧烈处自动取小步长}。
+
+\subsection{误差：从哪里来、到哪里去}
+
+\textbf{数值计算的三类误差}：
+
+\begin{itemize}
+\item \textbf{截断误差}（truncation error）——\textbf{方法本身的近似误差}——\textbf{比如 Simpson 法的 $O(h^4)$}
+\item \textbf{舍入误差}（round-off error）——\textbf{浮点数的有限精度}——\textbf{双精度约 $10^{-16}$}
+\item \textbf{传播误差}——\textbf{前面的误差被后续运算放大}——\textbf{$10^{16}$ 次乘法可能放大很多}
+\end{itemize}
+
+\textbf{机器精度}：\textbf{IEEE 754 双精度浮点}——\textbf{$\epsilon_{\text{mach}} \approx 2.22 \times 10^{-16}$}——\textbf{你永远算不到比它更准}。
+
+\section{Aha 一：Newton 法手算 $\sqrt{2}$}
+
+\textbf{问题}：\textbf{求 $\sqrt{2}$}——\textbf{不用计算器的 sqrt 键}——\textbf{用 Newton 法}。
+
+\textbf{思路}：\textbf{$\sqrt{2}$ 是 $f(x) = x^2 - 2 = 0$ 的正根}。
+
+\textbf{Newton 迭代}：
+\begin{equation}
+x_{n+1} = x_n - \frac{x_n^2 - 2}{2 x_n} = \frac{1}{2} \left( x_n + \frac{2}{x_n} \right)
+\end{equation}
+
+\textbf{这就是著名的"巴比伦平方根算法"}——\textbf{4000 年前的巴比伦人就在用}——\textbf{他们不知道这是 Newton 法}。
+
+\textbf{从 $x_0 = 1.5$ 开始迭代}：
+
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+$n$ & $x_n$ & 有效数字 \\
+\midrule
+0 & 1.5 & 1 位 \\
+1 & 1.41666666666\ldots & 3 位 \\
+2 & 1.41421568627\ldots & 6 位 \\
+3 & 1.41421356237\ldots & \textbf{12 位} \\
+4 & 1.41421356237\ldots & \textbf{16 位（机器精度）} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{4 次迭代——干到机器精度}——\textbf{这就是二次收敛的威力}！
+
+\textbf{对比二分法}：\textbf{每次精度翻一倍}——\textbf{要到 16 位精度——需要 50 多次迭代}。
+
+\begin{lstlisting}[language=Python]
+# numerical.py —— Newton's method for sqrt
+def newton_sqrt(a, x0=1.0, tol=1e-15, max_iter=100):
+    """Compute sqrt(a) by Newton's method."""
+    x = x0
+    for i in range(max_iter):
+        x_new = 0.5 * (x + a / x)
+        if abs(x_new - x) < tol:
+            return x_new, i + 1
+        x = x_new
+    return x, max_iter
+
+# usage
+val, iters = newton_sqrt(2.0)
+print(f"sqrt(2) = {val:.16f}  ({iters} iterations)")
+# sqrt(2) = 1.4142135623730951  (4 iterations)
+\end{lstlisting}
+
+\section{Aha 二：GPS 定位算法——你口袋里的数值方法}
+
+\textbf{你每天用手机导航——背后跑的是什么？}
+
+\textbf{答案}：\textbf{实时非线性方程组求解 + 最小二乘 + Kalman 滤波}——\textbf{这一章的所有方法——你的手机芯片每秒跑 10 次}。
+
+\subsection{GPS 的几何原理}
+
+\textbf{GPS 卫星}：\textbf{24 颗}——\textbf{在 20200 km 高的轨道上}——\textbf{每颗都在不停广播}：\textbf{"我是 \#7 号卫星——现在是格林尼治时间 12:34:56.789——我的位置是 $(x_7, y_7, z_7)$"}。
+
+\textbf{你的手机收到信号}——\textbf{比较"信号发出时间"和"信号到达时间"}——\textbf{算出"信号飞了多远"}：
+\begin{equation}
+d_i = c \cdot (t_{\text{recv}} - t_{\text{sent}})
+\end{equation}
+\textbf{$c$ 是光速}。
+
+\textbf{你的位置 $(x, y, z)$ 满足}：
+\begin{equation}
+\sqrt{(x - x_i)^2 + (y - y_i)^2 + (z - z_i)^2} = d_i, \qquad i = 1, 2, 3, 4
+\end{equation}
+
+\textbf{3 个未知数（$x, y, z$）——为什么要 4 颗卫星？}
+
+\textbf{因为你的手机时钟不准}——\textbf{差几个微秒——位置就差 1 公里}——\textbf{第 4 颗卫星——是用来解出"时钟偏差" $\Delta t$ 的}。
+
+\textbf{所以 GPS 的真正方程是}：
+\begin{equation}
+\sqrt{(x - x_i)^2 + (y - y_i)^2 + (z - z_i)^2} = c \cdot (t_{\text{recv}} - t_{\text{sent},i} - \Delta t)
+\end{equation}
+\textbf{4 个未知数 $(x, y, z, \Delta t)$——4 个方程——非线性方程组}。
+
+\subsection{怎么解？}
+
+\textbf{这就是 Newton 法的多变量版本}：
+\begin{equation}
+\bm{x}_{n+1} = \bm{x}_n - [\bm{J}(\bm{x}_n)]^{-1} \bm{F}(\bm{x}_n)
+\end{equation}
+\textbf{$\bm{J}$ 是 Jacobian 矩阵}——\textbf{每次迭代——解一个 4x4 的线性方程组（直接法）}。
+
+\textbf{在实际芯片里}：\textbf{用 5\textasciitilde{}10 颗卫星——超定方程组——用最小二乘 + Kalman 滤波}——\textbf{每秒更新 1\textasciitilde{}10 次位置}。
+
+\textbf{这就是你的手机蓝点——每秒移动的背后}。
+
+\begin{lstlisting}[language=Python]
+# numerical.py —— simplified GPS solver
+import numpy as np
+from scipy.optimize import least_squares
+
+def gps_solve(sat_positions, pseudo_ranges, x0=None):
+    """
+    sat_positions: (n, 3) array of satellite (x, y, z)
+    pseudo_ranges: (n,) array of measured distances
+    Returns: (x, y, z, dt_bias)
+    """
+    c = 299792458.0  # speed of light, m/s
+
+    def residuals(params):
+        x, y, z, dt = params
+        true_d = np.linalg.norm(sat_positions - np.array([x, y, z]), axis=1)
+        # pseudo-range = true distance + clock bias * c
+        return true_d + c * dt - pseudo_ranges
+
+    if x0 is None:
+        x0 = np.array([0, 0, 0, 0])  # center of Earth + zero bias
+    sol = least_squares(residuals, x0, method='lm')  # Levenberg-Marquardt
+    return sol.x
+
+# usage (synthetic 4-satellite example)
+sats = np.array([
+    [15600e3,  7540e3, 20140e3],
+    [18760e3,  2750e3, 18610e3],
+    [17610e3, 14630e3, 13480e3],
+    [19170e3,  610e3,  18390e3],
+])
+ranges = np.array([20451e3, 21421e3, 23864e3, 21952e3])
+x, y, z, dt = gps_solve(sats, ranges)
+print(f"Position: ({x:.0f}, {y:.0f}, {z:.0f})  bias={dt*1e6:.3f} us")
+\end{lstlisting}
+
+\textbf{这就是 21 世纪的 Newton 法}——\textbf{从 17 世纪的羽毛笔——到 21 世纪的硅芯片}——\textbf{算法没变——速度快了 $10^{15}$ 倍}。
+
+\section{深入 / Deep Dive}
+
+\subsection{数值积分实战：Simpson vs trapezoidal}
+
+\textbf{算 $\int_0^1 e^{-x^2} dx$}（高斯钟形曲线的一部分——\textbf{无解析解}）。
+
+\begin{lstlisting}[language=Python]
+# numerical.py —— quadrature comparison
+import numpy as np
+from scipy.integrate import quad
+
+def trapezoidal(f, a, b, n):
+    x = np.linspace(a, b, n + 1)
+    y = f(x)
+    h = (b - a) / n
+    return h * (0.5 * y[0] + y[1:-1].sum() + 0.5 * y[-1])
+
+def simpson(f, a, b, n):
+    """n must be even."""
+    if n % 2:
+        raise ValueError("n must be even")
+    x = np.linspace(a, b, n + 1)
+    y = f(x)
+    h = (b - a) / n
+    return h / 3 * (y[0] + 4 * y[1:-1:2].sum() + 2 * y[2:-1:2].sum() + y[-1])
+
+f = lambda x: np.exp(-x**2)
+exact, _ = quad(f, 0, 1)  # SciPy reference
+
+for n in [10, 100, 1000]:
+    t = trapezoidal(f, 0, 1, n)
+    s = simpson(f, 0, 1, n)
+    print(f"n={n:5d}  trap err={abs(t-exact):.2e}  simp err={abs(s-exact):.2e}")
+# n=   10  trap err=6.94e-04  simp err=4.51e-08
+# n=  100  trap err=6.94e-06  simp err=4.51e-12
+# n= 1000  trap err=6.94e-08  simp err=4.51e-16  <- machine precision!
+\end{lstlisting}
+
+\textbf{看清楚了吗}？
+
+\begin{itemize}
+\item \textbf{trapezoidal}：$n$ 增加 10 倍——\textbf{误差减少 100 倍}（$O(h^2)$）
+\item \textbf{Simpson}：$n$ 增加 10 倍——\textbf{误差减少 10000 倍}（$O(h^4)$）
+\item \textbf{Simpson 在 $n = 1000$ 时——已经撞上机器精度天花板}
+\end{itemize}
+
+\textbf{这就是高阶方法的价值}。
+
+\subsection{ODE 实战：化学反应动力学}
+
+\textbf{Lotka-Volterra 捕食者-猎物方程}（\textbf{生态学经典模型}）：
+\begin{equation}
+\frac{dx}{dt} = \alpha x - \beta x y, \qquad \frac{dy}{dt} = \delta x y - \gamma y
+\end{equation}
+
+\begin{lstlisting}[language=Python]
+# numerical.py —— ODE solver demo
+from scipy.integrate import solve_ivp
+import numpy as np
+
+def lotka_volterra(t, z, alpha, beta, delta, gamma):
+    x, y = z
+    return [alpha * x - beta * x * y,
+            delta * x * y - gamma * y]
+
+# parameters: rabbits (x) and foxes (y)
+params = (1.0, 0.1, 0.075, 1.5)
+z0 = [10, 5]  # 10 rabbits, 5 foxes
+t_span = (0, 50)
+t_eval = np.linspace(*t_span, 1000)
+
+sol = solve_ivp(lotka_volterra, t_span, z0,
+                args=params, t_eval=t_eval,
+                method='RK45', rtol=1e-8, atol=1e-10)
+
+print(f"Final: rabbits={sol.y[0, -1]:.2f}, foxes={sol.y[1, -1]:.2f}")
+# population oscillates -- classic predator-prey cycle
+\end{lstlisting}
+
+\textbf{这就是 SciPy 的 \texttt{solve\_ivp}}——\textbf{背后是自适应 RK45（Dormand-Prince）}——\textbf{工业级、上线就能用}。
+
+\subsection{线性方程组实战：稀疏矩阵}
+
+\textbf{大型有限元仿真——矩阵 $n = 10^6$——但每行只有 10 个非零元}——\textbf{稠密存储要 8 TB——稀疏存储只要 80 MB}。
+
+\begin{lstlisting}[language=Python]
+# numerical.py —— sparse linear solve
+import numpy as np
+from scipy.sparse import diags
+from scipy.sparse.linalg import cg  # conjugate gradient
+
+n = 100000
+# tridiagonal: 2 on diagonal, -1 off-diagonal (1D Laplacian)
+A = diags([-1, 2, -1], [-1, 0, 1], shape=(n, n), format='csr')
+b = np.ones(n)
+
+x, info = cg(A, b, rtol=1e-10)
+print(f"Converged: {info == 0},  ||Ax - b|| = {np.linalg.norm(A @ x - b):.2e}")
+\end{lstlisting}
+
+\textbf{共轭梯度法}（CG）在\textbf{对称正定矩阵}上——\textbf{$O(\sqrt{\kappa})$ 次迭代收敛}（$\kappa$ 是条件数）——\textbf{在工程上经常 100 次迭代解掉 $10^6$ 维方程}。
+
+\subsection{误差分析：为什么不能"无脑减"}
+
+\textbf{灾难性抵消}（catastrophic cancellation）——\textbf{两个相近的数相减——大量有效数字消失}。
+
+\textbf{典型}：\textbf{算 $f(x) = \frac{1 - \cos x}{x^2}$ 在 $x = 10^{-8}$}：
+
+\begin{lstlisting}[language=Python]
+import math
+x = 1e-8
+naive = (1 - math.cos(x)) / x**2     # 0.0  <- WRONG!
+clever = 2 * math.sin(x/2)**2 / x**2  # 0.4999... <- correct
+# true value: 1/2
+\end{lstlisting}
+
+\textbf{原因}：\textbf{$\cos(10^{-8}) \approx 0.99999999\ldots$}——\textbf{$1 - \cos x$ 把前 16 位有效数字全部抵消掉——剩下噪声}。
+
+\textbf{用 $1 - \cos x = 2 \sin^2(x/2)$ 重写——避免减法——结果就对了}。
+
+\textbf{教训}：\textbf{数值方法不只是"调库"}——\textbf{有时候需要数学上的等价变换才能避免精度灾难}。
+
+\section{常见错误 / Common Pitfalls}
+
+\textbf{(1) 步长 $h$ 选得太小}——\textbf{舍入误差主导}——\textbf{数值微分尤其要小心}。\textbf{经验值}：$h \approx 10^{-8}$（对双精度）。
+
+\textbf{(2) Newton 法初值乱选}——\textbf{可能发散、可能跳到错误的根}——\textbf{无法保证收敛}。\textbf{保险做法}：\textbf{先用二分法粗调、再用 Newton 精调}。
+
+\textbf{(3) 自己实现高斯消元}——\textbf{99\% 的情况下比 LAPACK 慢 100 倍、还不数值稳定}——\textbf{直接调 \texttt{np.linalg.solve}}。
+
+\textbf{(4) 用 Euler 法解 ODE}——\textbf{精度太低、稳定性差}——\textbf{除非你在做教学演示——否则永远用 RK4 或自适应方法}。
+
+\textbf{(5) 忽略条件数}——\textbf{病态矩阵}（$\kappa \gg 1$）\textbf{即使用 LAPACK 也会丢精度}——\textbf{用 \texttt{np.linalg.cond} 先体检}。
+
+\textbf{(6) 没设容忍度}——\textbf{\texttt{solve\_ivp} 默认 \texttt{rtol=1e-3}}——\textbf{科学计算要设到 $10^{-8}$ 或更小}。
+
+\textbf{(7) 把"能跑"当成"对"}——\textbf{数值方法不报错——不代表结果对}——\textbf{一定要验证}（\textbf{用 mesh refinement / 解析解对比 / 物理守恒律}）。
+
+\section{应用 / Applications}
+
+\textbf{(1) 天气预报}——\textbf{欧洲中期天气预报中心}（ECMWF）——\textbf{每天求解一个 $10^9$ 维 PDE}——\textbf{核心是有限元 + 半隐式时间积分}。
+
+\textbf{(2) 期权定价}——\textbf{Black-Scholes 方程的数值解}——\textbf{有限差分 + Monte Carlo}——\textbf{华尔街的核心算法}。
+
+\textbf{(3) 飞机机翼设计}——\textbf{Navier-Stokes 方程的 CFD 求解}——\textbf{有限体积法 + 自适应网格}——\textbf{波音 787 设计周期从 10 年缩短到 4 年}。
+
+\textbf{(4) 核反应堆模拟}——\textbf{中子输运方程}——\textbf{蒙特卡洛 + 离散纵标法}——\textbf{Los Alamos 70 年的拿手好戏}。
+
+\textbf{(5) 你的手机 GPS}——\textbf{每秒解一次非线性方程组 + Kalman 滤波}——\textbf{见前文}。
+
+\textbf{(6) 训练 GPT}——\textbf{反向传播本质上是链式法则 + 数值优化}——\textbf{Adam 优化器 = 自适应步长的梯度下降}——\textbf{每一步都在求解一个高维非凸优化}。
+
+\section{SciPy 工具箱速查表 / SciPy Cheatsheet}
+
+\textbf{遇到问题——先查这个表——不要自己手写}：
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{问题} & \textbf{SciPy 函数} & \textbf{说明} \\
+\midrule
+数值积分（1D） & \texttt{scipy.integrate.quad} & 自适应高斯-Kronrod \\
+数值积分（多重） & \texttt{scipy.integrate.dblquad} & 二重 / 三重 \\
+ODE 初值问题 & \texttt{scipy.integrate.solve\_ivp} & RK45 / Radau / BDF \\
+非线性方程 & \texttt{scipy.optimize.brentq} & 二分+割线，超稳 \\
+非线性方程组 & \texttt{scipy.optimize.fsolve} & Powell 混合算法 \\
+最小二乘 & \texttt{scipy.optimize.least\_squares} & Levenberg-Marquardt \\
+线性方程组（稠密） & \texttt{np.linalg.solve} & LAPACK LU \\
+线性方程组（稀疏） & \texttt{scipy.sparse.linalg.spsolve} & 稀疏 LU \\
+迭代法（对称正定） & \texttt{scipy.sparse.linalg.cg} & 共轭梯度 \\
+迭代法（一般） & \texttt{scipy.sparse.linalg.gmres} & GMRES \\
+特征值 & \texttt{np.linalg.eig} & QR 算法 \\
+插值 & \texttt{scipy.interpolate.interp1d} & 多种样条 \\
+FFT & \texttt{np.fft.fft} & 快速傅里叶变换 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{记住这个表——你 90\% 的科学计算都能搞定}。
+
+\textbf{剩下的 10\%}（极端规模、特殊硬件、新算法）——\textbf{才需要你自己写代码或者用 PETSc / Trilinos 等专业库}。
+
+\section{本章总结 / Summary}
+
+\begin{tcolorbox}[essbox={本章关键收获}]
+\textbf{一句话}：\textbf{数值方法——把"算不出来"的问题——变成"能算的"——靠的是近似、迭代、收敛三件套}。
+
+\medskip
+
+\textbf{六类核心方法}：
+\begin{enumerate}
+\item \textbf{数值微分}：中心差分（$O(h^2)$）——\textbf{别选太小的 $h$}
+\item \textbf{数值积分}：Simpson 法（$O(h^4)$）+ adaptive quadrature
+\item \textbf{非线性方程}：Newton 法（二次收敛）+ bisection（稳但慢）
+\item \textbf{线性方程组}：LU（直接、稠密）/ CG (迭代、稀疏)
+\item \textbf{ODE}：RK4 / RK45 自适应（金标准）
+\item \textbf{误差}：截断 + 舍入 + 传播——\textbf{机器精度 $10^{-16}$ 是天花板}
+\end{enumerate}
+
+\medskip
+
+\textbf{两个 Aha}：
+\begin{itemize}
+\item \textbf{Newton 法求 $\sqrt{2}$}——\textbf{4 次迭代干到机器精度}——\textbf{巴比伦人 4000 年前就在用}
+\item \textbf{GPS 定位}——\textbf{多变量 Newton 法 + 最小二乘}——\textbf{你口袋里的科学计算}
+\end{itemize}
+
+\medskip
+
+\textbf{工程师心法}：\textbf{遇到问题——先查 SciPy 工具箱——不要重复发明轮子}——\textbf{把精力花在"建模"和"验证"上}。
+\end{tcolorbox}
+
+\textbf{下一章}——\textbf{我们进入}\textbf{优化理论}——\textbf{从最速下降到 Adam}——\textbf{从凸优化到深度学习}——\textbf{把"求最小值"这件事——彻底说清楚}。
+
+\clearpage

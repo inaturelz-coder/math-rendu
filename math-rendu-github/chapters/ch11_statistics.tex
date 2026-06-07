@@ -1,0 +1,582 @@
+% =====================================================================
+%  第 11 章 · 数理统计 / Statistics
+%  描述性统计、参数估计、假设检验、线性回归、方差分析、应用
+%  小故事：R.A. Fisher 与 Rothamsted 农场
+%  Aha：A/B 测试 + 推荐系统（线性回归 = ML 的最简形态）
+% =====================================================================
+
+\chapter{数理统计 / Statistics}
+\label{ch:stats}
+
+\begin{quote}\itshape
+1919 年——英国 Rothamsted 农业试验站——\\
+一个 29 岁、近视到几乎失明的年轻人 R.A. Fisher——\\
+被分配去整理\textbf{75 年来积压的土壤、肥料、产量数据}。\\
+他在那个农场——\textbf{独自一人}——\textbf{发明了今天我们叫"现代统计学"的几乎一切}：\\
+\textbf{方差分析、最大似然、实验设计、p 值}……\\
+统计学——\textbf{真的是从田里长出来的}。\\
+这一章——我们就讲他在那个农场里想清楚的事。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{第 10 章我们讲了概率论}——\textbf{概率是从模型推数据}——\textbf{已知一枚硬币是公平的、问扔 10 次有几次正面}。
+
+\textbf{这一章讲的是反过来的事}——\textbf{统计是从数据推模型}——\textbf{我捡到一枚硬币、扔了 100 次、73 次正面}——\textbf{问这枚硬币是不是公平的}。
+
+\textbf{这是两个方向相反的学科}——\textbf{但用的是同一套概率工具}。
+
+\textbf{我刚学统计时}——\textbf{和大多数人一样}——\textbf{我学的是公式}：
+
+样本均值 $\bar{X} = \frac{1}{n}\sum X_i$。样本方差 $S^2 = \frac{1}{n-1}\sum(X_i - \bar{X})^2$。t 统计量、$\chi^2$ 统计量、F 统计量……
+
+\textbf{我考试考得很好}——\textbf{但你问我"什么时候用 t 检验、什么时候用 $\chi^2$"}——\textbf{我说不清楚}。
+
+\textbf{真正让我懂统计的}——\textbf{是大三那年我做了一个推荐系统的项目}——\textbf{我要回答一个问题}：\textbf{"新版本的推荐算法——比旧版本好吗？"}
+
+我打开 Python：
+
+\begin{lstlisting}[language=Python]
+from scipy import stats
+t_stat, p_value = stats.ttest_ind(old_ctr, new_ctr)
+print(f"p = {p_value:.4f}")
+# p = 0.0023  -> 新版本显著更好
+\end{lstlisting}
+
+\textbf{三行代码——做完了一次 A/B 测试}。
+
+那一刻我才反应过来——\textbf{我学的所有公式——背后是同一个思想}：\textbf{"观察到的差异——是真的吗？还是运气？"}
+
+\textbf{这一章就把这件事讲清楚}——再多的统计公式——都是这一个问题的变体。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{统计是从有限的数据——推断背后的真相——并量化这个推断有多可信}。\\[6pt]
+\textbf{English}: Statistics is the art of inferring truth from limited data, while quantifying how much we can trust that inference.
+\end{tcolorbox}
+
+记住这一句话——\textbf{这一章已经讲完了一半}。
+
+\textbf{"量化可信度"——这五个字是统计的灵魂}。\textbf{物理学说"光速是 $3 \times 10^8$ m/s"}——\textbf{统计学说"我 95\% 相信真值在 [2.99, 3.01]$\times 10^8$ 之间"}——\textbf{前者是断言、后者是带不确定性的断言}——\textbf{真实世界里——后者才有用}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{浙大《概率论与数理统计》}
+
+\textbf{浙江大学盛骤主编}的\textbf{《概率论与数理统计》}——\textbf{是中国工科考研指定的统计教材}——\textbf{一半概率、一半统计}。
+
+\textbf{优点}：\textbf{严谨、覆盖考研所有考点}。
+
+\textbf{缺点}：
+
+\begin{enumerate}
+\item \textbf{先讲一堆抽样分布}（$\chi^2$、$t$、$F$ 分布的密度函数）——\textbf{学生不知道这些分布是干什么的}
+\item \textbf{假设检验讲了 8 种情况}（单总体、双总体、方差已知、方差未知……）——\textbf{学生记不住}
+\item \textbf{应用部分薄弱}——\textbf{回归只讲一元、方差分析点到为止}——\textbf{真实工业用的是多元回归 + 大规模 A/B 测试}
+\end{enumerate}
+
+\subsection{Casella \& Berger《Statistical Inference》}
+
+\textbf{美国研究生统计课的国民教材}——\textbf{从测度论一直讲到贝叶斯}——\textbf{非常严谨}——\textbf{600 页}——\textbf{不适合工科生}。
+
+\subsection{Wasserman《All of Statistics》}
+
+\textbf{卡内基梅隆 ML 系的统计教材}——\textbf{薄、快、现代}——\textbf{适合工科生重读}——\textbf{我强烈推荐}。
+
+\subsection{我的策略}
+
+\textbf{本章不会重复浙大教材的细节}——\textbf{它已经够全了}。
+
+\textbf{本章只做三件事}：
+
+\begin{enumerate}
+\item \textbf{把统计的核心思想讲清楚}——\textbf{"观察 vs 真相"——"信号 vs 噪声"}
+\item \textbf{把假设检验的"为什么"讲透}——\textbf{p 值不是你以为的那个意思}
+\item \textbf{把线性回归讲到能跑代码——并指出它就是 ML 的最简形态}
+\end{enumerate}
+
+\begin{tcolorbox}[storybox={\Large 小故事：R.A. Fisher 与 Rothamsted 农场}]
+\textbf{1919 年}——\textbf{Ronald Aylmer Fisher} 29 岁——\textbf{近视到几乎失明}（从小靠口算学数学——因为读书太费眼）——\textbf{找了好几年工作都被拒}。
+
+\medskip
+
+\textbf{Rothamsted 农业试验站}——\textbf{当时世界上最老的农业研究机构}（成立于 1843 年）——\textbf{积压了 75 年的肥料、土壤、产量数据}——\textbf{需要有人整理}。
+
+\medskip
+
+\textbf{他们以为请来了一个数据录入员}——\textbf{他们请来的是统计学的爱因斯坦}。
+
+\medskip
+
+\textbf{Fisher 在 Rothamsted 待了 14 年}——\textbf{独自一人}——\textbf{从那堆农业数据里}——\textbf{发明了今天我们说的"现代统计学"几乎所有概念}：
+
+\begin{enumerate}
+\item \textbf{方差分析（ANOVA）}——\textbf{为了判断不同肥料是否真的造成产量差异}
+\item \textbf{最大似然估计（MLE）}——\textbf{为了从有限样本估计真实参数}
+\item \textbf{实验设计（DoE）}——\textbf{随机化、区组、析因设计——所有现代实验的根基}
+\item \textbf{p 值与显著性检验}——\textbf{虽然这个概念后来被滥用——但它的本意是"信号能否压过噪声"}
+\item \textbf{Fisher 信息量}——\textbf{量化"一个数据点能告诉你多少关于参数的信息"}
+\end{enumerate}
+
+\medskip
+
+\textbf{1925 年}——他写了\textbf{《Statistical Methods for Research Workers》}——\textbf{这本书}——\textbf{被翻译成几十种语言}——\textbf{全世界的农学家、生物学家、心理学家——人手一本}。
+
+\medskip
+
+\textbf{统计学不是从象牙塔里发明的}——\textbf{是 Fisher 蹲在 Rothamsted 的田边}——\textbf{为了回答"这块地比那块地高 5\% 的产量——是肥料的功劳——还是运气？"}——\textbf{一点一点想出来的}。
+
+\medskip
+
+\textbf{今天}——\textbf{Google、Facebook、字节跳动}——\textbf{每天跑成千上万次 A/B 测试}——\textbf{用的还是 Fisher 在那片麦田里想出来的方法}。
+
+\medskip
+
+\textbf{你今天学的每一个 p 值}——\textbf{背后都有那片麦田}。
+\end{tcolorbox}
+
+\section{直觉 / Intuition}
+
+\subsection{描述性统计：把数据压缩成几个数}
+
+\textbf{你有 1000 个学生的数学成绩}——\textbf{你不可能挨个看}——\textbf{你需要把这 1000 个数压缩成几个关键数字}。
+
+\textbf{三个最重要的数}：
+
+\begin{itemize}
+\item \textbf{均值 mean} $\bar{X} = \frac{1}{n}\sum X_i$——\textbf{中心在哪}
+\item \textbf{方差 variance} $S^2 = \frac{1}{n-1}\sum(X_i - \bar{X})^2$——\textbf{散得多开}
+\item \textbf{相关系数 correlation} $r = \frac{\sum(X_i-\bar{X})(Y_i-\bar{Y})}{\sqrt{\sum(X_i-\bar{X})^2 \sum(Y_i-\bar{Y})^2}}$——\textbf{两个变量同涨同跌的程度}
+\end{itemize}
+
+\textbf{为什么方差要除以 $n-1$ 而不是 $n$？}——\textbf{因为你用了样本均值 $\bar{X}$ 代替真均值 $\mu$}——\textbf{这"偷"掉了一个自由度}——\textbf{要把它还回来}——\textbf{这叫 Bessel 校正}。
+
+\begin{example}[相关 $\neq$ 因果]
+\textbf{冰淇淋销量}和\textbf{溺水死亡人数}——\textbf{相关系数 $r = 0.9$}——\textbf{是因为吃冰淇淋会让人溺水吗}？
+
+\textbf{不是}——\textbf{是因为夏天到了}——\textbf{冰淇淋卖得多、游泳的人也多、溺水自然多}。\textbf{"夏天"是它们共同的原因——叫混淆变量（confounder）}。
+
+\textbf{统计能告诉你"两件事一起发生"——但不能告诉你"谁导致谁"}——\textbf{这是统计的本质局限}——\textbf{记住这一句话——能让你在数据时代少犯 90\% 的错}。
+\end{example}
+
+\subsection{参数估计：从样本猜真相}
+
+\textbf{背景}：\textbf{真实分布 $f(x; \theta)$ 的参数 $\theta$ 是未知的}（比如均值 $\mu$、方差 $\sigma^2$）——\textbf{我们只有 $n$ 个样本 $X_1, \ldots, X_n$}——\textbf{怎么猜 $\theta$？}
+
+\textbf{两种猜法}：
+
+\textbf{(1) 点估计 Point Estimation}——\textbf{给一个数}：\textbf{"我猜 $\mu = 5.3$"}。
+
+\textbf{最常用方法——最大似然估计（MLE）}：\textbf{选一个 $\theta$——让我观察到当前数据的概率最大}。
+
+\begin{equation}
+\hat{\theta}_{\text{MLE}} = \arg\max_\theta \prod_{i=1}^n f(X_i; \theta)
+\end{equation}
+
+\textbf{"哪个 $\theta$ 最能解释我看到的数据——就选哪个"}——\textbf{这是 Fisher 1922 年提出的}——\textbf{今天所有 ML 模型的训练——本质上都是 MLE}。
+
+\textbf{(2) 区间估计 Interval Estimation}——\textbf{给一个范围 + 信心}：\textbf{"我 95\% 相信 $\mu \in [4.8, 5.8]$"}。
+
+\textbf{这就是置信区间（confidence interval）}——\textbf{比点估计更有用}——\textbf{因为它带了不确定性}。
+
+\begin{tcolorbox}[colback=yellow!10, colframe=orange!70!black, title={\textbf{警告：95\% 置信区间不是你以为的那个意思}}]
+\textbf{常见的错误理解}：\textbf{"真实的 $\mu$ 有 95\% 的概率落在 [4.8, 5.8] 里"}。
+
+\textbf{正确的理解}：\textbf{"如果我重复这个实验 100 次——每次都算一个区间——大约 95 个区间会包含真实的 $\mu$"}。
+
+\textbf{区别在哪}？——\textbf{真实的 $\mu$ 是一个固定的数——它要么在 [4.8, 5.8] 里、要么不在——没有"概率"可言}。\textbf{有概率的是"我们这个区间"——它是随机的}。
+
+\textbf{这是频率学派和贝叶斯学派吵了 100 年的话题}——\textbf{工业里——你不需要纠结——记住"95\% 的区间会捞到真值"就够了}。
+\end{tcolorbox}
+
+\subsection{假设检验：信号能压过噪声吗？}
+
+\textbf{这是 Fisher 思想的核心}——\textbf{也是统计在工业里最常用的一招}。
+
+\textbf{场景}：\textbf{新版推荐算法 vs 旧版}——\textbf{新版点击率 5.3\%、旧版 5.0\%}——\textbf{差 0.3\%}——\textbf{这是真的提升还是随机波动？}
+
+\textbf{假设检验的逻辑}（\textbf{反证法}）：
+
+\begin{enumerate}
+\item \textbf{假设两者没区别（原假设 $H_0$）}：\textbf{$\mu_{\text{new}} = \mu_{\text{old}}$}
+\item \textbf{算一个"如果 $H_0$ 真——观察到当前数据的概率"——这就是 p 值}
+\item \textbf{p 值很小（一般 < 0.05）}——\textbf{说明"如果 $H_0$ 真——这数据太离谱了"}——\textbf{拒绝 $H_0$}——\textbf{相信新版真的更好}
+\item \textbf{p 值不小}——\textbf{数据和 $H_0$ 不矛盾}——\textbf{不能拒绝 $H_0$}——\textbf{不代表 $H_0$ 真——只代表"目前证据不够"}
+\end{enumerate}
+
+\textbf{这是逻辑上的"宁可放过、不要冤枉"}——\textbf{法庭原则}——\textbf{Fisher 设计这一套的时候——脑子里想的就是法庭}。
+
+\begin{tcolorbox}[colback=red!5, colframe=red!70!black, title={\textbf{p 值不是"原假设为真的概率"}}]
+\textbf{p 值的真实含义}：\textbf{"假设原假设 $H_0$ 为真——观察到比当前数据更极端结果的概率"}。
+
+\textbf{形式上}：\textbf{$p = P(\text{data} \mid H_0)$}——\textbf{不是} $P(H_0 \mid \text{data})$。
+
+\textbf{这两个混淆——是科学界最大的统计误用}——\textbf{2016 年美国统计学会专门发了一个声明}——\textbf{警告大家"p < 0.05 不等于结论可信"}。
+
+\textbf{工业里的实用规则}：\textbf{p < 0.01——挺可信}；\textbf{p < 0.001——很可信}；\textbf{p < 0.05——值得继续看、但别下定论}。
+\end{tcolorbox}
+
+\textbf{两类错误}：
+
+\begin{itemize}
+\item \textbf{第一类错误（弃真）}：\textbf{$H_0$ 真——你拒绝了}——\textbf{冤枉好人}——\textbf{概率 = $\alpha$（显著性水平）}
+\item \textbf{第二类错误（取伪）}：\textbf{$H_0$ 假——你没拒绝}——\textbf{放过坏人}——\textbf{概率 = $\beta$}
+\item \textbf{统计功效（power）= $1 - \beta$}——\textbf{"真有效果时——能检测出来的概率"}——\textbf{样本量越大、功效越高}
+\end{itemize}
+
+\subsection{常用检验：t 检验和 $\chi^2$ 检验}
+
+\textbf{t 检验（t-test）}：\textbf{比较两组数的均值是否相同}。\textbf{两个版本}：
+
+\begin{itemize}
+\item \textbf{单样本 t 检验}：\textbf{这组数的均值是不是 $\mu_0$}？
+\item \textbf{双样本 t 检验}：\textbf{A 组和 B 组的均值是否相同}？
+\end{itemize}
+
+\textbf{统计量}（双样本、方差未知、近似相等）：
+
+\begin{equation}
+t = \frac{\bar{X}_A - \bar{X}_B}{S_p \sqrt{\frac{1}{n_A} + \frac{1}{n_B}}}, \quad S_p^2 = \frac{(n_A-1)S_A^2 + (n_B-1)S_B^2}{n_A + n_B - 2}
+\end{equation}
+
+\textbf{它服从自由度 $n_A + n_B - 2$ 的 t 分布}——\textbf{查表或用 \texttt{scipy.stats.t} 算 p 值}。
+
+\textbf{$\chi^2$ 检验（卡方检验）}：\textbf{比较"分类数据"的分布是否符合预期}。
+
+\textbf{例子}：\textbf{骰子扔 600 次}——\textbf{每个点数应该出现约 100 次}——\textbf{实际是 95、110、98、102、99、96}——\textbf{这个骰子公平吗}？
+
+\begin{equation}
+\chi^2 = \sum_{i=1}^k \frac{(O_i - E_i)^2}{E_i}
+\end{equation}
+
+\textbf{$O_i$ 是观察值、$E_i$ 是期望值}——\textbf{这个统计量服从 $\chi^2$ 分布}——\textbf{越大——越说明观察值偏离期望}。
+
+\subsection{线性回归：ML 的最简形态}
+
+\textbf{这是本章最重要的一节}——\textbf{读三遍}。
+
+\textbf{场景}：\textbf{房价 $y$ 和面积 $x$}——\textbf{你有 1000 套房子的数据}——\textbf{画在散点图上——大致是一条直线}——\textbf{你想用这条直线预测新房子的价格}。
+
+\textbf{模型}：\textbf{$y = \beta_0 + \beta_1 x + \varepsilon$}——\textbf{$\beta_0$ 是截距、$\beta_1$ 是斜率、$\varepsilon$ 是噪声}。
+
+\textbf{怎么选 $\beta_0, \beta_1$？}——\textbf{最小二乘法（OLS）}——\textbf{让所有点到直线的"垂直距离平方和"最小}：
+
+\begin{equation}
+\min_{\beta_0, \beta_1} \sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_i)^2
+\end{equation}
+
+\textbf{求导 = 0——解出来}：
+
+\begin{equation}
+\hat{\beta}_1 = \frac{\sum (x_i - \bar{x})(y_i - \bar{y})}{\sum (x_i - \bar{x})^2}, \quad \hat{\beta}_0 = \bar{y} - \hat{\beta}_1 \bar{x}
+\end{equation}
+
+\textbf{多元回归}：\textbf{$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \cdots + \beta_p x_p + \varepsilon$}——\textbf{多个特征预测一个目标}。
+
+\textbf{矩阵形式}：\textbf{$\mathbf{y} = X\boldsymbol{\beta} + \boldsymbol{\varepsilon}$}——\textbf{解是}：
+
+\begin{equation}
+\boxed{\hat{\boldsymbol{\beta}} = (X^T X)^{-1} X^T \mathbf{y}}
+\end{equation}
+
+\textbf{这个公式——叫"正规方程"（normal equation）——你必须背下来}。
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!70!black, title={\textbf{核心洞察：线性回归 = 所有 ML 的种子}}]
+\textbf{把线性回归学透——你就懂了 80\% 的监督学习}。\textbf{为什么}？
+
+\begin{enumerate}
+\item \textbf{逻辑回归（分类）}——\textbf{线性回归 + sigmoid 激活}——\textbf{$P(y=1) = \sigma(\boldsymbol{\beta}^T \mathbf{x})$}
+\item \textbf{神经网络}——\textbf{多层线性回归 + 非线性激活叠加}——\textbf{每一层都是 $\mathbf{Wx} + \mathbf{b}$}
+\item \textbf{支持向量机（SVM）}——\textbf{线性回归 + 最大化间隔 + 核技巧}
+\item \textbf{岭回归、Lasso}——\textbf{线性回归 + 正则化}——\textbf{防过拟合}
+\item \textbf{深度学习}——\textbf{说到底就是} \textbf{"$\mathbf{Wx} + \mathbf{b}$ 堆很多层 + 非线性 + 反向传播算梯度"}
+\end{enumerate}
+
+\textbf{你看}——\textbf{$\mathbf{Wx} + \mathbf{b}$ 这个形式}——\textbf{从 1805 年 Legendre 的最小二乘}——\textbf{活到了 2025 年 GPT 的 transformer}——\textbf{220 年没换过}。
+
+\textbf{把线性回归理解到能闭眼推导 $(X^T X)^{-1} X^T y$ 的程度}——\textbf{你已经掌握了 ML 的根}。\textbf{后面所有的复杂模型——都是这个根上长出来的枝叶}。
+\end{tcolorbox}
+
+\subsection{方差分析（ANOVA）：Fisher 的招牌}
+
+\textbf{场景}：\textbf{三种肥料 A/B/C}——\textbf{每种用在 10 块地上}——\textbf{产量不一样}——\textbf{这是肥料的差异、还是地之间的随机波动}？
+
+\textbf{ANOVA 的核心思想}——\textbf{把数据的总方差分解}：
+
+\begin{equation}
+\underbrace{SS_{\text{total}}}_{\text{总变异}} = \underbrace{SS_{\text{between}}}_{\text{组间变异（信号）}} + \underbrace{SS_{\text{within}}}_{\text{组内变异（噪声）}}
+\end{equation}
+
+\textbf{F 统计量}：
+
+\begin{equation}
+F = \frac{SS_{\text{between}}/(k-1)}{SS_{\text{within}}/(n-k)} = \frac{\text{信号}}{\text{噪声}}
+\end{equation}
+
+\textbf{F 越大——信号越强}——\textbf{说明组与组之间真的有差异}。\textbf{F 接近 1——组间和组内差不多——说明所谓的"差异"就是随机波动}。
+
+\textbf{实验设计（DoE）}——\textbf{Fisher 的另一项发明}——\textbf{三个原则}：
+
+\begin{itemize}
+\item \textbf{随机化（randomization）}——\textbf{随机分配处理}——\textbf{抵消混淆变量}
+\item \textbf{重复（replication）}——\textbf{每个处理多做几次}——\textbf{估计噪声大小}
+\item \textbf{区组（blocking）}——\textbf{把相似的实验单元放一起}——\textbf{减少噪声}
+\end{itemize}
+
+\textbf{这三条原则}——\textbf{今天的 A/B 测试、临床试验、新药审批}——\textbf{全部遵循}。
+
+\section{Aha 例子：A/B 测试 + 推荐系统}
+
+\subsection{背景}
+
+\textbf{某互联网公司的推荐系统}——\textbf{旧版算法 A、新版算法 B}——\textbf{产品经理问}：\textbf{"B 比 A 好吗？能上线吗？"}
+
+\textbf{这是字节跳动、Meta、Google 每天发生几百次的事}。
+
+\subsection{方法：A/B 测试}
+
+\textbf{步骤}：
+
+\begin{enumerate}
+\item \textbf{随机把用户分成两组}——A 组用旧算法、B 组用新算法
+\item \textbf{跑一段时间（一般 1$\sim$2 周）}——\textbf{收集每个用户的点击率（CTR）}
+\item \textbf{用双样本 t 检验}——\textbf{看两组的 CTR 是否显著不同}
+\item \textbf{p < 0.05 + B 的均值高}——\textbf{决定上线 B}
+\end{enumerate}
+
+\subsection{Python 实现}
+
+\begin{lstlisting}[language=Python, caption={A/B 测试 + 线性回归}]
+import numpy as np
+from scipy import stats
+from sklearn.linear_model import LinearRegression
+
+# === 1. A/B 测试：两组 CTR 数据 ===
+np.random.seed(42)
+ctr_A = np.random.normal(0.050, 0.02, 5000)  # 旧版 CTR
+ctr_B = np.random.normal(0.053, 0.02, 5000)  # 新版 CTR
+
+# 描述性统计
+print(f"A: mean={ctr_A.mean():.4f}, std={ctr_A.std():.4f}")
+print(f"B: mean={ctr_B.mean():.4f}, std={ctr_B.std():.4f}")
+print(f"提升: {(ctr_B.mean()/ctr_A.mean() - 1)*100:.2f}%")
+
+# 双样本 t 检验
+t_stat, p_value = stats.ttest_ind(ctr_A, ctr_B)
+print(f"\nt = {t_stat:.4f}, p = {p_value:.6f}")
+if p_value < 0.05:
+    print(">>> 显著差异 -> 上线 B")
+else:
+    print(">>> 不显著 -> 继续观察")
+
+# 95% 置信区间（差值）
+diff = ctr_B - ctr_A
+ci = stats.t.interval(0.95, len(diff)-1,
+                      loc=diff.mean(),
+                      scale=stats.sem(diff))
+print(f"95% CI for B-A: [{ci[0]:.5f}, {ci[1]:.5f}]")
+
+# === 2. 线性回归：CTR vs 特征 ===
+# 假设特征：用户活跃度、内容相关性、推送时段
+n = 1000
+X = np.random.randn(n, 3)
+true_beta = np.array([0.8, 1.2, -0.5])
+y = X @ true_beta + 0.3 + np.random.randn(n) * 0.5
+
+model = LinearRegression().fit(X, y)
+print(f"\n真实系数:  {true_beta}")
+print(f"估计系数:  {model.coef_}")
+print(f"R^2: {model.score(X, y):.4f}")
+
+# 手算正规方程验证
+X_aug = np.column_stack([np.ones(n), X])
+beta_hat = np.linalg.inv(X_aug.T @ X_aug) @ X_aug.T @ y
+print(f"正规方程: {beta_hat}")
+\end{lstlisting}
+
+\textbf{运行结果}：\textbf{t 检验告诉你 p < 0.001——上线 B}；\textbf{线性回归告诉你哪个特征对 CTR 影响最大}——\textbf{这就是真实推荐系统每天在做的事}。
+
+\subsection{推荐系统的统计学全貌}
+
+\begin{itemize}
+\item \textbf{召回}——\textbf{协同过滤、矩阵分解}——\textbf{本质是\textbf{相关系数}和 \textbf{SVD}}
+\item \textbf{排序}——\textbf{逻辑回归、GBDT、DNN}——\textbf{本质是\textbf{广义线性模型}}
+\item \textbf{评估}——\textbf{AUC、precision、recall}——\textbf{本质是\textbf{二分类的假设检验}}
+\item \textbf{上线}——\textbf{A/B 测试}——\textbf{本质是\textbf{双样本 t 检验或 $\chi^2$}}
+\item \textbf{长期效应}——\textbf{反事实分析、Uplift 模型}——\textbf{本质是\textbf{因果推断}}
+\end{itemize}
+
+\textbf{看到了吗}——\textbf{整个推荐系统——从头到尾——都是统计}。
+
+\section{Module: \texttt{statistics.py}}
+
+\textbf{把本章的所有内容打包成一个 Python 模块}——\textbf{你可以直接用}。
+
+\begin{lstlisting}[language=Python, caption={statistics.py}]
+"""
+statistics.py - 工科统计工具集
+用法: from statistics import describe, ab_test, linreg
+"""
+import numpy as np
+from scipy import stats
+from sklearn.linear_model import LinearRegression
+
+
+def describe(x):
+    """描述性统计：均值、方差、四分位"""
+    x = np.asarray(x)
+    return {
+        'n': len(x),
+        'mean': x.mean(),
+        'std': x.std(ddof=1),
+        'min': x.min(),
+        'q25': np.percentile(x, 25),
+        'median': np.median(x),
+        'q75': np.percentile(x, 75),
+        'max': x.max(),
+    }
+
+
+def confidence_interval(x, conf=0.95):
+    """单样本均值的置信区间"""
+    x = np.asarray(x)
+    n = len(x)
+    return stats.t.interval(conf, n-1,
+                            loc=x.mean(),
+                            scale=stats.sem(x))
+
+
+def ab_test(a, b, alpha=0.05):
+    """双样本 t 检验，返回判定结果"""
+    t_stat, p = stats.ttest_ind(a, b)
+    lift = (np.mean(b) - np.mean(a)) / np.mean(a)
+    return {
+        'mean_A': np.mean(a),
+        'mean_B': np.mean(b),
+        'lift_pct': lift * 100,
+        't_stat': t_stat,
+        'p_value': p,
+        'significant': p < alpha,
+        'recommend': 'B' if (p < alpha and lift > 0) else 'A',
+    }
+
+
+def chi2_test(observed, expected):
+    """卡方检验"""
+    chi2, p = stats.chisquare(observed, expected)
+    return {'chi2': chi2, 'p_value': p,
+            'reject_H0': p < 0.05}
+
+
+def linreg(X, y, intercept=True):
+    """线性回归（多元），手算 + sklearn 双验证"""
+    X = np.asarray(X)
+    y = np.asarray(y)
+    if X.ndim == 1:
+        X = X.reshape(-1, 1)
+
+    # sklearn 解
+    model = LinearRegression(fit_intercept=intercept).fit(X, y)
+
+    # 正规方程解（验证）
+    if intercept:
+        X_aug = np.column_stack([np.ones(len(X)), X])
+    else:
+        X_aug = X
+    beta = np.linalg.pinv(X_aug.T @ X_aug) @ X_aug.T @ y
+
+    # R^2
+    y_pred = model.predict(X)
+    ss_res = ((y - y_pred) ** 2).sum()
+    ss_tot = ((y - y.mean()) ** 2).sum()
+    r2 = 1 - ss_res / ss_tot
+
+    return {
+        'beta_sklearn': np.r_[model.intercept_, model.coef_] \
+                        if intercept else model.coef_,
+        'beta_normal_eq': beta,
+        'r_squared': r2,
+        'predict': model.predict,
+    }
+
+
+def anova_oneway(*groups):
+    """单因素方差分析"""
+    f_stat, p = stats.f_oneway(*groups)
+    return {'F': f_stat, 'p_value': p,
+            'significant': p < 0.05}
+
+
+if __name__ == '__main__':
+    # 演示
+    np.random.seed(0)
+    a = np.random.normal(50, 10, 200)
+    b = np.random.normal(53, 10, 200)
+    print('描述:', describe(a))
+    print('CI:', confidence_interval(a))
+    print('A/B:', ab_test(a, b))
+
+    X = np.random.randn(100, 2)
+    y = X @ [1.5, -2.0] + 0.5 + np.random.randn(100) * 0.3
+    print('回归:', linreg(X, y)['beta_sklearn'])
+\end{lstlisting}
+
+\section{常见陷阱 / Common Pitfalls}
+
+\begin{enumerate}
+\item \textbf{p-hacking}——\textbf{反复试不同切片、不同指标——直到 p < 0.05}——\textbf{这是科学造假}——\textbf{学术界已经严打 10 年了}
+\item \textbf{多重比较（multiple testing）}——\textbf{同时检验 20 个假设、5\% 的水平}——\textbf{平均有 1 个会"偶然显著"}——\textbf{要做 Bonferroni 校正}
+\item \textbf{样本量太小}——\textbf{$n < 30$ 时 t 分布和正态偏离明显}——\textbf{结论不可靠}——\textbf{先用功效分析（power analysis）算最少样本量}
+\item \textbf{相关 $\neq$ 因果}——\textbf{再强调一次}——\textbf{$r = 0.99$ 都可能是混淆变量}——\textbf{要因果——必须做随机化实验或反事实分析}
+\item \textbf{异常值的处理}——\textbf{均值对异常值极度敏感}——\textbf{有时用中位数、修剪均值（trimmed mean）更稳健}
+\item \textbf{过拟合}——\textbf{回归里特征越多、训练 $R^2$ 越高}——\textbf{但泛化变差}——\textbf{用调整后 $R^2$ 或交叉验证判断}
+\end{enumerate}
+
+\section{核心公式速查 / Cheat Sheet}
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{概念} & \textbf{公式} \\ \hline
+样本均值 & $\bar{X} = \frac{1}{n}\sum X_i$ \\ \hline
+样本方差 & $S^2 = \frac{1}{n-1}\sum(X_i - \bar{X})^2$ \\ \hline
+相关系数 & $r = \frac{\sum(x_i-\bar{x})(y_i-\bar{y})}{\sqrt{\sum(x_i-\bar{x})^2 \sum(y_i-\bar{y})^2}}$ \\ \hline
+95\% 置信区间 & $\bar{X} \pm t_{\alpha/2, n-1} \cdot \frac{S}{\sqrt{n}}$ \\ \hline
+单样本 t & $t = \frac{\bar{X} - \mu_0}{S/\sqrt{n}}$ \\ \hline
+双样本 t & $t = \frac{\bar{X}_A - \bar{X}_B}{S_p \sqrt{1/n_A + 1/n_B}}$ \\ \hline
+$\chi^2$ 检验 & $\chi^2 = \sum \frac{(O_i - E_i)^2}{E_i}$ \\ \hline
+线性回归 (一元) & $\hat{\beta}_1 = \frac{\sum(x_i-\bar{x})(y_i-\bar{y})}{\sum(x_i-\bar{x})^2}$ \\ \hline
+线性回归 (多元) & $\hat{\boldsymbol{\beta}} = (X^T X)^{-1} X^T \mathbf{y}$ \\ \hline
+$R^2$ & $R^2 = 1 - \frac{SS_{\text{res}}}{SS_{\text{tot}}}$ \\ \hline
+F 统计量 (ANOVA) & $F = \frac{MS_{\text{between}}}{MS_{\text{within}}}$ \\ \hline
+MLE & $\hat{\theta} = \arg\max_\theta \prod f(X_i; \theta)$ \\ \hline
+\end{tabular}
+\end{center}
+
+\section{本章小结 / Summary}
+
+\textbf{这一章我们讲了 6 件事}：
+
+\begin{enumerate}
+\item \textbf{描述性统计}——\textbf{均值、方差、相关}——\textbf{把数据压缩成几个关键数}
+\item \textbf{参数估计}——\textbf{MLE 给点估计、置信区间给范围 + 不确定性}
+\item \textbf{假设检验}——\textbf{t 检验比均值、$\chi^2$ 检验比分布}——\textbf{p < 0.05 的真正含义}
+\item \textbf{线性回归}——\textbf{$\hat{\boldsymbol{\beta}} = (X^T X)^{-1} X^T \mathbf{y}$}——\textbf{ML 的根}
+\item \textbf{方差分析}——\textbf{Fisher 的发明}——\textbf{F = 信号/噪声}
+\item \textbf{应用}——\textbf{A/B 测试是 t 检验的工业版}——\textbf{推荐系统从头到尾都是统计}
+\end{enumerate}
+
+\textbf{最重要的一句话}——\textbf{读三遍}：
+
+\begin{tcolorbox}[colback=green!5, colframe=green!50!black]
+\textbf{线性回归是 ML 的种子}——\textbf{深度理解线性回归——就是理解了 80\% 的监督学习}。
+
+\textbf{从 1805 年 Legendre 的最小二乘——到 2025 年 GPT 的 transformer}——\textbf{$\mathbf{Wx} + \mathbf{b}$ 这个形式——220 年没换过}。
+
+\textbf{当别人在追新模型时——你回头把线性回归学透——你就赢了}。
+\end{tcolorbox}
+
+\textbf{下一章}——\textbf{我们讲数值方法}——\textbf{当方程没有解析解时——计算机怎么算}——\textbf{这是把数学变成代码的最后一公里}。
+
+\clearpage

@@ -1,0 +1,354 @@
+% =====================================================================
+%  第 3 章 · 矢量分析 / Vector Analysis
+%  梯度、散度、旋度、Gauss、Stokes
+%  小故事：Maxwell 与 Gibbs 的矢量发明
+%  Aha：手机信号场强
+% =====================================================================
+
+\chapter{矢量分析 / Vector Analysis}
+\label{ch:vec}
+
+\begin{quote}\itshape
+\textbf{Maxwell 1865 年}发表《电磁场的动力学理论》——里面是\textbf{20 个偏微分方程}——\textbf{用四元数（quaternions）写的}——\textbf{没人看得懂}。
+
+\medskip
+
+\textbf{Heaviside 和 Gibbs}\textbf{在 1880 年代}独立改写了它——\textbf{用我们今天熟悉的"矢量"语言}——\textbf{20 个方程缩成 4 个}。
+
+\medskip
+
+我们这一章——讲的就是 Heaviside 和 Gibbs 发明的"矢量分析"——它是电磁、流体、弹性、传热的\textbf{共用语言}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{我读大二上《电动力学》}——\textbf{第一节课老师写了一个公式}：
+\[
+\nabla \cdot \bm{E} = \rho / \varepsilon_0
+\]
+\textbf{我懵了 10 分钟}。
+
+那个倒三角是什么？点乘是什么？$\rho / \varepsilon_0$ 我懂——电荷密度除以真空介电常数——但等号左边是个什么"操作"——我说不上来。
+
+\textbf{我翻同济《高等数学下册》}——\textbf{第十一章}——\textbf{讲过"散度"——总共一页半}——\textbf{讲完就给习题}。
+
+\textbf{我翻 Griffiths《Introduction to Electrodynamics》}——\textbf{它专门花了一章讲矢量分析}——\textbf{我跟读了三天}——\textbf{才反应过来}：
+
+\textbf{$\nabla$ 不是"数学家发明的折磨工具"}——\textbf{它是"工程师发明的简写"}。
+
+它简化了什么？——\textbf{它把"对每个分量分别写偏导"的繁琐版}——\textbf{压缩成了一个符号}。
+
+\textbf{这一章的目的}——\textbf{把 $\nabla \cdot, \nabla \times, \nabla^2$ 这三个符号——讲到你看 Maxwell 方程组不再懵}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{$\nabla$ 是一个"矢量算符"——它的点乘是散度（衡量源）、叉乘是旋度（衡量旋转）、自乘是 Laplacian（衡量曲率）}。\\[6pt]
+\textbf{English}: $\nabla$ is a vector operator——its dot product gives divergence (measuring sources), its cross product gives curl (measuring rotation), and its square gives the Laplacian (measuring curvature).
+\end{tcolorbox}
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+同济下册有一章\textbf{"曲线积分与曲面积分"}——\textbf{讲了 Gauss 定理、Stokes 定理}——\textbf{但只当成"计算工具"}——\textbf{没讲它们的物理意义}。
+
+\textbf{物理系的教材}（比如梁昆淼《数学物理方法》）——\textbf{讲得更深}——\textbf{但工科生很少看}。
+
+\textbf{我的策略}——\textbf{把"梯度、散度、旋度"当成三个\textbf{独立的几何对象}}——\textbf{每一个都配一个物理画面}：
+
+\begin{itemize}
+\item \textbf{梯度} = 山的最陡上升方向
+\item \textbf{散度} = "流出量"（水从源头喷出）
+\item \textbf{旋度} = "转动量"（水的小漩涡）
+\end{itemize}
+
+\begin{tcolorbox}[storybox={\Large 小故事：Maxwell, Gibbs, Heaviside 的矢量发明}]
+\textbf{1865 年}——\textbf{James Clerk Maxwell}（苏格兰人）——\textbf{发表《电磁场的动力学理论》}——\textbf{20 个偏微分方程}——\textbf{用 Hamilton 的"四元数"写的}。
+
+\medskip
+
+\textbf{四元数}是什么？——\textbf{它是 1843 年 Hamilton 发明的"3D 复数"}——\textbf{$i^2 = j^2 = k^2 = ijk = -1$}——\textbf{乘法不交换}——\textbf{学起来比矢量分析难十倍}。
+
+\medskip
+
+\textbf{Maxwell 的方程组用四元数写出来——非常对称、非常美}——\textbf{但工程师看不懂}。
+
+\medskip
+
+\textbf{1880 年代}——\textbf{两个"实用派"独立行动}：
+
+\begin{itemize}
+\item \textbf{Josiah Willard Gibbs}（耶鲁大学的化学家——后来成为物理学家）
+\item \textbf{Oliver Heaviside}（英国电信工程师——自学成才——脾气怪——晚年贫困）
+\end{itemize}
+
+\medskip
+
+\textbf{他们独立做了同一件事}——\textbf{把 Maxwell 的四元数版}——\textbf{改写成"矢量分析"版}——\textbf{20 个方程 → 4 个方程}。
+
+\medskip
+
+\textbf{Hamilton 的拥护者大怒}——\textbf{发起"四元数 vs 矢量分析"的口水战}——\textbf{持续了 20 年}。
+
+\medskip
+
+\textbf{最后矢量分析赢了}——\textbf{因为它更直观、更易教、更适合工程}。
+
+\medskip
+
+\textbf{我们今天看到的 $\nabla \cdot E = \rho / \varepsilon_0$、$\nabla \times B = \mu_0 J + \mu_0 \varepsilon_0 \partial E / \partial t$——都是 Heaviside 和 Gibbs 的简化版}。
+
+\medskip
+
+\textbf{Maxwell 本人没活到看见这场胜利}（他 1879 年去世——48 岁）。
+\end{tcolorbox}
+
+\section{直觉 / Intuition}
+
+\subsection{矢量场 vs 标量场}
+
+\textbf{标量场}——\textbf{每点一个数}——温度 $T(\bm{r})$、电势 $\phi(\bm{r})$、海拔 $h(x,y)$。
+
+\textbf{矢量场}——\textbf{每点一个矢量}——速度场 $\bm{v}(\bm{r})$、电场 $\bm{E}(\bm{r})$、磁场 $\bm{B}(\bm{r})$。
+
+\textbf{我们要做的事}——\textbf{对"场"求导}——\textbf{得到三种不同的"变化率"}：梯度、散度、旋度。
+
+\subsection{$\nabla$ 算符：矢量微分}
+
+\textbf{$\nabla$（"nabla"）}定义为：
+\[
+\nabla = \left( \frac{\partial}{\partial x}, \frac{\partial}{\partial y}, \frac{\partial}{\partial z} \right)
+\]
+
+\textbf{它是个"矢量"}——\textbf{但分量是"偏导操作"而不是数}——所以叫\textbf{矢量算符}。
+
+\textbf{它能做四件事}（前三件本章讲，最后一件是 Ch 5 PDE 的核心）：
+
+\begin{enumerate}
+\item \textbf{作用于标量场}：$\nabla f$ = \textbf{梯度}（结果是矢量）
+\item \textbf{点乘矢量场}：$\nabla \cdot \bm{F}$ = \textbf{散度}（结果是标量）
+\item \textbf{叉乘矢量场}：$\nabla \times \bm{F}$ = \textbf{旋度}（结果是矢量）
+\item \textbf{自身点乘}：$\nabla^2 f = \nabla \cdot \nabla f$ = \textbf{Laplacian}（结果是标量）
+\end{enumerate}
+
+\subsection{散度：源还是汇}
+
+\textbf{物理画面}——\textbf{想象一个水流场 $\bm{v}(\bm{r})$}——\textbf{每点的水流速度}。
+
+\textbf{散度 $\nabla \cdot \bm{v}$ 告诉你}：\textbf{这一点周围——是水的源头（喷出来）还是汇（吸进去）}？
+
+\begin{itemize}
+\item $\nabla \cdot \bm{v} > 0$：\textbf{源}（这一点向外喷水）
+\item $\nabla \cdot \bm{v} < 0$：\textbf{汇}（这一点吸水）
+\item $\nabla \cdot \bm{v} = 0$：\textbf{无源无汇}（水进多少出多少）
+\end{itemize}
+
+\textbf{Maxwell 第一方程 $\nabla \cdot \bm{E} = \rho / \varepsilon_0$ 的物理意义}：\textbf{电场的源是电荷}——\textbf{电荷在哪里——电场就从哪里"喷出来"}。
+
+\textbf{Maxwell 第二方程 $\nabla \cdot \bm{B} = 0$ 的物理意义}：\textbf{磁场无源}——\textbf{没有"单极磁荷"}——\textbf{磁感线必须闭合}。
+
+\subsection{旋度：漩涡}
+
+\textbf{物理画面}——\textbf{把一个小风车放进水流场}——\textbf{看它转不转}。
+
+\textbf{旋度 $\nabla \times \bm{v}$ 告诉你}：\textbf{这一点的水流——有没有"旋转"}？
+
+\begin{itemize}
+\item $\nabla \times \bm{v} \neq \bm{0}$：\textbf{有旋}（小风车会转）——\textbf{方向沿转轴}
+\item $\nabla \times \bm{v} = \bm{0}$：\textbf{无旋}（小风车不转）
+\end{itemize}
+
+\textbf{Maxwell 第三方程 $\nabla \times \bm{E} = -\partial \bm{B}/\partial t$ 的物理意义}（Faraday 电磁感应）：\textbf{磁场的变化——会产生有旋的电场}。
+
+\textbf{Maxwell 第四方程 $\nabla \times \bm{B} = \mu_0 \bm{J} + \mu_0 \varepsilon_0 \partial \bm{E}/\partial t$}（Ampère-Maxwell）：\textbf{电流 + 电场变化——会产生有旋的磁场}。
+
+\subsection{Laplacian：曲率}
+
+\[
+\nabla^2 f = \frac{\partial^2 f}{\partial x^2} + \frac{\partial^2 f}{\partial y^2} + \frac{\partial^2 f}{\partial z^2}
+\]
+
+\textbf{物理画面}——\textbf{这一点的 $f$，比周围邻居们的平均值多了多少}？
+
+\begin{itemize}
+\item $\nabla^2 f > 0$：\textbf{这点比邻居低}（凹陷处）
+\item $\nabla^2 f < 0$：\textbf{这点比邻居高}（凸起处）
+\item $\nabla^2 f = 0$：\textbf{这点等于邻居的平均}——\textbf{Laplace 方程}——\textbf{第 5 章主角}
+\end{itemize}
+
+\section{数学 / The Math}
+
+\subsection{矢量恒等式：必背的五个}
+
+\begin{align}
+\nabla \times (\nabla f) &= \bm{0} \quad \text{(梯度场无旋)} \\
+\nabla \cdot (\nabla \times \bm{F}) &= 0 \quad \text{(旋度场无源)} \\
+\nabla \times (\nabla \times \bm{F}) &= \nabla(\nabla \cdot \bm{F}) - \nabla^2 \bm{F} \\
+\nabla \cdot (f \bm{F}) &= f \nabla \cdot \bm{F} + \nabla f \cdot \bm{F} \\
+\nabla \times (f \bm{F}) &= f \nabla \times \bm{F} + \nabla f \times \bm{F}
+\end{align}
+
+\textbf{前两个特别重要}——\textbf{它们告诉我们"梯度场无旋"、"旋度场无源"}——\textbf{这是 Helmholtz 分解定理的基础}。
+
+\subsection{Gauss 定理（散度定理）}
+
+\begin{theorem}[Gauss 散度定理]
+设 $V$ 是 $\mathbb{R}^3$ 中体积——$\partial V$ 是其边界曲面——$\bm{F}$ 是 $V$ 上的可微矢量场。则
+\[
+\iiint_V \nabla \cdot \bm{F} \, dV = \oiint_{\partial V} \bm{F} \cdot d\bm{S}
+\]
+\end{theorem}
+
+\textbf{物理意义}：\textbf{体积内的"总源"——等于边界的"总流量"}——\textbf{水进多少——必须流出多少}（无积累）。
+
+\textbf{Maxwell 第一方程的积分版}：
+\[
+\oiint \bm{E} \cdot d\bm{S} = Q_{\text{内}} / \varepsilon_0
+\]
+\textbf{封闭曲面的电通量 = 内部总电荷 / $\varepsilon_0$}——\textbf{Gauss 定律}。
+
+\subsection{Stokes 定理}
+
+\begin{theorem}[Stokes 定理]
+设 $S$ 是有向曲面——$\partial S$ 是其边界曲线（按右手定则）——$\bm{F}$ 是 $S$ 邻域上的可微矢量场。则
+\[
+\iint_S (\nabla \times \bm{F}) \cdot d\bm{S} = \oint_{\partial S} \bm{F} \cdot d\bm{r}
+\]
+\end{theorem}
+
+\textbf{物理意义}：\textbf{曲面内的"总旋转"——等于边界的"环流量"}——\textbf{所有小漩涡的总和——等于宏观的循环}。
+
+\textbf{Maxwell 第三方程的积分版}：
+\[
+\oint \bm{E} \cdot d\bm{r} = -\frac{d\Phi_B}{dt}
+\]
+\textbf{电场沿闭合回路的积分 = 磁通量变化的负值}——\textbf{Faraday 电磁感应定律}。
+
+\subsection{Helmholtz 分解定理}
+
+\textbf{任何（性质足够好的）矢量场}——\textbf{可以唯一分解为}：
+\[
+\bm{F} = -\nabla \phi + \nabla \times \bm{A}
+\]
+即\textbf{一个"无旋"分量 + 一个"无源"分量}。
+
+\textbf{在电磁学里}——\textbf{$\phi$ 是电势——$\bm{A}$ 是磁矢势}——\textbf{它们是 Maxwell 方程组的"原函数"}。
+
+\section{Aha 例子：手机信号场强 / Aha: Mobile Signal Strength}
+
+\textbf{场景}：你在华为做天线工程师。要预测一个新基站的\textbf{信号覆盖图}——\textbf{每点的信号强度}。
+
+\textbf{物理}：基站发射电磁波——电磁波的能量密度 $u = \frac{1}{2}(\varepsilon_0 E^2 + B^2/\mu_0)$。
+
+\textbf{建模}（远场近似）：基站位置 $(0,0,h)$，频率 $f$，功率 $P$。则在地面 $(x, y, 0)$ 处的信号场强（近似）：
+\[
+E(x, y) = \frac{C \sqrt{P}}{r}, \quad r = \sqrt{x^2 + y^2 + h^2}
+\]
+$C$ 是常数。
+
+\textbf{问题}：
+
+\begin{enumerate}
+\item \textbf{信号最弱的方向在哪}（梯度方向）
+\item \textbf{封闭区域里的总发射能量是多少}（Gauss 定理）
+\item \textbf{多个基站的信号叠加}（矢量场的线性叠加）
+\end{enumerate}
+
+\begin{tcolorbox}[ahabox={Aha: Maxwell 方程组的几何意义}]
+\textbf{你以为 Maxwell 方程组是物理系学的"高深公式"}——\textbf{它其实是工程师每天都在用的工具}。
+
+\medskip
+
+\textbf{4G/5G 基站设计}——\textbf{$\nabla \cdot E = \rho/\varepsilon_0$}——\textbf{算电荷布局}\\
+\textbf{Wi-Fi 路由器天线}——\textbf{$\nabla \times B = \mu_0 J + \mu_0 \varepsilon_0 \partial E/\partial t$}——\textbf{算电磁波辐射}\\
+\textbf{电力变压器}——\textbf{$\nabla \times E = -\partial B/\partial t$}——\textbf{Faraday 电磁感应}\\
+\textbf{MRI 核磁共振}——\textbf{整个 Maxwell 方程组的工程实现}
+
+\medskip
+
+\textbf{这些方程不是物理学家的私产}——\textbf{是 21 世纪工程的骨架}。
+
+\medskip
+
+\textbf{矢量分析——是它们的母语}。
+\end{tcolorbox}
+
+\textbf{Python 实现}：
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 基站参数
+h = 30        # 高度 30m
+P = 100       # 功率 100W
+C = 1.0       # 比例常数
+
+# 场强计算
+X, Y = np.meshgrid(np.linspace(-200, 200, 100),
+                    np.linspace(-200, 200, 100))
+r = np.sqrt(X**2 + Y**2 + h**2)
+E = C * np.sqrt(P) / r
+
+# 等高线 + 梯度
+plt.contourf(X, Y, E, 20, cmap='viridis')
+plt.colorbar(label='|E| field strength')
+gx, gy = np.gradient(E)
+plt.quiver(X[::5, ::5], Y[::5, ::5], gx[::5, ::5], gy[::5, ::5])
+plt.title('Mobile Signal Coverage Map')
+plt.savefig('signal_map.png')
+\end{lstlisting}
+
+\section{现代视角：Maxwell, 流体, ML / Modern}
+
+\textbf{矢量分析的现代应用}：
+
+\begin{itemize}
+\item \textbf{Maxwell 方程组}——所有电磁工程的根
+\item \textbf{Navier-Stokes 方程}——流体的"Maxwell"——$\partial \bm{v} / \partial t + (\bm{v} \cdot \nabla) \bm{v} = \cdots$
+\item \textbf{弹性力学}——应力张量的散度 = 体力 + 惯性
+\item \textbf{ML 里的"Hamiltonian flow"}——\textbf{Hamilton Monte Carlo}——\textbf{把矢量分析用到 Bayesian inference}
+\end{itemize}
+
+\textbf{你掌握了 $\nabla$——你掌握了 21 世纪工程数学的"通用语"}。
+
+\section{代码与思考 / Code and Exercises}
+
+\subsection{配套模块 \texttt{vector\_analysis.py}}
+
+\begin{enumerate}
+\item \texttt{demo\_gradient\_field()}——画 $\nabla(x^2+y^2)$ 的矢量场
+\item \texttt{demo\_divergence()}——比较点源 vs 旋转场的散度
+\item \texttt{demo\_curl()}——可视化旋转场的旋度
+\item \texttt{demo\_gauss\_theorem()}——数值验证 Gauss 定理
+\item \texttt{demo\_stokes\_theorem()}——数值验证 Stokes 定理
+\item \texttt{demo\_signal\_coverage()}——本章 Aha 例子
+\end{enumerate}
+
+\subsection{思考题 / Exercises}
+
+\begin{enumerate}
+\item \textbf{[直觉]} 用一句话区分"散度"和"旋度"——不许用公式。
+\item \textbf{[计算]} 求 $\bm{F} = (x^2 y, y^2 z, z^2 x)$ 的散度和旋度。
+\item \textbf{[应用]} 一个 $\bm{B}$ 场 $\bm{B} = B_0 \hat{\bm{z}}$（均匀磁场）——它的散度和旋度各是什么？
+\item \textbf{[代码]} 用 Python 数值验证 $\nabla \times \nabla f = \bm{0}$（任取一个 $f$）。
+\item \textbf{[历史]} 查一查：Heaviside 为什么晚年贫困？他的工作为什么被低估？
+\item \textbf{[ML]} 在 PyTorch 里实现一个简单的"矢量场"——计算它的 Jacobian——和"散度 + 旋度"对比。
+\end{enumerate}
+
+\section{本章小结 / Chapter Summary}
+
+\begin{tcolorbox}[essbox={本章核心}]
+\begin{itemize}
+\item \textbf{$\nabla$} = $(\partial_x, \partial_y, \partial_z)$ = 矢量微分算符
+\item \textbf{梯度 $\nabla f$} = 最陡上升方向（结果：矢量）
+\item \textbf{散度 $\nabla \cdot \bm{F}$} = 源/汇的强度（结果：标量）
+\item \textbf{旋度 $\nabla \times \bm{F}$} = 漩涡的强度（结果：矢量）
+\item \textbf{Laplacian $\nabla^2 f$} = 偏离邻居平均的量（结果：标量）
+\item \textbf{Gauss 定理} = 体积内的源 = 边界的流量
+\item \textbf{Stokes 定理} = 曲面内的旋 = 边界的环流
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{下一章——常微分方程 ODE}——\textbf{我们让"变化率"出现在方程里}——\textbf{进入"动力系统"的世界}。
+
+\clearpage

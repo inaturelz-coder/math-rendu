@@ -1,0 +1,233 @@
+% =====================================================================
+%  《打通工科数学任督二脉》/ Math Rendu
+%  Bridging the Threads of Engineering Mathematics
+%  A Fun Lecture Note from High School to Graduate Level
+%  Li Zhou — 2027
+%  LaTeX source — MIT License
+%  仿《打通物理任督二脉》V5 风格
+% =====================================================================
+
+\documentclass[11pt,a4paper,openany]{book}
+
+% ---------- 中文 ----------
+\usepackage{xeCJK}
+\setCJKmainfont[ItalicFont=Droid Sans Fallback,BoldFont=Droid Sans Fallback]{Droid Sans Fallback}
+\setCJKsansfont{Droid Sans Fallback}
+\setCJKmonofont{Droid Sans Fallback}
+% 西文字体——DejaVu Serif 有 em-dash 字形
+\setmainfont{DejaVu Serif}
+\setsansfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}
+% 把 U+2014（em-dash ——）路由到 Latin 字体——破折号显示为"——"
+\xeCJKDeclareCharClass{HalfLeft}{"2014}
+% 行距、段距——适中
+\linespread{1.32}
+\setlength{\parskip}{0.4em}
+\setlength{\parindent}{2em}
+% 中文章节命名——\thechapter 只放数字，"章"字由 titlesec/书签格式控制
+\renewcommand{\chaptername}{第}
+\renewcommand{\contentsname}{目录}
+\renewcommand{\figurename}{图}
+\renewcommand{\tablename}{表}
+\renewcommand{\appendixname}{附录}
+\renewcommand{\partname}{第}
+% 让 thepart 在引用时输出"X 部分"——但 part 标题的"第 X 部分"由 titlesec 处理
+\renewcommand{\thepart}{\Roman{part}}
+
+% ---------- 页面 ----------
+\usepackage[a4paper,margin=2.5cm,headheight=14pt]{geometry}
+
+% ---------- 数学 ----------
+\usepackage{amsmath,amssymb,amsthm,mathtools,bm,esint}
+
+% ---------- 图表 ----------
+\usepackage{graphicx,booktabs,array,xcolor,multirow}
+
+% ---------- 色板 ----------
+\definecolor{sectionblue}{RGB}{32,52,90}
+\definecolor{sectiongold}{RGB}{180,140,40}
+
+% ---------- 盒子 ----------
+\definecolor{storyboxbg}{RGB}{255,247,224}
+\definecolor{storyboxframe}{RGB}{180,140,40}
+\definecolor{essbg}{RGB}{230,243,255}
+\definecolor{essframe}{RGB}{40,90,180}
+\definecolor{ahabg}{RGB}{235,255,235}
+\definecolor{ahaframe}{RGB}{40,140,60}
+\usepackage[most]{tcolorbox}
+\tcbset{
+  storybox/.style={colback=storyboxbg, colframe=storyboxframe, boxrule=0.6pt, arc=2pt, left=8pt, right=8pt, top=6pt, bottom=6pt, fonttitle=\bfseries, title={#1}},
+  essbox/.style={colback=essbg, colframe=essframe, boxrule=0.6pt, arc=2pt, left=8pt, right=8pt, top=6pt, bottom=6pt, fonttitle=\bfseries, title={#1}},
+  ahabox/.style={colback=ahabg, colframe=ahaframe, boxrule=0.6pt, arc=2pt, left=8pt, right=8pt, top=6pt, bottom=6pt, fonttitle=\bfseries, title={#1}},
+}
+
+% ---------- 列表 ----------
+\usepackage{enumitem}
+\setlist[itemize]{itemsep=0.1em, topsep=0.2em, parsep=0.05em, partopsep=0pt}
+\setlist[enumerate]{itemsep=0.1em, topsep=0.2em, parsep=0.05em, partopsep=0pt}
+
+% ---------- 代码 ----------
+\usepackage{listings}
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue}\bfseries,
+  commentstyle=\color{olive}\itshape,
+  stringstyle=\color{purple},
+  showstringspaces=false,
+  frame=single,
+  framerule=0.3pt,
+  rulecolor=\color{gray},
+}
+
+% ---------- 链接 ----------
+\usepackage[bookmarks=true,bookmarksopen=false,unicode=true]{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue,
+  pdftitle={打通工科数学任督二脉},
+  pdfauthor={Li Zhou}}
+
+% ---------- V5 风格章节标题 ----------
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\color{sectionblue}}
+  {\color{sectiongold}\Large 第 \thechapter\ 章}{14pt}{\Huge}
+  [\vspace{6pt}{\color{sectionblue}\hrule height 1pt}]
+\titleformat{\section}
+  {\Large\bfseries\color{sectionblue}}
+  {\raisebox{0.05em}{\textcolor{sectionblue}{\rule{0.75em}{0.75em}}}\;\thesection}{0.5em}{}
+  [\vspace{2pt}{\color{sectionblue}\hrule height 0.5pt}]
+\titleformat{\subsection}
+  {\large\bfseries}
+  {\color{sectionblue}\thesubsection}{0.5em}{}
+\titlespacing*{\chapter}{0pt}{20pt}{20pt}
+\titlespacing*{\section}{0pt}{1.5em}{0.6em}
+\titlespacing*{\subsection}{0pt}{1em}{0.3em}
+\titleformat{\part}[display]
+  {\centering\normalfont\Huge\bfseries\color{sectionblue}}
+  {\Large\color{sectiongold}\partname\ \thepart}{20pt}{\Huge}
+  [\vspace{8pt}{\color{sectiongold}\hrule height 1pt}]
+
+% ---------- 定理 ----------
+\newtheorem{theorem}{定理}[chapter]
+\newtheorem{lemma}[theorem]{引理}
+\newtheorem{proposition}[theorem]{命题}
+\newtheorem{corollary}[theorem]{推论}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{定义}
+\newtheorem{example}[theorem]{例}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{注}
+
+% =====================================================================
+\begin{document}
+
+% ---------- 封面（V5 风格） ----------
+\definecolor{titleline}{RGB}{32,52,90}
+\definecolor{titlegold}{RGB}{180,140,40}
+
+\begin{titlepage}
+\centering
+\vspace*{3.2cm}
+
+{\color{titleline}\hrule height 0.9pt}
+\vspace{1.0cm}
+
+{\Huge\bfseries\color{titleline} 打通工科数学任督二脉 \par}
+\vspace{0.6cm}
+
+{\color{titlegold}\hrule height 1.2pt width 6cm}
+\vspace{0.8cm}
+
+{\Large 高中到研究生的数学贯通课 \par}
+\vspace{0.5cm}
+
+{\Large\itshape Bridging the Threads of Engineering Mathematics \par}
+\vspace{0.15cm}
+{\large A Fun Lecture Note from High School to Graduate Level \par}
+
+\vspace{2.5cm}
+
+{\Large\color{titlegold}\bfseries Li Zhou \par}
+
+\vspace{1.2cm}
+
+{\normalsize 第一版 \quad 2027 \par}
+
+\vfill
+
+{\color{titleline}\hrule height 0.9pt}
+\vspace{0.8cm}
+
+{\normalsize\itshape 数学是活的——但它需要有人来贯通 \par}
+
+\vspace{1cm}
+\end{titlepage}
+
+% ---------- 版权页 ----------
+\clearpage
+\thispagestyle{empty}
+\noindent\textbf{《打通工科数学任督二脉——高中到研究生的数学贯通课》}\\[4pt]
+Author: Li Zhou\\
+Email: \texttt{lizhou\_alfred2011@hotmail.com}\\
+First edition: 2027\\[8pt]
+本书采用 MIT 许可证开源发布。配套 Python 代码模块亦遵循 MIT 许可证。\\
+您可以自由阅读、复制、分发、修改本书内容，但请保留原作者署名。\\[16pt]
+
+文责自负。
+
+% ---------- 引言句 ----------
+\clearpage
+\thispagestyle{empty}
+\vspace*{4cm}
+\begin{center}
+\itshape
+\itshape
+"数学家最大的敌人不是公式——是孤立。\\[6pt]
+教材把它们分开教——研究把它们拼起来用。\\[6pt]
+这本书想做的是后者。"\\[20pt]
+\normalfont 写在前面
+\end{center}
+
+\clearpage
+\tableofcontents
+
+\mainmatter
+
+\input{chapters/ch00_preface}
+
+% 全书脉络图——分析/代数 二脉框架（紧接序言之后）
+\input{chapters/threads_map}
+
+\part{微积分与场 / Calculus and Fields}
+\input{chapters/ch01_calculus_intro}
+\input{chapters/ch02_multi_calc}
+\input{chapters/ch03_vector_analysis}
+\input{chapters/ch04_ode}
+\input{chapters/ch05_pde}
+
+\part{线性代数 / Linear Algebra}
+\input{chapters/ch06_linalg_intro}
+\input{chapters/ch07_linalg_core}
+\input{chapters/ch08_linalg_apps}
+
+\part{复变函数 / Complex Analysis}
+\input{chapters/ch09_complex_analysis}
+
+\part{概率与统计 / Probability and Statistics}
+\input{chapters/ch10_probability}
+\input{chapters/ch11_statistics}
+
+\part{计算与优化 / Computation and Optimization}
+\input{chapters/ch12_numerical}
+\input{chapters/ch13_optimization}
+
+\part{离散数学（可选）/ Discrete Math (Optional)}
+\input{chapters/ch14_discrete}
+
+\appendix
+\input{chapters/appendix_a_symbols}
+\input{chapters/appendix_b_modules}
+
+\end{document}

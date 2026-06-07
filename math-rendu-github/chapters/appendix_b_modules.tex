@@ -1,0 +1,345 @@
+% =====================================================================
+%  附录 B · Python 模块索引 / Module Index
+%  13 + 1 个模块——配文件名、章节、主要函数、安装指南、GitHub 链接
+% =====================================================================
+
+\chapter{Python 模块索引 / Module Index}
+\label{app:modules}
+
+\begin{quote}\itshape
+本书 14 章——\textbf{每一章都附\textbf{一个 Python 模块}}——\textbf{把数学讲完——就让你能跑代码}。\\
+\textbf{本附录是\textbf{所有模块的总索引}}：\textbf{文件名、依赖、主要函数、安装方法}——\textbf{一页找到任何工具}。
+\end{quote}
+
+\section{模块总表 / Module Overview}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{@{}cllc@{}}
+\toprule
+\textbf{Ch} & \textbf{文件名} & \textbf{主题} & \textbf{状态} \\
+\midrule
+1  & \texttt{calculus.py}      & 极限、导数、积分、数值微分             & 必备 \\
+2  & \texttt{multivar.py}      & 偏导、梯度、Hessian、Jacobian        & 必备 \\
+3  & \texttt{vector\_analysis.py} & 散度、旋度、Laplace、矢量积分        & 必备 \\
+4  & \texttt{ode.py}           & 一阶/二阶 ODE、Laplace 变换、状态空间   & 必备 \\
+5  & \texttt{pde.py}           & 有限差分热方程/波方程、谱方法           & 必备 \\
+6  & \texttt{linalg\_intro.py} & 矩阵基本运算、Gauss 消元、LU 分解         & 必备 \\
+7  & \texttt{linalg\_core.py}  & 特征分解、SVD、QR、Schur                 & 必备 \\
+8  & \texttt{linalg\_apps.py}  & PCA、最小二乘、推荐系统、PageRank        & 必备 \\
+9  & \texttt{complex.py}       & 复函数、留数、FFT、滤波、传递函数        & 必备 \\
+10 & \texttt{probability.py}   & 分布抽样、Monte Carlo、Bayes、Markov     & 必备 \\
+11 & \texttt{statistics.py}    & 假设检验、回归、bootstrap、MLE           & 必备 \\
+12 & \texttt{numerical.py}     & 插值、积分求积、Runge-Kutta、稳定性      & 必备 \\
+13 & \texttt{optimization.py}  & GD、Newton、BFGS、SGD、Adam、LP、KKT      & 必备 \\
+14 & \texttt{discrete.py}      & 组合、图论、布尔逻辑、TSP                  & 可选 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{共 \textbf{13 + 1 = 14 个模块}}——\textbf{每个 200--500 行 Python}——\textbf{都\textbf{独立可用}}——\textbf{也可联合使用}。
+
+\section{模块详表 / Module Details}
+
+\subsection{\texttt{calculus.py} —— 第 1 章}
+
+\begin{lstlisting}[language=Python]
+from calculus import (
+    numerical_derivative,   # 中心差分
+    numerical_integral,     # Simpson + Trapezoid
+    taylor_series,          # 解析 Taylor 展开（sympy）
+    plot_function,          # 函数 + 导数 + 积分三联图
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, scipy, sympy, matplotlib}
+
+\subsection{\texttt{multivar.py} —— 第 2 章}
+
+\begin{lstlisting}[language=Python]
+from multivar import (
+    gradient_numeric,       # numpy.gradient 多维包装
+    hessian_numeric,        # 二阶差分 Hessian
+    jacobian_numeric,
+    double_integral,        # scipy.integrate.dblquad
+    triple_integral,        # scipy.integrate.tplquad
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, scipy}
+
+\subsection{\texttt{vector\_analysis.py} —— 第 3 章}
+
+\begin{lstlisting}[language=Python]
+from vector_analysis import (
+    divergence,             # div F
+    curl,                   # curl F
+    laplacian,              # nabla^2 f
+    flux_through_surface,
+    circulation,            # 闭曲线环流
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, sympy}
+
+\subsection{\texttt{ode.py} —— 第 4 章}
+
+\begin{lstlisting}[language=Python]
+from ode import (
+    solve_ode,              # scipy.integrate.solve_ivp 封装
+    transfer_function,      # scipy.signal.TransferFunction
+    bode_plot,              # 频率响应图
+    state_space_simulate,
+    laplace_transform,      # 解析 Laplace（sympy）
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, scipy, sympy, matplotlib}
+
+\subsection{\texttt{pde.py} —— 第 5 章}
+
+\begin{lstlisting}[language=Python]
+from pde import (
+    heat_1d_fdm,            # 1D 热方程有限差分
+    wave_1d_fdm,
+    laplace_2d_jacobi,      # 2D Laplace 迭代解
+    burgers_1d,
+    spectral_solver,        # FFT 谱方法
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, matplotlib, scipy}
+
+\subsection{\texttt{linalg\_intro.py} —— 第 6 章}
+
+\begin{lstlisting}[language=Python]
+from linalg_intro import (
+    gauss_elimination,      # 显式高斯消元（教学用）
+    lu_decomp,              # 分解为 L 和 U
+    solve_linear,           # Ax = b
+    matrix_inverse,
+    determinant,
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy}
+
+\subsection{\texttt{linalg\_core.py} —— 第 7 章}
+
+\begin{lstlisting}[language=Python]
+from linalg_core import (
+    eig_decomp,             # A = V Lambda V^{-1}
+    svd_decomp,             # A = U Sigma V^T
+    qr_decomp,
+    schur_decomp,
+    spectral_norm,
+    frobenius_norm,
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, scipy}
+
+\subsection{\texttt{linalg\_apps.py} —— 第 8 章}
+
+\begin{lstlisting}[language=Python]
+from linalg_apps import (
+    pca,                    # 主成分分析
+    least_squares,          # 最小二乘 + 伪逆
+    page_rank,              # 网页排名（特征向量法）
+    recommender_svd,        # SVD 推荐系统
+    image_compress_svd,     # 灰度图低秩近似
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, scipy, scikit-learn (可选)}
+
+\subsection{\texttt{complex.py} —— 第 9 章}
+
+\begin{lstlisting}[language=Python]
+from complex import (
+    residue,                # 留数计算
+    fft, ifft,              # numpy.fft 封装
+    bode_plot,
+    transfer_eval,          # H(jw) 求值
+    butterworth_filter,
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, scipy, matplotlib}
+
+\subsection{\texttt{probability.py} —— 第 10 章}
+
+\begin{lstlisting}[language=Python]
+from probability import (
+    sample_normal, sample_binomial, sample_poisson,
+    monte_carlo_integrate,
+    bayes_update,
+    markov_chain_simulate,
+    central_limit_demo,
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, scipy.stats, matplotlib}
+
+\subsection{\texttt{statistics.py} —— 第 11 章}
+
+\begin{lstlisting}[language=Python]
+from statistics_module import (
+    t_test, chi2_test, anova,
+    linear_regression,
+    bootstrap_ci,
+    mle_normal,
+    kl_divergence,
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, scipy.stats, statsmodels (可选)}\\
+\textbf{注}：\texttt{statistics} 是 Python 标准库——\textbf{模块文件名实际为 \texttt{statistics\_module.py}}。
+
+\subsection{\texttt{numerical.py} —— 第 12 章}
+
+\begin{lstlisting}[language=Python]
+from numerical import (
+    lagrange_interp, cubic_spline,
+    simpson_rule, gauss_quadrature,
+    runge_kutta_4,
+    condition_number,
+    machine_epsilon,
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, scipy}
+
+\subsection{\texttt{optimization.py} —— 第 13 章}
+
+\begin{lstlisting}[language=Python]
+from optimization import (
+    gradient_descent, newton_method, bfgs,
+    sgd, adam,
+    lp_simplex,             # scipy.optimize.linprog
+    kkt_solver,             # 等式约束
+    plot_convergence,
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{numpy, scipy, matplotlib, torch (用于 SGD/Adam 真实示例)}
+
+\subsection{\texttt{discrete.py} —— 第 14 章（可选）}
+
+\begin{lstlisting}[language=Python]
+from discrete import (
+    n_perm, n_comb, derangement,
+    shortest_path,          # Dijkstra
+    min_spanning_tree,      # Kruskal
+    graph_coloring,
+    truth_table,
+    tsp_bruteforce,
+)
+\end{lstlisting}
+\textbf{依赖}：\texttt{networkx, matplotlib}
+
+\section{安装指南 / Installation}
+
+\subsection{推荐环境：Anaconda + Python 3.11+}
+
+\begin{lstlisting}[language=bash]
+# 1. 安装 Miniconda（轻量版 Anaconda）
+#    https://docs.conda.io/en/latest/miniconda.html
+
+# 2. 创建虚拟环境
+conda create -n math-rendu python=3.11
+conda activate math-rendu
+
+# 3. 一键安装本书全部依赖
+pip install -r requirements.txt
+\end{lstlisting}
+
+\subsection{\texttt{requirements.txt}}
+
+\begin{lstlisting}
+numpy>=1.26
+scipy>=1.11
+sympy>=1.12
+matplotlib>=3.8
+pandas>=2.1
+scikit-learn>=1.3
+statsmodels>=0.14
+networkx>=3.2
+torch>=2.1            # 第 13 章 Adam / SGD 实战
+jupyterlab>=4.0       # 推荐用 Jupyter 跑示例
+\end{lstlisting}
+
+\subsection{分步安装 / Minimal Install}
+
+\textbf{若你只看前 8 章}（微积分 + 线代）：
+
+\begin{lstlisting}[language=bash]
+pip install numpy scipy sympy matplotlib
+\end{lstlisting}
+
+\textbf{若加上概率统计}（Ch 10--11）：
+
+\begin{lstlisting}[language=bash]
+pip install pandas scikit-learn statsmodels
+\end{lstlisting}
+
+\textbf{若到优化 + 深度学习}（Ch 13）：
+
+\begin{lstlisting}[language=bash]
+pip install torch
+\end{lstlisting}
+
+\textbf{若选修离散}（Ch 14）：
+
+\begin{lstlisting}[language=bash]
+pip install networkx
+\end{lstlisting}
+
+\subsection{验证安装}
+
+\begin{lstlisting}[language=Python]
+# 在 Python REPL 里运行
+import numpy, scipy, sympy, matplotlib
+import pandas, sklearn, statsmodels
+import networkx
+print("All packages OK!")
+\end{lstlisting}
+
+\section{GitHub 仓库 / Repository}
+
+\begin{tcolorbox}[essbox={本书代码仓库}]
+\textbf{GitHub}：\url{https://github.com/<your-handle>/math-rendu}\\[4pt]
+\textbf{结构}：
+\begin{itemize}
+\item \texttt{book/}\quad —— LaTeX 源码 + PDF
+\item \texttt{modules/}\quad —— 14 个 Python 模块
+\item \texttt{notebooks/}\quad —— 每章 1 个 Jupyter notebook（"Aha 实战"）
+\item \texttt{tests/}\quad —— pytest 单元测试
+\item \texttt{requirements.txt}\quad —— 依赖列表
+\item \texttt{README.md}\quad —— 快速上手指南
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{克隆与运行}
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/<your-handle>/math-rendu.git
+cd math-rendu
+pip install -r requirements.txt
+
+# 运行示例 notebook
+jupyter lab notebooks/ch01_calculus_aha.ipynb
+\end{lstlisting}
+
+\subsection{贡献 / Contributing}
+
+\textbf{欢迎以下贡献}：
+
+\begin{itemize}
+\item \textbf{勘误}（typo、公式错误）—— 直接提 Issue 或 PR
+\item \textbf{补充示例}（你工业里用到的真实案例）—— 提 PR
+\item \textbf{翻译}（英文版 / 日文版 / 韩文版）—— 联系作者
+\end{itemize}
+
+\section{使用建议 / How to Use the Modules}
+
+\begin{enumerate}
+\item \textbf{初学者}：\textbf{读每一章——\textbf{打开对应 notebook}——\textbf{改参数、跑代码、画图}——\textbf{这比做习题题高效 10 倍}}。
+\item \textbf{工程师}：\textbf{把模块作为\textbf{速查工具箱}}——\textbf{需要 PCA 时 \texttt{from linalg\_apps import pca}}——\textbf{3 秒搞定}。
+\item \textbf{研究生}：\textbf{把模块作为\textbf{教学示范代码}}——\textbf{自己用 \texttt{numpy} 重新实现一遍}——\textbf{比读 \texttt{scipy} 源码温和得多}。
+\item \textbf{教师}：\textbf{所有模块和 notebook \textbf{MIT License}}——\textbf{可以\textbf{自由用于课堂}}——\textbf{只需保留作者署名}。
+\end{enumerate}
+
+\begin{tcolorbox}[essbox={最后一句}]
+\textbf{数学是\textbf{工程师的内功}}——\textbf{Python 是\textbf{把内功打出去的拳脚}}。\textbf{这本书把两者打通}——\textbf{从此你看见公式就能\textbf{秒变代码}}——\textbf{看见代码就能\textbf{秒懂数学}}。\\[4pt]
+\textbf{祝你——\textbf{打通任督二脉}}。
+\end{tcolorbox}
+
+\clearpage

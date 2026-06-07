@@ -1,0 +1,676 @@
+% =====================================================================
+%  第 5 章 · 偏微分方程 / Partial Differential Equations
+%  椭圆、抛物、双曲——分离变量、Fourier、有限差分、有限元
+%  小故事：Fourier 被法兰西学院拒稿三次
+%  Aha：手机芯片散热仿真
+% =====================================================================
+
+\chapter{偏微分方程 / Partial Differential Equations}
+\label{ch:pde}
+
+\begin{quote}\itshape
+\textbf{1807 年}——\textbf{Joseph Fourier} 把一篇关于\textbf{热传导}的论文交给法兰西学院。\\
+评审是 \textbf{Lagrange} 和 \textbf{Laplace}——\textbf{当时数学界的两座大山}。\\
+他们说：\textbf{"你这个'三角级数'——一会儿连续一会儿不连续——不严格——拒。"}\\
+Fourier 改了再交——\textbf{再拒}。再改再交——\textbf{再拒}。\\
+直到 1822 年——他干脆\textbf{自己出书}——《\textbf{热的解析理论}》——\textbf{现代 PDE 和信号处理的奠基之作}。\\[4pt]
+我们这一章——讲的就是 Fourier 用一辈子才让世人接受的那套方法——\textbf{偏微分方程 + 分离变量 + 三角级数}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{我刚接触 PDE 是大三《传热学》}——\textbf{老师在黑板上写了热传导方程}：
+\[
+\frac{\partial u}{\partial t} = \alpha \frac{\partial^2 u}{\partial x^2}
+\]
+\textbf{然后说}：\textbf{"这就是描述温度随时间和空间变化的方程——大家回去自己看。"}
+
+\textbf{我懵了整整一周}。
+
+那个左边的 $\partial u / \partial t$——我懂——温度对时间的变化率。
+那个右边的 $\partial^2 u / \partial x^2$——我也勉强懂——温度对空间的二阶导。
+但\textbf{"温度的变化率 等于 温度的二阶导"}——\textbf{这是什么物理}？
+
+\textbf{这一周我跑去蹭了《数学物理方法》的课}——\textbf{讲到分离变量法}——\textbf{$u(x,t) = X(x) T(t)$}——\textbf{老师写满了三块黑板的求解步骤}——\textbf{我抄了一份回去}——\textbf{依然不懂}。
+
+\textbf{直到我用 Python 写了 10 行有限差分代码}——\textbf{把一根铁棒切成 100 段}——\textbf{每个时间步让每一段的温度 = 自己 + $\alpha\Delta t / \Delta x^2 \times$（左右邻居 - 2 倍自己）}——\textbf{我看到一个初始的"尖峰"温度——慢慢摊平、扩散、变成平台}。
+
+\textbf{那一刻我才反应过来}：
+
+\begin{quote}
+\textbf{"二阶导 $\partial^2 u / \partial x^2$——就是\textbf{邻居平均 - 自己}"}——\textbf{所以热传导方程在说一件最朴素的事}——\textbf{每个点的温度——在向它的邻居平均靠拢}——\textbf{这就是"扩散"}。
+\end{quote}
+
+\textbf{PDE 不是用来折磨工科生的}——\textbf{它是用来描述"场"的语言}。温度场、电场、磁场、压力场、速度场——\textbf{凡是"在空间里铺开 + 随时间演化"的东西}——\textbf{都得用 PDE}。
+
+\textbf{这一章只做四件事}：
+
+\begin{enumerate}
+\item \textbf{讲清 PDE 三大类型}——\textbf{椭圆、抛物、双曲}——\textbf{它们对应三种完全不同的物理}
+\item \textbf{讲清分离变量法}——\textbf{它为什么会引出 Fourier 级数}
+\item \textbf{讲清有限差分}——\textbf{它就是把 PDE "搬"到 numpy 数组上的方法}
+\item \textbf{Aha 例子}——\textbf{手机芯片散热——20 行 Python——你能看见温度在硅片上扩散}
+\end{enumerate}
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{偏微分方程描述"场"如何随空间和时间演化——三大类型分别对应\textbf{扩散}（抛物）、\textbf{振动}（双曲）、\textbf{平衡}（椭圆）}。\\[6pt]
+\textbf{English}: A PDE describes how a field evolves in space and time. The three canonical types correspond respectively to \emph{diffusion} (parabolic), \emph{wave propagation} (hyperbolic), and \emph{equilibrium} (elliptic).
+\end{tcolorbox}
+
+\textbf{记住这一句话——这一章已经讲完了三分之一}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{梁昆淼《数学物理方法》}
+
+中国物理系学生人手一本的\textbf{梁昆淼《数学物理方法》}——\textbf{下册整本讲 PDE}——\textbf{讲得非常深}——\textbf{从分离变量到 Sturm-Liouville 到 Green 函数到积分变换}。
+
+\textbf{优点}：\textbf{把"为什么"讲到了}——\textbf{比工科教材深一层}。
+
+\textbf{缺点}：\textbf{物理系思维}——\textbf{偏理论 + 偏特殊函数}（Bessel、Legendre、Hermite 各占一章）——\textbf{工科生看着觉得"和我的电机/芯片/管道有什么关系"}。
+
+\subsection{Zill《Advanced Engineering Mathematics》}
+
+\textbf{Zill 第 12--15 章}——\textbf{专门讲 PDE}——\textbf{从分离变量讲到 Fourier 变换到 Laplace 变换}——\textbf{有不少应用例子}。
+
+\textbf{优点}：\textbf{工科口味}——\textbf{每个方法配一个例子}。
+
+\textbf{缺点}：\textbf{没有数值方法}——\textbf{停在解析解}——\textbf{现实问题 90\% 没有解析解}。
+
+\subsection{Strauss《Partial Differential Equations: An Introduction》}
+
+\textbf{Strauss} 是\textbf{美国数学系学生的标准 PDE 入门}——\textbf{写得清晰、例子丰富}——\textbf{但偏纯数学}。
+
+\subsection{LeVeque《Finite Difference Methods for ODEs and PDEs》}
+
+\textbf{真正的 PDE 工程师工作手册}——\textbf{告诉你怎么把 PDE 写成代码、怎么分析稳定性、怎么估误差}——\textbf{是 ANSYS / COMSOL / 任何 CAE 软件背后的数学}。
+
+\subsection{我的策略}
+
+\textbf{本章不会重复梁昆淼的"特殊函数大全"}——\textbf{也不会重复 Strauss 的"严格证明"}——\textbf{本章把"三大类型 + 分离变量 + 有限差分"讲到}：
+
+\begin{itemize}
+\item 你看到一个 PDE——\textbf{能立刻判断它是哪一类}（看二阶导的"判别式"）
+\item 你拿到一个最简单的 PDE（热、波、Laplace）——\textbf{能徒手用分离变量法求解析解}
+\item 你拿到一个有点复杂的 PDE——\textbf{能写 20 行 Python 用有限差分跑出数值解}
+\end{itemize}
+
+\begin{tcolorbox}[storybox={\Large 小故事：Fourier 与三次被拒的论文}]
+\textbf{1807 年}——\textbf{Joseph Fourier}（41 岁——\textbf{拿破仑远征埃及时的科学顾问}——刚回到法国）——\textbf{把一篇 234 页的论文}投给\textbf{法兰西学院}——题目：\textbf{《热在固体中的传播》}。
+
+\medskip
+
+论文里他做了三件\textbf{当时的人觉得不可思议}的事：
+
+\begin{enumerate}
+\item \textbf{推导出热传导方程}：$\partial u / \partial t = \alpha \partial^2 u / \partial x^2$
+\item \textbf{用分离变量法求解}——\textbf{把解写成 $\sum_n B_n \sin(n\pi x/L) e^{-\alpha (n\pi/L)^2 t}$}
+\item \textbf{断言}：\textbf{\textbf{任意函数都可以写成三角级数 $\sum a_n \cos(nx) + b_n \sin(nx)$}}
+\end{enumerate}
+
+\medskip
+
+\textbf{评审委员会是当时数学界的"三巨头"}：\textbf{Lagrange、Laplace、Legendre}——\textbf{再加 Monge 和 Lacroix}。
+
+\medskip
+
+\textbf{Lagrange 反对最激烈}——\textbf{他在 50 年前研究过弦振动}——\textbf{当时和 Euler 已经吵过"任意函数能不能写成三角级数"}——\textbf{他坚信不能}——\textbf{尤其是有跳跃的函数（比如方波）}。
+
+\medskip
+
+\textbf{Laplace 比较温和}——\textbf{但他也觉得 Fourier 的"收敛性"没说清}。
+
+\medskip
+
+\textbf{结果}：\textbf{拒稿}。\textbf{Fourier 修改后再投——再拒——再投——又被搁置}。
+
+\medskip
+
+\textbf{1812 年}——\textbf{法兰西学院终于把数学大奖给了 Fourier}——\textbf{但评语里写}：\textbf{"虽然推导和应用都很有价值——但严格性不够——\textbf{不予正式出版}"}。
+
+\medskip
+
+\textbf{Fourier 气坏了}——\textbf{1822 年他干脆自己掏钱出书}——\textbf{《Théorie analytique de la chaleur》}——\textbf{《热的解析理论》}。
+
+\medskip
+
+\textbf{这本书后来成了现代物理和工程的奠基书之一}——\textbf{爱因斯坦读过、Maxwell 读过、Kelvin 读过}——\textbf{Kelvin 说}：\textbf{"Fourier 的定理——不仅是这个时代最美的数学结果——还是解决几乎所有自然哲学难题的不可缺少的工具。"}
+
+\medskip
+
+\textbf{今天}——\textbf{Fourier 级数 / Fourier 变换 是}：\textbf{JPEG 图像压缩、MP3 音频压缩、5G 通信、医学 CT、地震信号、量子力学、信号处理}——\textbf{无处不在}。
+
+\medskip
+
+\textbf{Lagrange 和 Laplace 当年的担心}——\textbf{严格性问题}——\textbf{直到 1966 年 Carleson 才彻底解决}（\textbf{L\textsuperscript{2} 函数的 Fourier 级数几乎处处收敛}）——\textbf{Carleson 拿了 2006 年的 Abel 奖}。
+
+\medskip
+
+\textbf{从 1807 年的"被拒稿"到 2006 年的"Abel 奖"——这件事整整跨了 200 年}。\textbf{科学不怕一时不被理解——只怕你自己中途放弃}。
+\end{tcolorbox}
+
+\section{直觉：三大类型 / Three Types}
+
+\subsection{PDE 的"判别式"——和二次曲线一样}
+
+\textbf{二阶线性 PDE 的一般形式}：
+\begin{equation}
+A u_{xx} + 2B u_{xy} + C u_{yy} + (\text{低阶项}) = 0
+\end{equation}
+
+\textbf{看判别式} $\Delta = B^2 - AC$：
+
+\begin{itemize}
+\item $\Delta < 0$——\textbf{椭圆型}（elliptic）——\textbf{对应"$x^2 + y^2 = 1$ 椭圆"}——例：\textbf{Laplace 方程} $u_{xx} + u_{yy} = 0$
+\item $\Delta = 0$——\textbf{抛物型}（parabolic）——\textbf{对应"$y = x^2$ 抛物线"}——例：\textbf{热传导方程} $u_t = u_{xx}$（这里"$t$"扮演 $y$ 的角色，注意 $A=1, B=0, C=0$）
+\item $\Delta > 0$——\textbf{双曲型}（hyperbolic）——\textbf{对应"$x^2 - y^2 = 1$ 双曲线"}——例：\textbf{波动方程} $u_{tt} = c^2 u_{xx}$
+\end{itemize}
+
+\textbf{这个分类不是数学家凭空造的}——\textbf{它和"二次曲线分类"用的是同一套代数}——\textbf{是因为 PDE 在变换下的"主部"恰好是一个二次型}。
+
+\subsection{三种物理画面}
+
+\textbf{记住这三句话——比记任何公式都管用}：
+
+\begin{tcolorbox}[colback=blue!4,colframe=blue!50,boxrule=0.6pt,arc=2pt]
+\textbf{抛物型（热）}：\textbf{"今天的温度——是昨天温度被邻居拉平之后的样子"}——\textbf{扩散、磨平、走向平衡——\textbf{时间不可逆}}。
+
+\medskip
+
+\textbf{双曲型（波）}：\textbf{"扰动以有限速度传播——左右都跑"}——\textbf{振动、回声、能量守恒——\textbf{时间可逆}}。
+
+\medskip
+
+\textbf{椭圆型（Laplace）}：\textbf{"每个点的值 = 邻居的平均值"}——\textbf{已达稳态——\textbf{没有时间}}。
+\end{tcolorbox}
+
+\begin{example}[一句话记住三大类型]
+\textbf{把同一片湖比作三种物理}：
+\begin{itemize}
+\item \textbf{热}：你往湖里倒一杯热水——温度会慢慢"摊开、降低"——\textbf{抛物}
+\item \textbf{波}：你往湖里扔一个石子——涟漪向外传播——\textbf{双曲}
+\item \textbf{Laplace}：湖面静止——每个点都等于周围点的平均——\textbf{椭圆}
+\end{itemize}
+\end{example}
+
+\section{§1 PDE 三大类型 / Three Types: Math}
+
+\subsection{Laplace 方程（椭圆）}
+\begin{equation}
+\nabla^2 u = u_{xx} + u_{yy} + u_{zz} = 0
+\end{equation}
+\textbf{物理}：稳态温度场、静电势、稳态流场、引力势。
+
+\textbf{关键性质}：\textbf{均值定理}——\textbf{$u$ 在球心的值 = $u$ 在球面上的平均}——\textbf{所以椭圆方程的解\textbf{极其光滑}}（你不能在 Laplace 解里出现尖角，否则均值定理不成立）。
+
+\subsection{热传导方程（抛物）}
+\begin{equation}
+\frac{\partial u}{\partial t} = \alpha \nabla^2 u
+\end{equation}
+\textbf{物理}：温度随时间扩散；浓度扩散；金融期权定价（Black-Scholes 的核心是抛物型）。
+
+\textbf{关键性质}：\textbf{最大值原理}——\textbf{$u$ 在内部任意点 $\le$ 它在初始时刻 + 边界上的最大值}——\textbf{所以"温度只会被磨平、不会自己冒尖"}。\textbf{扩散是不可逆的}——\textbf{把方程反向 $t \to -t$——它变成"反扩散"——数值上完全不稳定}（这就是为什么我们不能"从今天反推昨天的温度分布"）。
+
+\subsection{波动方程（双曲）}
+\begin{equation}
+\frac{\partial^2 u}{\partial t^2} = c^2 \nabla^2 u
+\end{equation}
+\textbf{物理}：弦振动、声波、电磁波、地震波。
+
+\textbf{关键性质}：\textbf{有限传播速度 $c$}——\textbf{$t$ 时刻能影响到 $u(x_0, t)$ 的"初始数据"只在以 $x_0$ 为中心、半径 $ct$ 的范围内}（"光锥"）——\textbf{这和热传导的"瞬时无穷远"完全相反}。\textbf{能量守恒}——\textbf{$E = \int (\tfrac{1}{2} u_t^2 + \tfrac{1}{2} c^2 u_x^2) dx$ 不变}。
+
+\section{§2 分离变量法 / Separation of Variables}
+
+\textbf{这是 Fourier 1807 年发明的核心技术}——\textbf{把一个 PDE 拆成两个 ODE}。
+
+\subsection{基本想法}
+
+\textbf{猜}：解能写成\textbf{一个只依赖 $x$ 的函数 $\times$ 一个只依赖 $t$ 的函数}：
+\[
+u(x, t) = X(x) \, T(t)
+\]
+
+\textbf{代入热传导方程 $u_t = \alpha u_{xx}$}：
+\[
+X(x) T'(t) = \alpha X''(x) T(t)
+\]
+两边除以 $\alpha X T$：
+\[
+\frac{T'(t)}{\alpha T(t)} = \frac{X''(x)}{X(x)} = -\lambda
+\]
+\textbf{左边只依赖 $t$，右边只依赖 $x$——\textbf{它们相等的唯一可能是}：\textbf{两边都等于同一个常数 $-\lambda$}}（习惯写负号——因为我们期待振荡解）。
+
+\subsection{两个 ODE}
+
+\begin{align}
+X''(x) + \lambda X(x) &= 0 \quad \text{（空间方程）}\\
+T'(t) + \alpha \lambda T(t) &= 0 \quad \text{（时间方程）}
+\end{align}
+
+\textbf{加边界条件}（例如 $X(0) = X(L) = 0$——两端温度恒为 0）——\textbf{空间方程变成一个本征值问题}：
+\[
+X_n(x) = \sin\!\left(\frac{n\pi x}{L}\right), \quad \lambda_n = \left(\frac{n\pi}{L}\right)^2, \quad n = 1, 2, 3, \dots
+\]
+
+\textbf{时间方程的解}：
+\[
+T_n(t) = e^{-\alpha \lambda_n t}
+\]
+
+\subsection{叠加 = Fourier 级数}
+
+\textbf{每个 $n$ 都给出一个"基本模式"} $u_n(x,t) = \sin(n\pi x/L) \, e^{-\alpha(n\pi/L)^2 t}$。
+
+\textbf{线性 PDE 满足叠加原理}——\textbf{所以一般解是它们的和}：
+\begin{equation}
+u(x, t) = \sum_{n=1}^{\infty} B_n \sin\!\left(\frac{n\pi x}{L}\right) e^{-\alpha (n\pi/L)^2 t}
+\end{equation}
+
+\textbf{系数 $B_n$ 怎么定}？——\textbf{从初始条件 $u(x, 0) = f(x)$}——\textbf{这就是\textbf{把 $f(x)$ 展开成 Fourier 正弦级数}}：
+\begin{equation}
+B_n = \frac{2}{L} \int_0^L f(x) \sin\!\left(\frac{n\pi x}{L}\right) dx
+\end{equation}
+
+\textbf{这就是 Fourier 一辈子被人骂"不严格"的那个公式}——\textbf{今天它是所有信号处理和数据压缩的根}。
+
+\begin{example}[为什么"高频模式衰减得最快"]
+\textbf{看那个指数因子}：\textbf{$e^{-\alpha (n\pi/L)^2 t}$}——\textbf{$n$ 越大——指数衰减越快}。
+
+\textbf{物理意义}：\textbf{初始温度分布里的"尖锐细节"（高频成分）}——\textbf{很快被磨掉}；\textbf{"大块的趋势"（低频成分）}——\textbf{保留得久}。
+
+\textbf{这就是为什么"热扩散 = 低通滤波"——和 Gaussian blur 在图像里做的是同一件事}！
+\end{example}
+
+\section{§3 热传导方程 / The Heat Equation}
+
+\subsection{推导：从能量守恒开始}
+
+\textbf{取一小段 $[x, x+\Delta x]$}——\textbf{它的内能 $\propto u(x, t) \cdot \Delta x$}。
+
+\textbf{Fourier 定律}：\textbf{热流密度 $q = -k \, \partial u / \partial x$}——\textbf{热从高温流向低温——比例常数 $k$ 是热导率}。
+
+\textbf{能量守恒}：\textbf{这一小段内能的变化率 = 左边流入 - 右边流出}：
+\[
+\rho c \, \Delta x \, \frac{\partial u}{\partial t} = q(x) - q(x+\Delta x) \approx -\frac{\partial q}{\partial x} \Delta x
+\]
+代入 Fourier 定律：
+\[
+\rho c \, \frac{\partial u}{\partial t} = k \, \frac{\partial^2 u}{\partial x^2}
+\]
+\textbf{除以 $\rho c$——记 $\alpha = k/(\rho c)$ 为\textbf{热扩散率}}：
+\begin{equation}
+\boxed{\, \frac{\partial u}{\partial t} = \alpha \frac{\partial^2 u}{\partial x^2} \,}
+\end{equation}
+
+\subsection{为什么"二阶导 = 邻居平均 - 自己"}
+
+\textbf{把 $u(x \pm \Delta x)$ 做 Taylor 展开}：
+\[
+u(x+\Delta x) + u(x-\Delta x) = 2 u(x) + u_{xx}(x) \, \Delta x^2 + O(\Delta x^4)
+\]
+\textbf{整理}：
+\[
+u_{xx}(x) \approx \frac{1}{\Delta x^2} \left[ \underbrace{\frac{u(x+\Delta x) + u(x-\Delta x)}{2}}_{\text{邻居的平均}} - u(x) \right] \cdot 2
+\]
+
+\textbf{所以热传导方程的本质是}：\textbf{"温度变化率 $\propto$ 邻居平均 - 自己"}——\textbf{比邻居冷——升温；比邻居热——降温}。\textbf{这就是扩散}。
+
+\section{§4 波动方程 / The Wave Equation}
+
+\subsection{推导：从牛顿第二定律开始}
+
+\textbf{弦上的一小段 $[x, x+\Delta x]$}——\textbf{质量 $\rho \Delta x$}——\textbf{受张力 $T$ 作用}。
+
+\textbf{弦稍微倾斜时}——\textbf{左端的张力沿弦切向、右端也沿弦切向}——\textbf{它们的合力的"竖直分量" $\approx T(\partial u/\partial x)|_{x+\Delta x} - T(\partial u/\partial x)|_x = T u_{xx} \Delta x$}。
+
+\textbf{牛顿第二定律}：
+\[
+\rho \Delta x \cdot \frac{\partial^2 u}{\partial t^2} = T \, u_{xx} \Delta x
+\]
+\textbf{记 $c^2 = T/\rho$}：
+\begin{equation}
+\boxed{\, \frac{\partial^2 u}{\partial t^2} = c^2 \, \frac{\partial^2 u}{\partial x^2} \,}
+\end{equation}
+\textbf{$c$ 是弦上波速}——\textbf{张力越大、密度越小——波越快}。
+
+\subsection{d'Alembert 公式（无穷长弦）}
+
+\textbf{对于无边界问题}——\textbf{解可以写成"两个反向行波"的叠加}：
+\begin{equation}
+u(x, t) = F(x - ct) + G(x + ct)
+\end{equation}
+\textbf{$F$ 是一个不变形地向右跑的波}——\textbf{$G$ 是向左跑的波}——\textbf{两者完全独立}。\textbf{这就是双曲方程"有限传播速度"的直接体现}。
+
+\subsection{有界弦的振动模式（与吉他弦相同）}
+
+\textbf{对于 $[0, L]$ 上的弦，两端固定}——\textbf{分离变量给出}：
+\begin{equation}
+u(x, t) = \sum_{n=1}^{\infty} \sin\!\left(\frac{n\pi x}{L}\right) \left[ A_n \cos\!\left(\frac{n\pi c t}{L}\right) + B_n \sin\!\left(\frac{n\pi c t}{L}\right) \right]
+\end{equation}
+
+\textbf{每一个 $n$ 都是一个"模式"}——\textbf{第 $n$ 模式的频率是 $f_n = nc/(2L)$}——\textbf{$n=1$ 是基频}——\textbf{$n=2, 3, \dots$ 是\textbf{泛音}}——\textbf{这就是吉他弦发声的物理}。\textbf{乐器的音色 = 各次泛音的相对强度（即 $B_n$ 的分布）}。
+
+\section{§5 Laplace / Poisson 方程 / Elliptic}
+
+\subsection{Laplace 方程}
+\[
+\nabla^2 u = 0
+\]
+\textbf{含义}：\textbf{稳态——没有时间——没有源}。
+
+\subsection{Poisson 方程}
+\[
+\nabla^2 u = -f
+\]
+\textbf{含义}：\textbf{稳态——有源 $f$}。\textbf{$f$ 可以是电荷密度（电场）、热源密度（稳态传热）、流体源（不可压流）}。
+
+\subsection{物理画面：肥皂膜}
+
+\textbf{Laplace 方程的最直观画面}：\textbf{把一个金属丝弯成 3D 曲线——蘸肥皂水——形成的肥皂膜——\textbf{它在每一点的高度 $u(x, y)$ 满足 $\nabla^2 u = 0$}}。
+
+\textbf{为什么}？——\textbf{肥皂膜的表面张力让它"局部尽可能平"——也就是}\textbf{"每一点都是邻居的平均"——这正是 Laplace 方程的均值性质}。
+
+\subsection{边界条件的两种类型}
+
+\begin{itemize}
+\item \textbf{Dirichlet 条件}：\textbf{在边界上指定 $u$ 的值}（例：边界温度恒定）
+\item \textbf{Neumann 条件}：\textbf{在边界上指定 $\partial u / \partial n$}（例：边界绝热——法向导热 = 0）
+\end{itemize}
+
+\textbf{椭圆方程的强大之处}：\textbf{边界条件一旦给定——内部解就唯一确定}——\textbf{这就是"稳态"的含义}。
+
+\section{§6 数值方法 / Numerical Methods}
+
+\textbf{现实工程问题——99\% 没有解析解}——\textbf{所以你必须会数值方法}。\textbf{两大主流}：\textbf{有限差分（FDM）}和\textbf{有限元（FEM）}。
+
+\subsection{有限差分法 / Finite Difference Method}
+
+\textbf{核心思想}：\textbf{把所有偏导用差分代替}。
+
+\textbf{常用差分公式}：
+\begin{align}
+u_t &\approx \frac{u^{n+1}_i - u^n_i}{\Delta t} \quad \text{（前向）}\\
+u_{xx} &\approx \frac{u^n_{i+1} - 2 u^n_i + u^n_{i-1}}{\Delta x^2} \quad \text{（中心二阶）}
+\end{align}
+
+\textbf{把它们代进热传导方程}——\textbf{得显式更新公式}：
+\begin{equation}
+u^{n+1}_i = u^n_i + r (u^n_{i+1} - 2 u^n_i + u^n_{i-1}), \quad r = \frac{\alpha \Delta t}{\Delta x^2}
+\end{equation}
+\textbf{这就是}\textbf{显式格式}——\textbf{用今天的所有点——一步算出明天的每一点}。
+
+\textbf{稳定性条件}（\textbf{CFL 条件}）：\textbf{$r \le 1/2$}——\textbf{否则数值解会爆炸}——\textbf{这告诉你 $\Delta t$ 不能太大——必须配合 $\Delta x$}。
+
+\subsection{隐式格式（Crank-Nicolson）}
+
+\textbf{把右边的二阶导取"今天和明天的平均"}：
+\[
+\frac{u^{n+1}_i - u^n_i}{\Delta t} = \frac{\alpha}{2}\left[ (u_{xx})^n_i + (u_{xx})^{n+1}_i \right]
+\]
+\textbf{结果}：\textbf{每一步要解一个三对角线性方程组}——\textbf{慢一点——但\textbf{无条件稳定}}——\textbf{$\Delta t$ 可以取任意大}。\textbf{这是工业 CAE 软件的默认时间积分器}。
+
+\subsection{有限元法 / Finite Element Method（一段话概述）}
+
+\textbf{核心思想}：\textbf{把求解区域划成小三角形（"单元"）}——\textbf{在每个单元里把 $u$ 假设成简单的多项式（线性或二次）}——\textbf{用\textbf{弱形式 / 变分原理}}把 PDE 转化成一个线性方程组 $K \bm{u} = \bm{f}$ ——\textbf{然后求解大型稀疏线性系统}。
+
+\textbf{为什么 FEM 比 FDM 强}：
+
+\begin{itemize}
+\item \textbf{复杂几何}（任意形状的硅片、机翼、人体）——\textbf{FDM 只在规则网格上方便——FEM 在任意三角剖分上都行}
+\item \textbf{自然处理边界条件}——\textbf{弱形式自动把 Neumann 条件吸收进来}
+\item \textbf{自适应加密}——\textbf{应力集中处自动用更密的单元}
+\end{itemize}
+
+\textbf{ANSYS、COMSOL、Abaqus、FEniCS——它们底层都是 FEM}。
+
+\section{Aha 例子：手机芯片散热 / Smartphone Chip Heat Dissipation}
+
+\begin{tcolorbox}[ahabox={\Large Aha 例子：手机芯片散热}]
+\textbf{一颗 5G 手机的 SoC（系统级芯片）}——\textbf{尺寸约 10 mm $\times$ 10 mm $\times$ 1 mm}——\textbf{满负荷时功耗 5 W}——\textbf{热流密度 $\approx 50$ W/cm\textsuperscript{2}}（比一块家用电熨斗的发热面还高 5 倍）。
+
+\medskip
+
+\textbf{芯片不能超过 100°C}——\textbf{否则会降频甚至烧毁}——\textbf{所以散热设计是手机性能的瓶颈之一}。
+
+\medskip
+
+\textbf{工程师怎么"算热"}？——\textbf{建模成一个 2D 热传导问题}：
+\[
+\rho c \frac{\partial T}{\partial t} = k \nabla^2 T + Q(x, y)
+\]
+\begin{itemize}
+\item \textbf{$Q(x, y)$}：芯片上 CPU 核 / GPU 核 / 基带 等\textbf{发热源的位置和功率}
+\item \textbf{边界条件}：\textbf{芯片表面通过石墨片散热 → Neumann 条件 $-k \partial T / \partial n = h(T - T_\infty)$（对流冷却）}
+\item \textbf{初始条件}：\textbf{$T(x,y,0) = T_\infty$（室温 25°C）}
+\end{itemize}
+
+\medskip
+
+\textbf{我们用最简单的 1D 模型}——\textbf{把芯片简化成一根长度 $L = 10$ mm 的硅棒——一端贴着 CPU 核（发热源 $Q_0$）、另一端贴着散热片（恒温 25°C）}——\textbf{用显式有限差分跑一下}：
+
+\begin{itemize}
+\item \textbf{看到温度分布如何\textbf{从均匀的 25°C 逐渐\textbf{升起}}}
+\item \textbf{看到经过几十毫秒——\textbf{稳态形成}}
+\item \textbf{看到稳态下\textbf{热源端最高温度}——这是芯片设计师最关心的数字}
+\end{itemize}
+\end{tcolorbox}
+
+\subsection{Python 实现（仅 20 行核心代码）}
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+import matplotlib.pyplot as plt
+
+# ---- 物理参数 ----
+L = 1e-2            # 芯片长度 10 mm
+alpha = 8.8e-5      # 硅的热扩散率 m^2/s
+T0 = 25.0           # 室温
+Q = 5e7             # 体热源密度 W/m^3 (CPU 核局部)
+
+# ---- 离散参数 ----
+N = 100             # 空间网格点数
+dx = L / (N - 1)
+dt = 0.4 * dx**2 / alpha   # 满足 CFL: r = alpha*dt/dx^2 = 0.4
+n_steps = 4000
+
+# ---- 初始 / 边界 ----
+T = np.ones(N) * T0
+T[-1] = T0          # 散热片端恒温 (Dirichlet)
+
+# ---- 时间推进 (显式有限差分) ----
+r = alpha * dt / dx**2
+for n in range(n_steps):
+    T_new = T.copy()
+    T_new[1:-1] = T[1:-1] + r * (T[2:] - 2*T[1:-1] + T[:-2])
+    # 内部 30% 区域是 CPU 核 - 持续加热
+    src = (Q / 2330 / 700) * dt   # Q / (rho*cp) * dt
+    T_new[:int(0.3*N)] += src
+    T_new[-1] = T0    # 维持边界
+    T = T_new
+
+print(f"稳态最高温: {T.max():.1f} °C")
+plt.plot(np.linspace(0, L*1000, N), T)
+plt.xlabel('Position (mm)'); plt.ylabel('Temperature (°C)')
+plt.title('Smartphone Chip 1D Heat Profile')
+plt.savefig('chip_heat.png')
+\end{lstlisting}
+
+\textbf{运行结果}（典型输出）：\textbf{稳态最高温 $\approx 95$°C}——\textbf{紧贴 100°C 的红线}——\textbf{这就是为什么你打游戏久了手机会"降频"}。
+
+\textbf{工程师的工作}——\textbf{改 $Q$ 的分布}（让发热源更分散）、\textbf{改 $\alpha$}（换更高导热的封装材料，如石墨烯）、\textbf{改边界}（加均热板 VC，增大有效散热面积）——\textbf{每改一次——重跑仿真——找到最优方案}。
+
+\textbf{你刚才写的 20 行代码——和 ANSYS Icepak / Flotherm 干的是同一件事——只是它们做 3D + 复杂几何 + 耦合多物理场}。
+
+\section{现代视角 / Modern Perspective}
+
+\subsection{PDE 在 21 世纪的位置}
+
+\begin{itemize}
+\item \textbf{芯片设计}：\textbf{热传导 + 电场 Laplace + 应力分析}——\textbf{每代工艺验证都靠 PDE 仿真}
+\item \textbf{电磁仿真}：\textbf{天线设计、5G/6G 信道——Maxwell 方程组 = 一组双曲 PDE}
+\item \textbf{流体力学}：\textbf{飞机、汽车、火箭——Navier-Stokes（混合型 PDE）}——\textbf{是\textbf{千禧年七大难题之一}}
+\item \textbf{金融工程}：\textbf{Black-Scholes 期权定价方程——是一个抛物型 PDE}
+\item \textbf{医学影像}：\textbf{CT 重建、MRI——背后是 Radon 变换 + PDE}
+\item \textbf{气候模拟}：\textbf{全球气候模型——耦合大气 + 海洋 PDE，运行在超级计算机上}
+\end{itemize}
+
+\subsection{PDE 与机器学习}
+
+\textbf{2018 年以来一个迅速崛起的领域}：\textbf{\textbf{Physics-Informed Neural Networks（PINN）}}——\textbf{用神经网络逼近 PDE 的解}——\textbf{把"残差 $\| u_t - \alpha u_{xx} \|^2$"作为损失函数训练}——\textbf{$\Longrightarrow$ 可以处理\textbf{逆问题}（已知部分观测——反推参数 $\alpha$）和\textbf{高维 PDE}（$n>10$ 维度下传统 FEM 完全无能为力）}。
+
+\textbf{\textbf{Neural Operators}（Fourier Neural Operator, DeepONet）}——\textbf{学的不是某一个 PDE 的解——而是"从初始条件到解"的算子}——\textbf{训练好之后用 $10^{-4}$ 秒得到解——比传统 FEM 快 $10^4$--$10^6$ 倍}。\textbf{这是\textbf{科学计算+ML} 最有前途的方向之一}。
+
+\subsection{扩散模型——为什么名字里有"扩散"}
+
+\textbf{2020 年起 AI 绘画领域爆火的\textbf{扩散模型}}（Stable Diffusion, DALL-E, Midjourney 的核心）——\textbf{它的数学基础\textbf{完全是 PDE}}——\textbf{具体是 Fokker-Planck 方程（一个广义的热传导方程）}。
+
+\textbf{想法}：\textbf{前向过程把图像"加噪声"——本质是让像素概率分布按热传导方程演化——最终变成纯 Gaussian}。\textbf{反向过程用神经网络学习"反扩散"——从噪声里恢复图像}。
+
+\textbf{你今天学的热传导方程——就是 OpenAI / Stability AI 的看家本领之一}。
+
+\section{代码与思考 / Code and Exercises}
+
+\subsection{配套模块 \texttt{pde.py}}
+
+\begin{lstlisting}[language=Python]
+"""
+pde.py - 偏微分方程数值实验
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+
+def demo_classify():
+    """打印 PDE 三大类型 + 判别式"""
+    cases = [
+        ("Laplace  u_xx + u_yy = 0", 1, 0, 1),
+        ("Heat     u_t = u_xx     ", 1, 0, 0),
+        ("Wave     u_tt = c^2 u_xx", 1, 0, -1),
+    ]
+    for name, A, B, C in cases:
+        disc = B**2 - A*C
+        kind = "elliptic" if disc<0 else ("parabolic" if disc==0 else "hyperbolic")
+        print(f"{name}   disc={disc:+d}  {kind}")
+
+def demo_heat_1d(N=100, n_steps=2000):
+    """1D 热传导 - 显式有限差分"""
+    L, alpha = 1.0, 0.01
+    dx = L/(N-1); dt = 0.4*dx**2/alpha
+    x = np.linspace(0, L, N)
+    u = np.exp(-200*(x-0.5)**2)   # 初始尖峰
+    u[0] = u[-1] = 0
+    r = alpha*dt/dx**2
+    for _ in range(n_steps):
+        u[1:-1] += r*(u[2:] - 2*u[1:-1] + u[:-2])
+    plt.plot(x, u); plt.title('Heat after diffusion')
+    plt.savefig('heat_1d.png')
+
+def demo_wave_1d(N=200, n_steps=600):
+    """1D 弦振动 - 显式有限差分 (双时间层)"""
+    L, c = 1.0, 1.0
+    dx = L/(N-1); dt = 0.9*dx/c   # CFL: c*dt/dx <= 1
+    x = np.linspace(0, L, N)
+    u_prev = np.sin(np.pi*x)      # 初始: 基模
+    u_curr = u_prev.copy()
+    R = (c*dt/dx)**2
+    snapshots = []
+    for n in range(n_steps):
+        u_next = np.zeros_like(u_curr)
+        u_next[1:-1] = (2*u_curr[1:-1] - u_prev[1:-1]
+                        + R*(u_curr[2:] - 2*u_curr[1:-1] + u_curr[:-2]))
+        u_prev, u_curr = u_curr, u_next
+        if n % 100 == 0:
+            snapshots.append(u_curr.copy())
+    for s in snapshots:
+        plt.plot(x, s)
+    plt.title('Standing wave - fundamental mode')
+    plt.savefig('wave_1d.png')
+
+def demo_laplace_2d(N=50, n_iter=5000):
+    """2D Laplace 方程 - Jacobi 迭代"""
+    u = np.zeros((N, N))
+    u[0, :] = 100   # 顶部边界 100 度
+    for _ in range(n_iter):
+        u[1:-1,1:-1] = 0.25*(u[2:,1:-1] + u[:-2,1:-1]
+                              + u[1:-1,2:] + u[1:-1,:-2])
+    plt.contourf(u, 20, cmap='hot'); plt.colorbar()
+    plt.title('Laplace solution: top=100, others=0')
+    plt.savefig('laplace_2d.png')
+
+def demo_chip_heat():
+    """本章 Aha: 手机芯片 1D 散热"""
+    L, alpha, T0, Q = 1e-2, 8.8e-5, 25.0, 5e7
+    N = 100; dx = L/(N-1); dt = 0.4*dx**2/alpha
+    T = np.ones(N)*T0; T[-1] = T0
+    r = alpha*dt/dx**2
+    for _ in range(4000):
+        T_new = T.copy()
+        T_new[1:-1] = T[1:-1] + r*(T[2:] - 2*T[1:-1] + T[:-2])
+        T_new[:int(0.3*N)] += (Q/2330/700)*dt
+        T_new[-1] = T0
+        T = T_new
+    print(f"Max chip temperature: {T.max():.1f} C")
+
+def demo_fourier_series(N_terms=20):
+    """方波的 Fourier 级数 - 看 Gibbs 现象"""
+    x = np.linspace(-np.pi, np.pi, 1000)
+    s = np.zeros_like(x)
+    for k in range(1, N_terms+1, 2):
+        s += (4/np.pi) * np.sin(k*x)/k
+    plt.plot(x, s); plt.title(f'Square wave: {N_terms} terms')
+    plt.savefig('fourier_square.png')
+\end{lstlisting}
+
+\subsection{Aha 重点：1D 弦振动模式}
+
+\textbf{把 \texttt{demo\_wave\_1d()} 跑起来——你会亲眼看到\textbf{驻波模式}}：
+
+\begin{itemize}
+\item \textbf{初始时}：\textbf{弦呈现 $\sin(\pi x / L)$ 形状（基模）}
+\item \textbf{时间推进}：\textbf{弦"上下振动"——振幅按 $\cos(\pi c t / L)$ 周期变化}
+\item \textbf{两端始终为 0}——\textbf{中点振幅最大}
+\end{itemize}
+
+\textbf{改初始条件为 $\sin(2\pi x/L)$ 或 $\sin(3\pi x/L)$}——\textbf{你看到\textbf{二次、三次模式}}——\textbf{这就是吉他、小提琴、钢琴的"泛音"由来}。
+
+\textbf{改初始条件为\textbf{两种模式的叠加}}——\textbf{你会听到（如果转成声音）\textbf{和弦}}——\textbf{这就是音乐的物理}。
+
+\textbf{Fourier 1822 年用一辈子争来的"任意函数 = 三角级数"——你今天 30 行 Python 就能实验它}——\textbf{改 N\_terms——看方波被逼近的过程——\textbf{你会看到不肯消失的"Gibbs 跳动"}——这正是 Lagrange 当年最反对的"不收敛"现象}。
+
+\subsection{思考题 / Exercises}
+
+\begin{enumerate}
+\item \textbf{[直觉]} 用一句话区分"抛物"和"双曲"——不许用"判别式"三个字。
+\item \textbf{[判别]} 判断 $u_{tt} - 2 u_{xt} + u_{xx} + 3 u_t = 0$ 的类型。
+\item \textbf{[计算]} 用分离变量法求 $u_t = u_{xx}$，$u(0,t)=u(\pi,t)=0$，$u(x,0)=\sin(3x)$ 的解。
+\item \textbf{[代码]} 在 \texttt{demo\_heat\_1d()} 里把 $r = \alpha \Delta t / \Delta x^2$ 改成 $0.6$——\textbf{看会发生什么}（CFL 违反——数值爆炸）。
+\item \textbf{[代码]} 写一个 \texttt{demo\_drum\_2d()}——\textbf{解 2D 波动方程}——\textbf{看圆形鼓面的振动模式}（结果会涉及 Bessel 函数）。
+\item \textbf{[物理]} 为什么"反扩散"在数学上不稳定？——\textbf{用最大值原理给个直观解释}。
+\item \textbf{[ML]} 查一下\textbf{扩散模型}（Diffusion Model）和热传导方程的联系——\textbf{为什么 Stable Diffusion 的"噪声调度"本质是一个 PDE？}
+\item \textbf{[工程]} 用 \texttt{demo\_chip\_heat()}——\textbf{加大 $\alpha$（模拟换石墨烯封装）}——\textbf{看最高温度降了多少}——\textbf{这是工业散热设计的真实问题}。
+\item \textbf{[历史]} 查一下 Carleson 1966 年的工作——\textbf{它解决了 Fourier 200 年前留下的什么严格性问题？}
+\end{enumerate}
+
+\section{本章小结 / Chapter Summary}
+
+\begin{tcolorbox}[essbox={本章核心}]
+\begin{itemize}
+\item \textbf{PDE} 描述\textbf{场}（温度、电、压力、波）\textbf{在空间和时间上的演化}
+\item \textbf{三大类型}（看判别式 $\Delta = B^2 - AC$）：
+   \begin{itemize}
+   \item \textbf{椭圆}（$\Delta < 0$）—— Laplace / Poisson —— \textbf{稳态/平衡}
+   \item \textbf{抛物}（$\Delta = 0$）—— 热传导 —— \textbf{扩散/不可逆}
+   \item \textbf{双曲}（$\Delta > 0$）—— 波动 —— \textbf{振动/有限传播}
+   \end{itemize}
+\item \textbf{分离变量法}：\textbf{$u = X(x)T(t)$} → \textbf{两个 ODE} → \textbf{叠加成 Fourier 级数}
+\item \textbf{二阶导 $\partial^2 u / \partial x^2 \approx$ 邻居平均 - 自己}——\textbf{解释了"扩散"的本质}
+\item \textbf{有限差分}：\textbf{把偏导换成差分——20 行 Python 就能跑}——\textbf{注意 CFL 稳定性 $r \le 1/2$（热）或 $c\Delta t/\Delta x \le 1$（波）}
+\item \textbf{有限元}：\textbf{任意几何 + 弱形式}——\textbf{ANSYS / COMSOL 的内核}
+\item \textbf{现代应用}：\textbf{芯片散热、电磁仿真、流体、金融、医学影像、PINN、扩散模型}
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{下一章——复变函数与积分变换}——\textbf{我们让 Fourier 级数推广到 Fourier \textbf{变换}}——\textbf{进入信号处理的世界}。
+
+\clearpage

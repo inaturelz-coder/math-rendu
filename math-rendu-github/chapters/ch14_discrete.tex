@@ -1,0 +1,535 @@
+% =====================================================================
+%  第 14 章 · 离散数学初步 / Discrete Math (Optional)
+%  组合 + 图论 + 布尔逻辑 + 复杂度 + 计算机应用
+%  小故事：Euler 的 1736 Königsberg 七桥问题——图论的诞生
+%  Aha：旅行商问题 TSP（NP-complete）
+% =====================================================================
+
+\chapter{离散数学初步 / Discrete Math \textnormal{(Optional)}}
+\label{ch:discrete}
+
+\begin{quote}\itshape
+1736 年，俄国 Königsberg 城。一群闲来无事的市民——\\
+\textbf{在普雷格尔河的七座桥上散步}——他们提了一个问题：\\
+\textbf{能不能一次走完七座桥——每座只走一次}？\\
+\textbf{Euler 把这个散步问题——抽象成了点和线}——\textbf{图论由此诞生}。\\
+本章——\textbf{讲的就是 Euler 那一笔下去的世界}：\textbf{离散}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{这本书的前 13 章}——\textbf{都是连续数学}：\textbf{极限、导数、积分、矩阵、概率密度}——\textbf{背后的世界是\textbf{光滑}的}。
+
+\textbf{但工程的另一半世界——是\textbf{离散}的}：
+
+\begin{itemize}
+\item \textbf{你写的每一行 Python 代码}——\textbf{是离散的字符序列}
+\item \textbf{你训练神经网络用的 GPU}——\textbf{是离散的逻辑门}
+\item \textbf{你刷的微信消息}——\textbf{是离散的字节包}
+\item \textbf{你出门用的 GPS 路径规划}——\textbf{是离散的图搜索}
+\item \textbf{你网购的快递分拣}——\textbf{是离散的组合优化}
+\end{itemize}
+
+\textbf{我大学时学过《离散数学》——闵嗣鹤那本——薄薄的——但读起来像天书}。\textbf{真值表、合取范式、Warshall 算法、图同构}——\textbf{符号一大堆——不知道有什么用}。
+
+\textbf{直到我工作后做了一个\textbf{物流路径优化的小项目}——\textbf{我才反应过来}}：
+
+\begin{itemize}
+\item \textbf{最短路径——是 Dijkstra}
+\item \textbf{快递分拣的最优顺序——是 TSP}
+\item \textbf{快递员排班——是着色问题}
+\item \textbf{评估这件事难不难——是 P vs NP}
+\end{itemize}
+
+\textbf{这一章——\textbf{把离散数学的五件核心事——讲到能跑代码}}：\textbf{组合、图论、布尔逻辑、复杂度、应用}。
+
+\textbf{这是一本\textbf{为工科生写的离散导引}——不是 CS 专业的离散教材}——\textbf{所以薄}——\textbf{但够用}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{离散数学研究\textbf{可数对象之间的结构与关系}——\textbf{组合是数数、图论是连线、逻辑是判断、复杂度是分级}——\textbf{它们合起来是\textbf{计算机科学的数学骨架}}}。\\[6pt]
+\textbf{English}: Discrete mathematics studies the structure and relations among countable objects; combinatorics counts, graph theory connects, logic decides, complexity classifies——together they form the mathematical skeleton of computer science.
+\end{tcolorbox}
+
+\textbf{连续数学服务于物理与控制}——\textbf{离散数学服务于计算机与通信}。\textbf{现代工程师——两边都要懂一点}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{国内教材：闵嗣鹤 / 屈婉玲 / 耿素云}
+
+\textbf{屈婉玲、耿素云的《离散数学》（清华版）}——\textbf{是国内 CS 系的标配}。\textbf{它的结构}：
+
+\begin{itemize}
+\item 数理逻辑（命题 + 谓词）
+\item 集合论
+\item 代数系统（群、环、域、格、布尔代数）
+\item 图论
+\item 组合数学
+\end{itemize}
+
+\textbf{优点}：\textbf{严格 + 全 + 考研标配}。\\
+\textbf{缺点}：\textbf{讲群环域占了一半篇幅——\textbf{工科 99\% 用不到}}——\textbf{真正有用的图论和组合反而被压缩}。
+
+\subsection{国外教材：Rosen《Discrete Mathematics and Its Applications》}
+
+\textbf{Rosen 的 \emph{Discrete Mathematics and Its Applications}}（McGraw-Hill）——\textbf{是欧美 CS 系的国民教材}——\textbf{1000+ 页彩印}——\textbf{每个概念都配\textbf{密码、网络、算法}的例子}。
+
+\textbf{它比国内教材好的地方}：\textbf{应用驱动——每讲一个定理——就问"在 RSA 里怎么用？"}。
+
+\textbf{缺点}：\textbf{1000 页——你也读不完}。
+
+\subsection{Knuth《Concrete Mathematics》}
+
+\textbf{Knuth} 的 \emph{Concrete Mathematics}（"Concrete" = "Continuous" $\cap$ "Discrete"）——\textbf{是离散里的\textbf{圣经}}——\textbf{但偏算法分析}——\textbf{适合做学问的人}——\textbf{不适合入门}。
+
+\subsection{我的策略}
+
+\textbf{本章只做四件事}：
+
+\begin{enumerate}
+\item \textbf{组合}——\textbf{排列、组合、容斥——这是概率与算法分析的基础}
+\item \textbf{图论}——\textbf{Euler、Dijkstra、MST、着色——\textbf{99\% 工业用的图算法都在这}}
+\item \textbf{布尔代数 + 命题逻辑}——\textbf{数字电路、SQL where 子句、机器学习决策树的底层}
+\item \textbf{复杂度}——\textbf{Big-O、P/NP——告诉你"这事能不能做"}
+\end{enumerate}
+
+\begin{tcolorbox}[storybox={\Large 小故事：Euler 与 Königsberg 七桥（1736）}]
+\textbf{1736 年}——\textbf{东普鲁士 Königsberg 城}（今俄罗斯加里宁格勒）。\textbf{城里有一条普雷格尔河}——\textbf{河里有两座岛}——\textbf{岛与两岸之间——\textbf{共有七座桥}}。
+
+\medskip
+
+市民们闲来无事——\textbf{提了一个问题}：
+
+\begin{quote}\itshape
+"能不能找到一条路线——\textbf{一次走完七座桥}——\textbf{每座只走一次}——\textbf{回到出发点}？"
+\end{quote}
+
+大家走了几个月——\textbf{没人能做到}——\textbf{但也没人能证明做不到}。
+
+\medskip
+
+\textbf{Leonhard Euler}（29 岁，那时还在圣彼得堡）——\textbf{听说了这个问题}——\textbf{他做了一件革命性的事}：
+
+\begin{quote}
+\textbf{他把"桥"画成"线"——\textbf{把"陆地"画成"点"}}。
+\end{quote}
+
+\textbf{于是七桥问题}——\textbf{变成了 4 个点 + 7 条边的图}。
+
+\medskip
+
+\textbf{Euler 证明}：
+
+\begin{quote}\itshape
+\textbf{一笔画的充要条件}——\textbf{所有点的度数都是偶数}（回路）——\textbf{或者只有 2 个奇度点}（非回路）。
+\end{quote}
+
+\textbf{Königsberg 的 4 个点——\textbf{度数分别是 3, 3, 3, 5——\textbf{全是奇数}}}——\textbf{所以做不到}。
+
+\medskip
+
+\textbf{Euler 这一笔下去}——\textbf{发明了\textbf{图论}}——\textbf{发明了\textbf{拓扑学的雏形}}——\textbf{为 200 年后的\textbf{电路网络、互联网、社交网络、神经网络}——\textbf{铺好了路}}。
+
+\medskip
+
+\textbf{1875 年——Königsberg 又建了一座桥（第 8 座）}——\textbf{度数全变了}——\textbf{这次\textbf{有解}}。\textbf{但那时——\textbf{已经不重要了}}——\textbf{因为图论已经长成大树}。
+
+\medskip
+
+\textbf{二战中——\textbf{Königsberg 被苏军炸毁了 5 座桥}}——\textbf{现在只剩 2 座}——\textbf{但 Euler 那一笔——\textbf{永远在那里}}。
+\end{tcolorbox}
+
+\section{§1 组合数学 / Combinatorics}
+
+\subsection{排列 / Permutation}
+
+\textbf{从 $n$ 个不同元素中取 $k$ 个——\textbf{按顺序}排成一列}：
+
+\[
+P(n,k) = \frac{n!}{(n-k)!} = n(n-1)(n-2)\cdots(n-k+1)
+\]
+
+\textbf{典型例子}：\textbf{10 匹马跑步——前 3 名的颁奖顺序有多少种}？$P(10,3) = 10 \times 9 \times 8 = 720$ 种。
+
+\subsection{组合 / Combination}
+
+\textbf{从 $n$ 个不同元素中取 $k$ 个——\textbf{不分顺序}}：
+
+\[
+\binom{n}{k} = C(n,k) = \frac{n!}{k!(n-k)!}
+\]
+
+\textbf{典型例子}：\textbf{36 人班里选 5 个班委——多少种选法}？$\binom{36}{5} = 376{,}992$ 种。
+
+\textbf{记忆要点}：\textbf{排列 = 顺序重要}（金银铜）——\textbf{组合 = 顺序无关}（班委没差别）。
+
+\subsection{二项式定理 / Binomial Theorem}
+
+\[
+(a+b)^n = \sum_{k=0}^{n} \binom{n}{k} a^{n-k} b^k
+\]
+
+\textbf{这就是\textbf{第 10 章二项分布}的源头}——\textbf{抛 $n$ 次硬币——\textbf{正面 $k$ 次的概率}——是 $\binom{n}{k} p^k (1-p)^{n-k}$}。
+
+\subsection{容斥原理 / Inclusion-Exclusion}
+
+\textbf{两个集合}：$|A \cup B| = |A| + |B| - |A \cap B|$。
+
+\textbf{三个集合}：
+\[
+|A \cup B \cup C| = |A| + |B| + |C| - |A \cap B| - |A \cap C| - |B \cap C| + |A \cap B \cap C|
+\]
+
+\textbf{$n$ 个集合的一般式}：
+\[
+\Big|\bigcup_{i=1}^{n} A_i\Big| = \sum_{k=1}^{n} (-1)^{k+1} \sum_{|S|=k} \Big|\bigcap_{i \in S} A_i\Big|
+\]
+
+\textbf{典型应用}：\textbf{错排问题——$n$ 个人交换礼物——\textbf{没有一个人拿到自己的礼物——的概率}}——\textbf{用容斥可证——\textbf{$n \to \infty$ 时趋于 $1/e \approx 0.368$}}。
+
+\section{§2 图论基础 / Graph Theory}
+
+\subsection{图的定义 / Definition}
+
+\textbf{图} $G = (V, E)$——\textbf{$V$ 是点集——$E$ 是边集}。
+
+\begin{itemize}
+\item \textbf{无向图 / 有向图}（边有无方向）
+\item \textbf{加权图 / 无权图}（边有无权重）
+\item \textbf{度数 degree}：\textbf{与某个顶点相连的边数}
+\end{itemize}
+
+\textbf{握手定理}：$\sum_{v \in V} \deg(v) = 2|E|$——\textbf{所有度数加起来 = 边数 $\times$ 2}。
+
+\subsection{树 / Tree}
+
+\textbf{树} = \textbf{无环连通图}——\textbf{$n$ 个点的树——恰有 $n-1$ 条边}。
+
+\textbf{两个关键应用}：
+
+\begin{itemize}
+\item \textbf{二叉搜索树 BST}——\textbf{数据库索引}
+\item \textbf{最小生成树 MST}——\textbf{Kruskal / Prim 算法}——\textbf{铺光缆、修铁路——\textbf{用最少的代价连通所有点}}
+\end{itemize}
+
+\subsection{最短路径 / Shortest Path}
+
+\textbf{Dijkstra 算法}（1956 年——\textbf{20 分钟在咖啡店里想出来}）：
+
+\textbf{思想}：\textbf{从起点出发——\textbf{每次扩展当前距离最小的未访问点}}——\textbf{时间复杂度 $O((V+E)\log V)$}（用堆）。
+
+\textbf{应用}：
+
+\begin{itemize}
+\item \textbf{高德地图 / Google Maps} —— \textbf{开车路径规划}
+\item \textbf{网络路由} —— \textbf{OSPF 协议}
+\item \textbf{物流配送}
+\end{itemize}
+
+\textbf{Bellman-Ford} —— \textbf{允许负权——\textbf{$O(VE)$}}。\textbf{Floyd-Warshall} —— \textbf{所有点对——\textbf{$O(V^3)$}}。
+
+\subsection{着色 / Coloring}
+
+\textbf{图着色问题}：\textbf{给图的每个顶点涂色——\textbf{相邻顶点颜色不同}——\textbf{最少几种颜色}}？
+
+\begin{itemize}
+\item \textbf{地图四色定理}（1976 年首次借助计算机证明）—— \textbf{平面图 4 色足够}
+\item \textbf{考试排考场}—— \textbf{相邻时段不能同人考}—— \textbf{顶点 = 课、边 = 冲突、颜色 = 时段}
+\item \textbf{编译器寄存器分配}—— \textbf{LLVM 用图着色把变量映射到 CPU 寄存器}
+\end{itemize}
+
+\textbf{这是一个 NP-hard 问题}——\textbf{下一节会讲}。
+
+\section{§3 布尔代数 + 命题逻辑 / Boolean Algebra and Propositional Logic}
+
+\subsection{布尔代数 / Boolean Algebra}
+
+\textbf{由 George Boole（1847 年）创立}——\textbf{只有两个值}：$\{0, 1\}$ 或 $\{\text{false}, \text{true}\}$。
+
+\textbf{三个基本运算}：
+
+\begin{itemize}
+\item \textbf{与 AND}：$a \land b$（都为真才真）
+\item \textbf{或 OR}：$a \lor b$（任一真即真）
+\item \textbf{非 NOT}：$\neg a$（取反）
+\end{itemize}
+
+\textbf{De Morgan 律}：
+\[
+\neg(a \land b) = \neg a \lor \neg b, \qquad \neg(a \lor b) = \neg a \land \neg b
+\]
+
+\textbf{这是\textbf{Shannon 1937 年硕士论文}的灵感}——\textbf{他证明了\textbf{布尔代数可以用电路实现}}——\textbf{从而开启了数字电路 + 计算机时代}。
+
+\subsection{命题逻辑 / Propositional Logic}
+
+\textbf{命题}：\textbf{非真即假的陈述句}——例如 "$2+2 = 4$"。
+
+\textbf{蕴含 implication}：$p \to q$——\textbf{"若 $p$ 则 $q$"}——\textbf{只有 $p$ 真而 $q$ 假时才为假}。
+
+\textbf{等价 equivalence}：$p \leftrightarrow q$。
+
+\textbf{重要等式}：
+\[
+p \to q \;\equiv\; \neg p \lor q \;\equiv\; \neg q \to \neg p \quad (\text{逆否命题})
+\]
+
+\subsection{真值表 / Truth Table}
+
+\textbf{$n$ 个变量——\textbf{有 $2^n$ 行}}。\textbf{用真值表——\textbf{你可以机械地证明任何命题逻辑等价式}}。
+
+\textbf{现代应用}：\textbf{SQL 的 WHERE 子句、Python 的 if 条件、神经网络的 ReLU 门控、CPU 的 ALU 设计}——\textbf{全是布尔代数的工程化}。
+
+\section{§4 算法复杂度 / Complexity}
+
+\subsection{Big-O 记号}
+
+\textbf{$f(n) = O(g(n))$ 表示}：\textbf{存在常数 $C$ 和 $n_0$——\textbf{使得 $f(n) \le C \cdot g(n)$ 对所有 $n \ge n_0$ 成立}}。
+
+\textbf{常见量级}（从快到慢）：
+\[
+O(1) < O(\log n) < O(n) < O(n \log n) < O(n^2) < O(n^3) < O(2^n) < O(n!)
+\]
+
+\textbf{典型例子}：
+
+\begin{itemize}
+\item \textbf{二分查找}：$O(\log n)$
+\item \textbf{归并排序 / 快排}：$O(n \log n)$
+\item \textbf{矩阵乘法（朴素）}：$O(n^3)$
+\item \textbf{穷举所有子集}：$O(2^n)$
+\item \textbf{TSP 暴力解}：$O(n!)$
+\end{itemize}
+
+\subsection{P 与 NP}
+
+\textbf{P 类}：\textbf{多项式时间内可解的问题}（$O(n^k)$ 某个常数 $k$）。\textbf{"容易做"}。
+
+\textbf{NP 类}：\textbf{多项式时间内可\textbf{验证答案}的问题}。\textbf{"容易验证"}。
+
+\textbf{显然 $P \subseteq NP$}——\textbf{但\textbf{$P = NP$ 吗}}？——\textbf{这是\textbf{Clay 研究所 7 大千禧难题之一}——\textbf{悬赏 100 万美金}——\textbf{至今未解}}。
+
+\textbf{NP-complete}：\textbf{NP 中"最难"的一类问题}——\textbf{任何 NP 问题都可在多项式时间归约到它}。\textbf{若任何一个 NP-complete 问题有多项式解——\textbf{$P = NP$ 立刻成立}}。
+
+\textbf{经典 NP-complete 问题}：
+
+\begin{itemize}
+\item \textbf{SAT}（布尔可满足性）—— \textbf{第一个被证明 NP-complete 的}（Cook 1971）
+\item \textbf{TSP}（旅行商问题）
+\item \textbf{图着色}（$k \ge 3$）
+\item \textbf{背包问题}（0-1 Knapsack）
+\item \textbf{子集和问题}
+\end{itemize}
+
+\textbf{对工程师的实操含义}：
+
+\begin{quote}\itshape
+\textbf{遇到 NP-complete 问题——\textbf{别想着求精确解}}——\textbf{用\textbf{近似算法、启发式、ILP solver、模拟退火}}—— \textbf{已经够好了}。
+\end{quote}
+
+\section{§5 应用：计算机 + 网络 + 编码 + 密码}
+
+\subsection{计算机：数字电路与 CPU}
+
+\textbf{每一个 CPU 内部}——\textbf{全是\textbf{NAND 门}（与非门）}——\textbf{用 NAND 可以构造\textbf{任意布尔函数}——\textbf{所以 NAND 称为"通用门"}}。
+
+\textbf{你用 Python 写的 \texttt{if a and b:}}——\textbf{最终编译成的机器码——\textbf{是几纳秒内 NAND 门翻转的物理过程}}。
+
+\subsection{网络：路由协议}
+
+\textbf{互联网的核心 = 一个巨大的有向加权图}：
+
+\begin{itemize}
+\item \textbf{顶点}：\textbf{路由器、自治系统 AS}
+\item \textbf{边}：\textbf{物理链路、带宽、延迟}
+\item \textbf{算法}：\textbf{OSPF 用 Dijkstra} —— \textbf{BGP 用距离向量 + 路径选择}
+\end{itemize}
+
+\subsection{编码：Hamming 与 Reed-Solomon}
+
+\textbf{你的硬盘、SSD、QR 码、蓝光光盘}——\textbf{全靠\textbf{纠错码}抗噪声}：
+
+\begin{itemize}
+\item \textbf{Hamming 码 (7,4)} —— \textbf{4 比特数据 + 3 比特校验 = 可纠 1 位错}
+\item \textbf{Reed-Solomon 码} —— \textbf{CD / DVD / QR 的标配}
+\item \textbf{LDPC / Turbo 码} —— \textbf{5G + WiFi 6 的物理层}
+\end{itemize}
+
+\textbf{这些码的基础}——\textbf{是\textbf{有限域 GF($2^n$) 上的线性代数}}——\textbf{离散版的第 7 章}。
+
+\subsection{密码：RSA 与椭圆曲线}
+
+\textbf{RSA}（1977）的核心：
+
+\begin{enumerate}
+\item \textbf{选两个大素数 $p, q$}（每个 1024 位）
+\item \textbf{$n = pq$——容易算}
+\item \textbf{从 $n$ 反推 $p, q$——\textbf{是 NP-hard 的因子分解问题}——\textbf{现代计算机算不动}}
+\end{enumerate}
+
+\textbf{这就是 RSA 安全性的根基}：\textbf{乘法易、因子分解难}。
+
+\textbf{若量子计算机成熟}——\textbf{Shor 算法可在多项式时间分解大数——\textbf{RSA 就崩了}}——\textbf{这就是为什么\textbf{后量子密码学}（lattice-based）正在成为新标准}。
+
+\section{Python 模块：\texttt{discrete.py}}
+
+本章对应的 Python 模块——\textbf{把组合、图论、布尔逻辑、复杂度示例——全部集中}。
+
+\begin{lstlisting}[language=Python, caption={discrete.py 核心 API}]
+"""
+discrete.py —— Discrete math toolkit
+组合 + 图论 + 布尔 + 复杂度
+依赖：numpy, networkx, matplotlib
+"""
+
+import math
+from itertools import permutations, combinations
+import networkx as nx
+import matplotlib.pyplot as plt
+
+
+# -------------------- §1 Combinatorics --------------------
+
+def n_perm(n, k):
+    """P(n,k) = n!/(n-k)!"""
+    return math.perm(n, k)
+
+def n_comb(n, k):
+    """C(n,k) = n!/(k!(n-k)!)"""
+    return math.comb(n, k)
+
+def derangement(n):
+    """错排数 D_n —— 用容斥公式"""
+    return round(math.factorial(n) * sum(
+        (-1)**k / math.factorial(k) for k in range(n + 1)
+    ))
+
+
+# -------------------- §2 Graph Theory --------------------
+
+def shortest_path(edges, src, dst):
+    """Dijkstra：edges = [(u,v,w), ...]"""
+    G = nx.Graph()
+    G.add_weighted_edges_from(edges)
+    return nx.shortest_path(G, src, dst, weight='weight'), \
+           nx.shortest_path_length(G, src, dst, weight='weight')
+
+def min_spanning_tree(edges):
+    """Kruskal MST"""
+    G = nx.Graph()
+    G.add_weighted_edges_from(edges)
+    return list(nx.minimum_spanning_edges(G, data=True))
+
+def graph_coloring(edges):
+    """贪心着色——返回每个点的颜色编号"""
+    G = nx.Graph()
+    G.add_edges_from(edges)
+    return nx.coloring.greedy_color(G, strategy='largest_first')
+
+
+# -------------------- §3 Boolean Logic --------------------
+
+def truth_table(expr, variables):
+    """expr 是一个 lambda；variables 是变量名列表
+       返回真值表（list of dict）"""
+    rows = []
+    for bits in range(2**len(variables)):
+        assignment = {v: bool((bits >> i) & 1)
+                      for i, v in enumerate(variables)}
+        assignment['out'] = expr(**assignment)
+        rows.append(assignment)
+    return rows
+
+
+# -------------------- §4 Complexity demo --------------------
+
+def tsp_bruteforce(dist):
+    """TSP O(n!)——只能小规模玩"""
+    n = len(dist)
+    best, best_path = float('inf'), None
+    for perm in permutations(range(1, n)):
+        path = (0,) + perm + (0,)
+        cost = sum(dist[path[i]][path[i+1]] for i in range(n))
+        if cost < best:
+            best, best_path = cost, path
+    return best, best_path
+\end{lstlisting}
+
+\textbf{安装}：\texttt{pip install networkx matplotlib}。
+
+\section{Aha 时刻：旅行商问题 TSP / Aha: Travelling Salesman}
+
+\begin{tcolorbox}[ahabox={\Large Aha：TSP 与 NP-complete 的边界}]
+\textbf{问题}：\textbf{一个推销员要访问 $n$ 个城市——\textbf{每个城市恰好一次}——\textbf{最后回到出发点}——\textbf{总路程最短}}。
+
+\medskip
+
+\textbf{暴力解}：\textbf{枚举所有 $(n-1)!/2$ 条回路}——\textbf{选最短的}。
+
+\begin{itemize}
+\item $n = 10$：\textbf{$181{,}440$ 条}——\textbf{毫秒}
+\item $n = 15$：\textbf{$4 \times 10^{10}$ 条}——\textbf{几分钟}
+\item $n = 20$：\textbf{$6 \times 10^{16}$ 条}——\textbf{几个月}
+\item $n = 30$：\textbf{$4 \times 10^{30}$ 条}——\textbf{\textbf{宇宙年龄都不够}}
+\end{itemize}
+
+\medskip
+
+\textbf{TSP 是\textbf{典型的 NP-hard}}——\textbf{没有已知的多项式算法}。
+
+\medskip
+
+\textbf{但工业里 TSP 必须解}：\textbf{京东配送、Uber 接单、芯片打线、PCB 钻孔}——\textbf{都是 TSP}。
+
+\medskip
+
+\textbf{工程师怎么办}？——\textbf{我们不求精确解——\textbf{求近似解}}：
+
+\begin{enumerate}
+\item \textbf{贪心}（最近邻）—— $O(n^2)$ —— \textbf{快}——\textbf{但可能差 25\%}
+\item \textbf{Christofides 算法}（基于 MST + 完美匹配）—— $O(n^3)$ —— \textbf{保证不超过最优 $1.5$ 倍}
+\item \textbf{2-opt / Lin-Kernighan} —— \textbf{局部搜索}——\textbf{实际效果接近最优}
+\item \textbf{模拟退火 / 遗传算法 / 蚁群算法} —— \textbf{随机启发式}
+\item \textbf{Concorde solver}（最强精确求解器）—— \textbf{2006 年解了 $85{,}900$ 城问题}
+\end{enumerate}
+
+\medskip
+
+\textbf{这是\textbf{工程实用主义的胜利}}——\textbf{理论说 NP-hard——\textbf{工程说"够好就行"}}。
+
+\medskip
+
+\textbf{Aha}：\textbf{学了 P/NP——\textbf{你才知道哪些事\textbf{别白费力气求最优}}——\textbf{这本身就是一种\textbf{智慧}}}。
+
+\medskip
+
+\textbf{TSP 与第 13 章的优化呼应}：\textbf{凸优化 = P（多项式可解）——\textbf{TSP = NP-hard（启发式 + 近似）}}——\textbf{两者一起——\textbf{构成现代工程优化的完整图景}}。
+\end{tcolorbox}
+
+\section{练习 / Exercises}
+
+\begin{enumerate}
+\item \textbf{容斥}：\textbf{用容斥原理证明}——\textbf{$n=5$ 时错排数 $D_5 = 44$}——\textbf{并验证 $D_n/n! \to 1/e$}。
+\item \textbf{Dijkstra}：\textbf{在 \texttt{networkx} 里构造一个 6 点 9 边的加权图——\textbf{用 \texttt{shortest\_path} 验证}}。
+\item \textbf{MST}：\textbf{给定 8 个城市坐标——\textbf{用 \texttt{min\_spanning\_tree} 算最小连通路径}——\textbf{并画图}}。
+\item \textbf{着色}：\textbf{用 \texttt{graph\_coloring} 给\textbf{彼得森图}（10 顶 15 边）着色}——\textbf{需要几种颜色}？
+\item \textbf{布尔}：\textbf{用 \texttt{truth\_table} 验证 De Morgan 律}——\textbf{$\neg(a \land b) \equiv \neg a \lor \neg b$}。
+\item \textbf{TSP}：\textbf{用 \texttt{tsp\_bruteforce} 在 8 个随机城市上求最短回路}——\textbf{并与贪心最近邻比较\textbf{差多少}}。
+\item \textbf{复杂度}：\textbf{对 $n = 100, 1000, 10000$ 的列表——\textbf{分别用线性查找和二分查找——\textbf{画时间 vs $n$ 的对数图}——\textbf{验证 $O(n)$ vs $O(\log n)$}}}。
+\item \textbf{RSA}：\textbf{用 \texttt{sympy.nextprime} 选两个 50 位素数——\textbf{算 $n = pq$}——\textbf{试着用 \texttt{sympy.factorint} 分解}——\textbf{观察用时}}。
+\end{enumerate}
+
+\section{回顾 / Recap}
+
+\begin{tcolorbox}[essbox={本章一句话总结}]
+\textbf{离散数学 = 计算机科学的数学骨架}。\textbf{组合数数——图论连线——逻辑判断——复杂度分级}——\textbf{TSP 告诉你"不是所有问题都能精确解"}。\textbf{Euler 的一笔下去——\textbf{开启了 290 年的图论与计算机时代}}。
+\end{tcolorbox}
+
+\textbf{至此}——\textbf{这本书的 14 章\textbf{全部讲完}}——\textbf{从 Newton 的微积分——到 Adam 的优化——到 Euler 的图论}——\textbf{我们走过了\textbf{从 1665 到 2026 共 361 年}的工科数学}。
+
+\textbf{附录 A 给你\textbf{符号速查表}——\textbf{附录 B 给你\textbf{所有 Python 模块的索引}}——\textbf{这本书可以放在案头一辈子}}。
+
+\textbf{祝你——\textbf{打通任督二脉}}。
+
+\clearpage

@@ -1,0 +1,742 @@
+% =====================================================================
+%  第 7 章 · 线代核心 / Linear Algebra II
+%  特征值、特征向量、对角化、内积、正交基、Gram-Schmidt、
+%  对称矩阵、谱定理、厄米矩阵、二次型、正定矩阵
+%  小故事：Hilbert 与"Hilbert 空间"的诞生（20 世纪初 · Göttingen）
+%  Aha：人脸识别的特征向量（Eigenfaces）
+% =====================================================================
+
+\chapter{线代核心 / Linear Algebra II}
+\label{ch:linalg2}
+
+\begin{quote}\itshape
+1904 年，德国 Göttingen。\\
+一位 42 岁的数学家——在他的"积分方程"讲义里——\textbf{第一次写下了一个无限维空间里的"内积"}。\\
+他叫 \textbf{David Hilbert}。\\
+20 年后——\textbf{Heisenberg 和 Schrödinger} 用这个空间——描述了电子和原子——\textbf{量子力学诞生}。\\[6pt]
+100 年后——\textbf{你打开手机的相册——它自动把你和家人分组}——\textbf{背后是同一个空间的特征向量}——\textbf{从 Hilbert 到 Eigenface——一脉相承}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{第 6 章我们学了"矩阵是线性变换"}——\textbf{这一章我们要回答一个更深的问题}：
+
+\textbf{一个矩阵——它最"本质"的样子——到底是什么}？
+
+\textbf{这个问题——是 20 世纪整个数学的中心问题之一}——\textbf{答案叫"特征值分解"}——\textbf{它是 21 世纪机器学习的根}。
+
+\textbf{我研究生第一次真正"用"线代}——\textbf{不是解方程}——\textbf{而是做人脸识别}。
+
+\textbf{老板给我一堆人脸照片}——\textbf{每张 92×112 像素}——\textbf{展平成一个 10304 维的向量}——\textbf{他说"算它们的协方差矩阵——然后求前 50 个特征向量"}。
+
+\textbf{我把那 50 个特征向量画出来}——\textbf{每一张——都是一张"幽灵般的人脸"}——\textbf{他们叫 Eigenfaces}。
+
+\textbf{我那一刻才明白}——\textbf{特征向量不是"满足 $A\bm{v} = \lambda\bm{v}$ 的奇怪向量"}——\textbf{而是"数据自己最想沿着延伸的方向"}——\textbf{是矩阵"骨架"里的"主轴"}。
+
+\textbf{从那以后——我看任何矩阵——都先问"它的特征向量长什么样"}。
+
+\textbf{这一章——就是讲这件事}。我们按下面这个顺序走：
+
+\begin{itemize}
+\item \textbf{第一步}：\textbf{特征值 + 特征向量}——\textbf{矩阵不会旋转的那些方向}
+\item \textbf{第二步}：\textbf{对角化 + 矩阵幂}——\textbf{找最好的基——让矩阵变成对角阵}
+\item \textbf{第三步}：\textbf{内积 + 正交基 + Gram-Schmidt}——\textbf{把"角度"和"长度"装进空间里}
+\item \textbf{第四步}：\textbf{对称矩阵 + 谱定理}——\textbf{所有数据科学背后的那个大定理}
+\item \textbf{第五步}：\textbf{厄米矩阵}——\textbf{对称矩阵的复数版——通向量子力学}
+\item \textbf{第六步}：\textbf{二次型 + 正定矩阵}——\textbf{凸优化、机器学习损失函数的几何}
+\end{itemize}
+
+\textbf{这一章——可以说是整本书 + 整个 ML 时代——最重要的一章}。\textbf{读懂它——你会拿到一把万能钥匙}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{特征向量是矩阵"不旋转、只缩放"的方向——对角化就是换一组基——让矩阵在新基下变成最简单的对角形式}。\\[6pt]
+\textbf{English}: Eigenvectors are the directions a matrix only stretches but never rotates; diagonalization is choosing a new basis so the matrix becomes a diagonal one.
+\end{tcolorbox}
+
+\textbf{记住这一句}——\textbf{这一章已经讲完了 60\%}。剩下的 40\% 是\textbf{对称矩阵的特殊待遇 + 内积带来的"几何"}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{同济《线性代数》第五章}
+
+\textbf{同济版把这一章压缩成 30 页}——\textbf{叫"相似矩阵与二次型"}——\textbf{包括特征值、对角化、对称矩阵、二次型}。
+
+\textbf{优点}：\textbf{紧凑、考研覆盖、公式齐全}。
+
+\textbf{缺点}（致命）：
+
+\begin{enumerate}
+\item \textbf{"特征向量"的几何意义只字未提}——\textbf{学生算了一辈子 $\det(A - \lambda I) = 0$——不知道这个 $\lambda$ 是什么}
+\item \textbf{"对角化"被讲成纯粹的计算技巧}——\textbf{从来没说"对角化 = 换一组好基"}
+\item \textbf{"谱定理"几乎没讲}——\textbf{只说"实对称矩阵可对角化"}——\textbf{没说为什么这件事是 20 世纪数学的奇迹}
+\item \textbf{二次型完全脱离几何}——\textbf{讲到"正惯性指数"——学生彻底投降}
+\end{enumerate}
+
+\subsection{Strang《Linear Algebra and Its Applications》第 5--7 章}
+
+\textbf{Strang 是这一章的最佳老师}。
+
+\textbf{他的特征值章节}——\textbf{第一页就画了一个"矩阵把空间拉伸"的图}——\textbf{然后告诉你 $\bm{v}$ 是那些"只被拉、不被转"的方向}。
+
+\textbf{他的谱定理}——\textbf{他说"这是线性代数的核心定理"}——\textbf{不止讲完——还讲了为什么}。
+
+\subsection{Axler《Linear Algebra Done Right》}
+
+\textbf{Sheldon Axler 的这本书}——\textbf{是数学系本科生的"硬核"教材}。
+
+\textbf{Axler 的主张}：\textbf{把"行列式"推迟到最后}——\textbf{用"特征值"作为整本书的主线}。
+
+\textbf{他证明谱定理的方式——比任何教科书都优雅}——\textbf{推荐数学品味强的同学读}。
+
+\subsection{我的策略}
+
+\textbf{这一章我们要做三件事}：
+
+\begin{enumerate}
+\item \textbf{把特征值 + 特征向量的几何意义讲到刻进骨子里}——\textbf{它们是矩阵"骨架"的主轴}
+\item \textbf{把谱定理 + 对角化讲清楚}——\textbf{它是 PCA / Eigenface / 物理振动模态背后的同一个定理}
+\item \textbf{把厄米矩阵和量子力学的桥搭起来}——\textbf{让你知道线代不只是工程工具——还是物理的语言}
+\end{enumerate}
+
+\begin{tcolorbox}[storybox={\Large 小故事：Hilbert 与"Hilbert 空间"的诞生（1904 · Göttingen）}]
+\textbf{David Hilbert}（1862--1943）——\textbf{德国数学家}——\textbf{20 世纪上半叶最伟大的数学家——没有之一}。
+
+\medskip
+
+\textbf{1900 年——巴黎国际数学家大会}——\textbf{他登台演讲——提出了"23 个数学问题"}——\textbf{为整个 20 世纪数学定下了路线图}。
+
+\medskip
+
+\textbf{但他真正改变物理学的——是 1904 年开始研究的"积分方程"}。
+
+\medskip
+
+那时候——\textbf{物理学家在研究"弦的振动"、"热的传导"、"光的衍射"}——\textbf{这些问题都归结为一类奇怪的方程}——\textbf{未知数不是一个数 $x$——而是一个函数 $f(x)$}。
+
+\medskip
+
+\textbf{Hilbert 灵机一动}——\textbf{他说}：
+
+\medskip
+
+\textit{"如果我把每一个函数 $f(x)$ 当成一个 \textbf{向量}——把所有这样的函数放在一起当成一个 \textbf{无限维空间}——那么积分方程就变成了无限维空间里的线性方程组——所有线代的工具都能搬过来用！"}
+
+\medskip
+
+\textbf{这个无限维空间——后来被命名为 Hilbert 空间}（Hilbert Space）。
+
+\medskip
+
+\textbf{它的核心结构是"内积"} $\langle f, g \rangle = \int f(x)\overline{g(x)}\,dx$——\textbf{有了内积——就有了"角度"和"长度"和"正交"}——\textbf{Hilbert 把整个线代搬进了无限维}。
+
+\medskip
+
+\textbf{1925 年}——\textbf{Heisenberg} 在哥廷根读博士时——\textbf{用矩阵描述电子的状态}——\textbf{Schrödinger} 用波函数描述同一件事——\textbf{两个人吵了整整一年——谁对谁错}？
+
+\medskip
+
+\textbf{1926 年——Hilbert 的学生 John von Neumann} 站出来——\textbf{他说"你们俩都对——你们的对象都活在同一个 Hilbert 空间里——只是用了不同的基！"}
+
+\medskip
+
+\textbf{这个证明——是 20 世纪物理学最优雅的统一}——\textbf{量子力学从此被装进了"Hilbert 空间 + 厄米算子"的框架}——\textbf{一直用到今天}。
+
+\medskip
+
+\textbf{Hilbert 一生最喜欢说的一句话}：
+
+\medskip
+
+\textit{"Wir m\"ussen wissen —— wir werden wissen."}（\textbf{我们必须知道——我们终将知道}）
+
+\medskip
+
+\textbf{这句话刻在他 Göttingen 的墓碑上}。
+
+\medskip
+
+\textbf{今天——你打开 PyTorch——\texttt{torch.linalg.eigh(A)}——它给你的特征向量在 Hilbert 空间里"正交"}——\textbf{每一次调用——都是对这位 19 世纪老者的致敬}。
+\end{tcolorbox}
+
+\section{直觉 / Intuition}
+
+\subsection{特征向量：矩阵不旋转的方向}
+
+\textbf{先讲一个最直观的画面}。
+
+\textbf{想象一个 2D 平面}——\textbf{你拿一个矩阵 $A$ 作用在每一个向量上}——\textbf{绝大多数向量}——\textbf{都会被 $A$"扭一下"+"拉一下"}——\textbf{方向变了——长度也变了}。
+
+\textbf{但是——总有那么几个特殊的方向}——\textbf{$A$ 作用在它身上时}——\textbf{只把它"拉长或缩短"}——\textbf{方向纹丝不动}。
+
+\textbf{这些"$A$ 不会旋转的方向"——就叫特征向量}（eigenvector）。
+
+\textbf{被拉长的倍数——就叫特征值}（eigenvalue）。
+
+\textbf{用一个方程写出来}：
+
+\[
+A \bm{v} = \lambda \bm{v}
+\]
+
+\textbf{读法}：\textbf{矩阵 $A$ 作用在 $\bm{v}$ 上——结果等于 $\bm{v}$ 自己乘以一个数 $\lambda$}。
+
+\textbf{"乘以一个数" = "只缩放、不旋转"}——\textbf{这就是特征向量的全部秘密}。
+
+\subsection{物理意义：振动模态}
+
+\textbf{把这个画面换成物理}——\textbf{特征向量的意义就更清楚}。
+
+\textbf{想象一根吉他弦}——\textbf{你拨它——它会振动}——\textbf{这根弦能怎么振}？
+
+\begin{itemize}
+\item \textbf{最简单的一种}——\textbf{整根弦上下抖}——\textbf{这是第一个"模态"}——\textbf{频率最低}（叫"基频"）
+\item \textbf{第二种}——\textbf{弦的中间不动——左右两半反向抖}——\textbf{频率是基频的 2 倍}
+\item \textbf{第三种}——\textbf{弦上有两个不动点——分成三段}——\textbf{频率是基频的 3 倍}
+\end{itemize}
+
+\textbf{每一种"振动模态"——就是这根弦的一个特征向量}——\textbf{对应的频率——就是特征值}。
+
+\textbf{你拨弦时——不管你怎么拨}——\textbf{弦的实际运动——总是这些模态的叠加}。
+
+\textbf{这就是 Fourier 级数的物理本源}——\textbf{把任何运动分解成"基本模态" = 把任何向量分解成"特征向量的线性组合"}。
+
+\textbf{第 5 章我们讲 Fourier}——\textbf{它讲的就是"$d^2/dx^2$"这个微分算子的特征向量}——\textbf{答案是 $\sin(nx)$ 和 $\cos(nx)$}——\textbf{特征值是 $-n^2$}。
+
+\textbf{所以——Fourier 级数 = 特征分解}——\textbf{两件事是一回事}。
+
+\subsection{几何意义：椭圆的主轴}
+
+\textbf{第三个画面}——\textbf{我最喜欢的画面}。
+
+\textbf{拿一个 $2\times 2$ 的对称矩阵 $A$}——\textbf{比如 $A = \begin{pmatrix} 3 & 1 \\ 1 & 2 \end{pmatrix}$}——\textbf{让它作用在单位圆上的每个点}。
+
+\textbf{单位圆会被压扁/拉长}——\textbf{变成一个椭圆}。
+
+\textbf{这个椭圆有两条主轴}——\textbf{一长一短}——\textbf{它们就是 $A$ 的两个特征向量}——\textbf{主轴的长度——就是特征值}。
+
+\textbf{这就是"特征向量是矩阵的主轴"这个说法的来源}——\textbf{它把"代数"和"几何"统一在了一起}。
+
+\section{数学 / Mathematics}
+
+\subsection{特征值的定义和求法}
+
+\textbf{定义}：\textbf{对于一个 $n\times n$ 的矩阵 $A$——如果存在一个非零向量 $\bm{v}$ 和一个数 $\lambda$——使得}
+
+\[
+A\bm{v} = \lambda \bm{v}
+\]
+
+\textbf{那么 $\bm{v}$ 叫做 $A$ 的特征向量}——\textbf{$\lambda$ 叫做对应的特征值}。
+
+\textbf{怎么求}？——\textbf{把方程改写一下}：
+
+\[
+(A - \lambda I)\bm{v} = \bm{0}
+\]
+
+\textbf{$\bm{v}$ 非零}——\textbf{意味着 $A - \lambda I$ 不可逆}——\textbf{意味着}：
+
+\[
+\boxed{\det(A - \lambda I) = 0}
+\]
+
+\textbf{这个方程叫"特征方程"}（characteristic equation）——\textbf{它是关于 $\lambda$ 的 $n$ 次多项式}——\textbf{解出来就是 $n$ 个特征值}。
+
+\textbf{对每一个特征值 $\lambda_i$——回去解 $(A - \lambda_i I)\bm{v} = \bm{0}$——就得到对应的特征向量}。
+
+\subsection{对角化}
+
+\textbf{假设 $A$ 有 $n$ 个线性无关的特征向量 $\bm{v}_1, \dots, \bm{v}_n$——对应特征值 $\lambda_1, \dots, \lambda_n$}。
+
+\textbf{把这些特征向量按列排起来——组成矩阵 $P$}：
+
+\[
+P = [\bm{v}_1 \;|\; \bm{v}_2 \;|\; \cdots \;|\; \bm{v}_n]
+\]
+
+\textbf{把特征值放在对角线上——组成对角矩阵 $\Lambda$}：
+
+\[
+\Lambda = \mathrm{diag}(\lambda_1, \lambda_2, \dots, \lambda_n)
+\]
+
+\textbf{那么}：
+
+\[
+\boxed{A = P \Lambda P^{-1}}
+\]
+
+\textbf{这就是对角化}（diagonalization）。
+
+\textbf{它的真正含义}：
+
+\textbf{$P^{-1}$——把任意向量换到"特征向量基"下表示}——\textbf{$\Lambda$——在新基下做缩放}——\textbf{$P$——再换回原来的基}。
+
+\textbf{在新基下——矩阵就是一个简单的对角阵——只做缩放——什么都不做}。
+
+\textbf{这就是"找最好的基"的含义}——\textbf{对角化 = 换一组让矩阵看起来最简单的基}。
+
+\subsection{矩阵幂的爆炸式简化}
+
+\textbf{为什么对角化这么有用}？——\textbf{看一个例子}。
+
+\textbf{你要算 $A^{100}$}——\textbf{硬乘的话——99 次矩阵乘法——每次 $O(n^3)$ 操作}——\textbf{累死}。
+
+\textbf{但如果 $A = P\Lambda P^{-1}$}——\textbf{那么}：
+
+\[
+A^2 = P\Lambda P^{-1} \cdot P\Lambda P^{-1} = P \Lambda^2 P^{-1}
+\]
+
+\[
+A^{100} = P \Lambda^{100} P^{-1}
+\]
+
+\textbf{$\Lambda^{100}$ 是对角阵——直接把每个对角元素的 100 次方算出来——$O(n)$ 操作}。
+
+\textbf{然后两边乘 $P$ 和 $P^{-1}$——总共 $O(n^3)$}——\textbf{原来 $99 \cdot n^3$ 的工作——变成了 $n^3$}。
+
+\textbf{这就是为什么 Fibonacci 数列、Markov 链、PageRank 的稳态——都用对角化来算}。
+
+\subsection{内积——把"角度"装进空间}
+
+\textbf{光有向量空间——只能加和缩放——没有"长度"也没有"角度"}。
+
+\textbf{要装"几何"——必须引入"内积"}（inner product）。
+
+\textbf{对实数向量 $\bm{u}, \bm{v} \in \mathbb{R}^n$——标准内积}：
+
+\[
+\langle \bm{u}, \bm{v} \rangle = \bm{u}^\top \bm{v} = \sum_{i=1}^n u_i v_i
+\]
+
+\textbf{有了内积——立刻得到三样东西}：
+
+\begin{itemize}
+\item \textbf{长度}：\;$\|\bm{v}\| = \sqrt{\langle \bm{v}, \bm{v} \rangle}$
+\item \textbf{角度}：\;$\cos\theta = \dfrac{\langle \bm{u}, \bm{v} \rangle}{\|\bm{u}\|\|\bm{v}\|}$
+\item \textbf{正交}：\;$\bm{u} \perp \bm{v} \iff \langle \bm{u}, \bm{v} \rangle = 0$
+\end{itemize}
+
+\textbf{这三样——是整个几何学的语言}——\textbf{没有内积——你就活在一个"扁平"的代数世界里}。
+
+\subsection{正交基与 Gram-Schmidt}
+
+\textbf{一组基}\;$\bm{q}_1, \dots, \bm{q}_n$\;\textbf{叫正交基}——\textbf{如果它们两两正交}（$\langle \bm{q}_i, \bm{q}_j \rangle = 0$ 当 $i\neq j$）。
+
+\textbf{如果还满足 $\|\bm{q}_i\| = 1$}——\textbf{就叫"标准正交基"}（orthonormal basis）。
+
+\textbf{为什么正交基好}？——\textbf{把一个向量 $\bm{v}$ 在正交基下分解——系数直接是内积}：
+
+\[
+\bm{v} = \sum_{i=1}^n \langle \bm{v}, \bm{q}_i \rangle \bm{q}_i
+\]
+
+\textbf{不用解方程——直接算内积——这就是 Fourier 系数公式的来源}。
+
+\textbf{Gram-Schmidt 过程}——\textbf{把任意一组线性无关的向量 $\bm{a}_1, \dots, \bm{a}_n$——加工成一组正交基 $\bm{q}_1, \dots, \bm{q}_n$}：
+
+\begin{align*}
+\bm{q}_1 &= \frac{\bm{a}_1}{\|\bm{a}_1\|} \\
+\bm{q}_2 &= \frac{\bm{a}_2 - \langle \bm{a}_2, \bm{q}_1 \rangle \bm{q}_1}{\|\cdot\|} \\
+\bm{q}_3 &= \frac{\bm{a}_3 - \langle \bm{a}_3, \bm{q}_1 \rangle \bm{q}_1 - \langle \bm{a}_3, \bm{q}_2 \rangle \bm{q}_2}{\|\cdot\|}
+\end{align*}
+
+\textbf{每一步——把新向量在已有基方向上的分量"减掉"——剩下的就和前面所有人都正交}。
+
+\textbf{这就是 QR 分解}（$A = QR$）的几何来源。
+
+\subsection{对称矩阵与谱定理}
+
+\textbf{对称矩阵}——\textbf{$A^\top = A$ 的实矩阵}——\textbf{是线代里最特殊的一类}。
+
+\textbf{谱定理}（Spectral Theorem）：
+
+\begin{tcolorbox}[essbox={谱定理 / Spectral Theorem}]
+\textbf{任意实对称矩阵 $A$——必然可以正交对角化}：
+\[
+A = Q \Lambda Q^\top
+\]
+\textbf{其中 $Q$ 是正交矩阵}（$Q^\top Q = I$）——\textbf{$\Lambda$ 是实对角阵}。\\[4pt]
+\textbf{中文意思}：\textbf{对称矩阵的特征值全是实数——特征向量可以选成两两正交}。
+\end{tcolorbox}
+
+\textbf{这个定理有多重要}？——\textbf{看下面这一长串它的应用就知道}：
+
+\begin{itemize}
+\item \textbf{PCA 主成分分析}——\textbf{对协方差矩阵做谱分解——前 $k$ 个特征向量就是主成分}
+\item \textbf{Eigenfaces 人脸识别}——\textbf{同上}
+\item \textbf{物理振动模态}——\textbf{刚度矩阵是对称的——谱分解给出振动频率}
+\item \textbf{Google PageRank}——\textbf{用谱方法找网页重要性}
+\item \textbf{谱聚类}——\textbf{社区发现、图像分割}
+\item \textbf{量子力学}——\textbf{所有观测量都是厄米算子——谱定理保证测量值是实数}
+\end{itemize}
+
+\textbf{谱定理 = 一个公式 + 一片江山}。
+
+\subsection{厄米矩阵——通向量子力学}
+
+\textbf{把对称矩阵扩展到复数}——\textbf{就是厄米矩阵}（Hermitian matrix）：
+
+\[
+A^\dagger = A \qquad \text{其中 } A^\dagger = \overline{A^\top}
+\]
+
+\textbf{$A^\dagger$ 叫共轭转置——也叫 Hermitian 共轭}。
+
+\textbf{厄米矩阵的两条黄金性质}：
+
+\begin{enumerate}
+\item \textbf{特征值全是实数}
+\item \textbf{特征向量两两正交}（在复内积下）
+\end{enumerate}
+
+\textbf{这两条——就是量子力学能存在的数学基础}。
+
+\textbf{为什么}？——\textbf{在量子力学里}：
+
+\begin{itemize}
+\item \textbf{一个粒子的状态——是 Hilbert 空间里的一个向量 $\bm{\psi}$}
+\item \textbf{一个可观测量}（能量、动量、位置）——\textbf{是一个厄米算子 $\hat{H}$}
+\item \textbf{测量这个量得到的值——必然是 $\hat{H}$ 的某个特征值 $\lambda_i$}
+\item \textbf{测量后——状态会"塌缩"到对应的特征向量上}
+\end{itemize}
+
+\textbf{我们能测出来的物理量——必须是实数}（你不会量到"3+4i 米"）——\textbf{这要求算子的特征值是实数——所以算子必须是厄米的}。
+
+\textbf{这是 20 世纪物理最深刻的发现之一}——\textbf{"测量 = 特征值"}——\textbf{由 von Neumann 在 Hilbert 空间里写得清清楚楚}。
+
+\subsection{二次型与正定矩阵}
+
+\textbf{二次型}（quadratic form）——\textbf{就是用一个对称矩阵把向量"夹起来"}：
+
+\[
+Q(\bm{x}) = \bm{x}^\top A \bm{x} = \sum_{i,j} a_{ij} x_i x_j
+\]
+
+\textbf{这是关于 $\bm{x}$ 的二次多项式}——\textbf{对应的几何图形是椭圆/双曲线/抛物线（在 2D）——椭球/双曲面（在 3D）}。
+
+\textbf{根据 $Q(\bm{x})$ 的取值——对称矩阵 $A$ 被分成四类}：
+
+\begin{itemize}
+\item \textbf{正定}（positive definite）——\textbf{对所有 $\bm{x}\neq \bm{0}$——$Q(\bm{x}) > 0$}——\textbf{$\iff$ 所有特征值 $> 0$}
+\item \textbf{半正定}——\textbf{$Q(\bm{x}) \geq 0$}——\textbf{$\iff$ 所有特征值 $\geq 0$}
+\item \textbf{负定}——\textbf{$Q(\bm{x}) < 0$}——\textbf{$\iff$ 所有特征值 $< 0$}
+\item \textbf{不定}——\textbf{有正有负——既上凸又下凹}
+\end{itemize}
+
+\textbf{为什么"正定"这么重要}？
+
+\textbf{因为机器学习里的"损失函数 $L(\bm{\theta})$"——在最优点附近——它的 Hessian 矩阵就是一个对称矩阵}。
+
+\textbf{Hessian 正定 $\iff$ 当前点是局部最小 $\iff$ 梯度下降会收敛}。
+
+\textbf{Hessian 不定 $\iff$ 鞍点——梯度下降会卡住}。
+
+\textbf{所以——整个凸优化理论 + 二阶优化方法（牛顿法、L-BFGS）——都建立在"正定矩阵"的几何上}。
+
+\section{Aha 例子 / The Aha Moment}
+
+\subsection{对角化 = 找最好的基}
+
+\textbf{我学这一章——最大的 aha 时刻——是有一天晚上明白了下面这句话}：
+
+\begin{tcolorbox}[ahabox={Aha 时刻}]
+\textbf{矩阵 $A$ 本身不是"差的"——只是\textbf{你用了"差的基"来描述它}}。\\[4pt]
+\textbf{对角化的真正含义}——\textbf{是换一组"好的基"（特征向量基）}——\textbf{在新基下——$A$ 看起来就是一个简单的对角阵}——\textbf{每一个特征向量方向独立缩放——互不干扰}。\\[4pt]
+\textbf{In English}: The matrix isn't ugly —— your basis is. Change to the eigenvector basis, and the matrix becomes diagonal —— each axis acting independently.
+\end{tcolorbox}
+
+\textbf{打个比方}——\textbf{你用中文写一首英文诗——别扭}——\textbf{换成英文写——流畅}。\textbf{矩阵也一样——换到它"母语"（特征向量基）下——它就变成对角阵——最纯粹的样子}。
+
+\subsection{Eigenfaces——人脸识别的特征向量}
+
+\textbf{现在我们来到这一章最让人震撼的应用}——\textbf{人脸识别}。
+
+\textbf{故事是这样的}——\textbf{1991 年——MIT 的 Turk 和 Pentland 发表了一篇论文}——\textbf{《Eigenfaces for Recognition》}——\textbf{第一次把"特征值分解"用在了人脸识别上}。
+
+\textbf{他们的算法极简}：
+
+\begin{enumerate}
+\item \textbf{收集 $N$ 张人脸照片}——\textbf{每张 92×112 像素 = 10304 个像素}——\textbf{展平成 10304 维的向量}
+\item \textbf{把 $N$ 个向量减去平均脸——得到"偏离平均"的 $N$ 个向量}
+\item \textbf{算它们的协方差矩阵 $C$}（对称 + 半正定——\textbf{谱定理直接生效}）
+\item \textbf{对 $C$ 做特征分解}——\textbf{取前 $k$ 个最大特征值对应的特征向量——叫 Eigenfaces}
+\item \textbf{每张新人脸——都可以用这 $k$ 个 Eigenfaces 的线性组合来近似表示}
+\end{enumerate}
+
+\textbf{效果}：\textbf{10304 维的人脸数据——压缩到 50 维——识别率达到 95\%}——\textbf{1991 年的硬件上跑得动}。
+
+\textbf{Eigenfaces 长什么样}？——\textbf{每一张都像一张"幽灵脸"}——\textbf{第一张大致是"平均脸的轮廓"}——\textbf{后面几张分别捕捉"鼻子的位置"、"眉毛的角度"、"光照的方向"、"嘴角的弧度"……}
+
+\textbf{这些"特征"——不是人类设计的}——\textbf{是数据自己"长出来"的}——\textbf{是协方差矩阵的特征向量自动告诉我们的}：\textbf{"这就是人脸数据里最重要的几个方向！"}
+
+\textbf{2012 年深度学习出来之前}——\textbf{Eigenfaces 是人脸识别的工业标准}——\textbf{Microsoft、Sony、Canon 的相机里"自动对焦人脸"——背后都是它}。
+
+\textbf{今天——你的手机相册"按人物分组"——本质还是同一个数学}——\textbf{虽然外面包了一层 CNN}。
+
+\textbf{Eigenfaces——是"特征向量"在 21 世纪最伟大的应用之一}。\textbf{它也是 PCA（主成分分析）的直接前身}——\textbf{第 8 章我们会专门讲 PCA}。
+
+\subsection{Python 实战——把 Eigenfaces 跑出来看看}
+
+\textbf{下面用 scikit-learn 的内置人脸数据集——亲手算一遍 Eigenfaces}：
+
+\begin{lstlisting}[language=Python, caption={Eigenfaces 最小实现}]
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import fetch_olivetti_faces
+
+# 1. 加载 400 张人脸（40 人 x 10 张），每张 64x64
+faces = fetch_olivetti_faces()
+X = faces.data           # shape: (400, 4096)
+n_samples, n_features = X.shape
+print(f"数据形状: {X.shape}")
+
+# 2. 中心化：减去"平均脸"
+mean_face = X.mean(axis=0)
+X_centered = X - mean_face
+
+# 3. 算协方差矩阵 (4096 x 4096) —— 太大，用 SVD 技巧
+#    更高效：直接对 X_centered 做 SVD，奇异向量就是特征向量
+U, S, Vt = np.linalg.svd(X_centered, full_matrices=False)
+
+# 4. 前 16 个特征脸
+eigenfaces = Vt[:16].reshape(16, 64, 64)
+
+# 5. 画出来
+fig, axes = plt.subplots(4, 4, figsize=(8, 8))
+for i, ax in enumerate(axes.flat):
+    ax.imshow(eigenfaces[i], cmap='gray')
+    ax.set_title(f'Eigenface #{i+1}')
+    ax.axis('off')
+plt.suptitle('前 16 个 Eigenfaces —— 数据自己长出来的"主方向"')
+plt.tight_layout()
+plt.show()
+
+# 6. 用前 k 个 Eigenfaces 重构一张人脸
+def reconstruct(face_idx, k):
+    coeffs = Vt[:k] @ X_centered[face_idx]
+    return mean_face + coeffs @ Vt[:k]
+
+# 比较 k=5, 20, 50, 200 的重构效果
+fig, axes = plt.subplots(1, 5, figsize=(15, 3))
+axes[0].imshow(X[0].reshape(64, 64), cmap='gray'); axes[0].set_title('原图')
+for i, k in enumerate([5, 20, 50, 200]):
+    axes[i+1].imshow(reconstruct(0, k).reshape(64, 64), cmap='gray')
+    axes[i+1].set_title(f'k={k}')
+[ax.axis('off') for ax in axes]
+plt.show()
+\end{lstlisting}
+
+\textbf{你跑完会看到}——\textbf{$k=5$ 时人脸还很模糊}——\textbf{$k=50$ 时已经认得出是谁了}——\textbf{$k=200$ 时几乎和原图无异}。
+
+\textbf{4096 维的人脸——50 维就够认人了}——\textbf{压缩了 80 倍——这就是特征值分解的"魔法"}。
+
+\section{现代视角 / Modern Perspective}
+
+\subsection{机器学习里的"特征值"无处不在}
+
+\textbf{我列一张表——你看一下"特征值/特征向量"在现代 ML 里的覆盖面}：
+
+\begin{center}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{应用} & \textbf{用到的特征分解} \\
+\hline
+PCA 主成分分析 & 协方差矩阵的特征分解 \\
+PageRank & 转移矩阵的最大特征向量 \\
+谱聚类 & 图 Laplacian 的最小特征向量 \\
+Spectral Embedding & 图 Laplacian 的特征向量 \\
+图神经网络 GCN & 图 Laplacian 的谱分解 \\
+推荐系统 SVD++ & 评分矩阵的奇异值分解 \\
+LSI 潜在语义索引 & 词-文档矩阵 SVD \\
+Word2Vec & 共现矩阵的低秩分解 \\
+Transformer 注意力 & QK 矩阵的低秩近似 \\
+量子计算 & Hamiltonian 的特征分解 \\
+\hline
+\end{tabular}
+\end{center}
+
+\textbf{你看}——\textbf{几乎所有"提取重要方向"的算法——都是某种意义上的特征分解}。
+
+\textbf{这就是为什么我说——\textbf{特征值分解是 21 世纪 ML 之根}}。
+
+\subsection{SVD：特征分解的"普适版"}
+
+\textbf{特征分解 $A = P\Lambda P^{-1}$ 有一个限制}——\textbf{$A$ 必须是方阵}。
+
+\textbf{对于一般的 $m\times n$ 矩阵（比如 Netflix 的用户-电影评分矩阵）——我们用 SVD}：
+
+\[
+A = U \Sigma V^\top
+\]
+
+\textbf{其中 $U \in \mathbb{R}^{m\times m}$、$V \in \mathbb{R}^{n\times n}$ 都是正交矩阵}——\textbf{$\Sigma$ 是对角阵——对角元素叫"奇异值"}。
+
+\textbf{SVD 是任意矩阵都能做的——它是特征分解的"普适版"}。
+
+\textbf{第 8 章我们会专门讲 SVD 在推荐系统和 PCA 里的用法}——\textbf{这里只埋个种}。
+
+\subsection{从 Hilbert 空间到 Transformer}
+
+\textbf{有意思的是}——\textbf{今天最火的 Transformer 模型}——\textbf{它的"注意力机制"$\mathrm{softmax}(QK^\top/\sqrt{d})V$}——\textbf{本质上是在一个 $d$ 维向量空间里算"内积"——找"最相关"的 token}。
+
+\textbf{这个"$d$ 维向量空间 + 内积"——就是有限维的 Hilbert 空间}。
+
+\textbf{从 1904 年 Hilbert 写下第一个无穷维内积——到 2017 年 Vaswani 写下 Attention 公式——人类用了 113 年——但是同一个数学结构}。
+
+\textbf{这就是数学的力量}——\textbf{一个好的抽象——可以跨越一个世纪——还活着}。
+
+\section{代码与思考 / Code \& Reflection}
+
+\textbf{把这一章的核心操作整理成一个 Python 模块}——\textbf{文件名 \texttt{linalg\_core.py}}：
+
+\begin{lstlisting}[language=Python, caption={\texttt{linalg\_core.py} —— 第 7 章工具箱}]
+"""
+linalg_core.py
+第 7 章工具：特征值、对角化、Gram-Schmidt、谱分解、Eigenfaces
+作者：打通工科数学任督二脉 Ch.7
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# --- 1. 特征值 + 特征向量 ---------------------------------------------
+def eig_demo(A):
+    """求 A 的特征值和特征向量，并验证 Av = λv"""
+    vals, vecs = np.linalg.eig(A)
+    for i, lam in enumerate(vals):
+        v = vecs[:, i]
+        print(f"λ_{i} = {lam:.3f},  ||Av - λv|| = {np.linalg.norm(A@v - lam*v):.2e}")
+    return vals, vecs
+
+
+# --- 2. 对角化 + 矩阵幂 -----------------------------------------------
+def matrix_power_via_diag(A, n):
+    """用对角化算 A^n —— O(d^3) 而不是 O(n d^3)"""
+    vals, P = np.linalg.eig(A)
+    Lambda_n = np.diag(vals ** n)
+    return P @ Lambda_n @ np.linalg.inv(P)
+
+
+def fibonacci_via_eig(n):
+    """用对角化算 Fibonacci 第 n 项"""
+    A = np.array([[1, 1], [1, 0]], dtype=float)
+    An = matrix_power_via_diag(A, n)
+    return int(round(An[0, 1]))
+
+
+# --- 3. Gram-Schmidt 正交化 -------------------------------------------
+def gram_schmidt(A):
+    """对 A 的列做 Gram-Schmidt，返回正交基 Q"""
+    A = np.array(A, dtype=float)
+    m, n = A.shape
+    Q = np.zeros_like(A)
+    for j in range(n):
+        v = A[:, j].copy()
+        for i in range(j):
+            v -= (Q[:, i] @ A[:, j]) * Q[:, i]
+        Q[:, j] = v / np.linalg.norm(v)
+    return Q
+
+
+# --- 4. 对称矩阵的谱分解 ----------------------------------------------
+def spectral_decomposition(A):
+    """A = Q Λ Q^T  (A 必须对称)"""
+    assert np.allclose(A, A.T), "矩阵必须对称"
+    vals, Q = np.linalg.eigh(A)   # eigh 专门给对称/厄米用
+    return Q, np.diag(vals)
+
+
+# --- 5. 厄米矩阵示例（Pauli 矩阵）-------------------------------------
+def pauli_matrices():
+    """量子力学里最有名的三个厄米矩阵"""
+    sigma_x = np.array([[0, 1], [1, 0]], dtype=complex)
+    sigma_y = np.array([[0, -1j], [1j, 0]], dtype=complex)
+    sigma_z = np.array([[1, 0], [0, -1]], dtype=complex)
+    return sigma_x, sigma_y, sigma_z
+
+
+# --- 6. 二次型 + 正定性检测 -------------------------------------------
+def is_positive_definite(A):
+    """判断对称矩阵 A 是否正定"""
+    if not np.allclose(A, A.T):
+        return False
+    vals = np.linalg.eigvalsh(A)
+    return np.all(vals > 0)
+
+
+# --- 7. Eigenfaces (PCA 雏形) -----------------------------------------
+def eigenfaces(X, k=50):
+    """
+    X: (n_samples, n_features) 的人脸矩阵
+    返回前 k 个 Eigenfaces 和平均脸
+    """
+    mean_face = X.mean(axis=0)
+    Xc = X - mean_face
+    U, S, Vt = np.linalg.svd(Xc, full_matrices=False)
+    return Vt[:k], mean_face
+
+
+if __name__ == "__main__":
+    # 小测试
+    A = np.array([[3., 1.], [1., 2.]])
+    print("--- 特征分解 ---");  eig_demo(A)
+    print("\n--- Fibonacci(30) =", fibonacci_via_eig(30))
+    print("\n--- 正定性 ---", is_positive_definite(A))
+\end{lstlisting}
+
+\textbf{思考题}（自己动手）：
+
+\begin{enumerate}
+\item \textbf{Markov 链稳态}——\textbf{随便写一个 $3\times 3$ 的随机转移矩阵}（每列和为 1）——\textbf{用 \texttt{matrix\_power\_via\_diag}\;算它的 100 次幂}——\textbf{观察每一列是不是趋于同一个向量}（这就是稳态分布——也是它的最大特征向量）
+\item \textbf{Gram-Schmidt 实验}——\textbf{对 $[(1,1,1)^\top, (1,2,3)^\top, (1,4,9)^\top]$ 做正交化}——\textbf{验证 $Q^\top Q = I$}
+\item \textbf{Pauli 矩阵的特征值}——\textbf{用 \texttt{np.linalg.eigh} 算 $\sigma_x, \sigma_y, \sigma_z$ 的特征值——你会发现都是 $\pm 1$}——\textbf{这就是"自旋 1/2"的来源}
+\item \textbf{Hessian 实验}——\textbf{写一个 2D 函数 $f(x,y) = 3x^2 + 2xy + 2y^2$——手算 Hessian 矩阵——用 \texttt{is\_positive\_definite} 验证它是正定的}——\textbf{画出 $f$ 的等高线——你会看到一个椭圆——主轴方向就是 Hessian 的特征向量}
+\end{enumerate}
+
+\section{本章小结 / Summary}
+
+\begin{tcolorbox}[essbox={本章小结}]
+\textbf{我们用六步——从"特征向量"走到"量子力学 + 机器学习"}：
+
+\medskip
+
+\textbf{一、特征值 + 特征向量}：\textbf{$A\bm{v}=\lambda\bm{v}$}——\textbf{矩阵不旋转、只缩放的方向}。
+
+\medskip
+
+\textbf{二、对角化}：\textbf{$A=P\Lambda P^{-1}$}——\textbf{换到特征向量基下——矩阵变成对角阵}——\textbf{$A^n = P\Lambda^n P^{-1}$——指数级加速}。
+
+\medskip
+
+\textbf{三、内积 + 正交基 + Gram-Schmidt}：\textbf{内积给空间装上"长度 + 角度"}——\textbf{Gram-Schmidt 把任意基加工成正交基}——\textbf{这是 QR 分解的根}。
+
+\medskip
+
+\textbf{四、对称矩阵 + 谱定理}：\textbf{$A^\top = A \Rightarrow A=Q\Lambda Q^\top$}——\textbf{特征值全实——特征向量两两正交}——\textbf{这是 PCA、Eigenfaces、振动模态、PageRank 的共同根}。
+
+\medskip
+
+\textbf{五、厄米矩阵}：\textbf{$A^\dagger = A$}——\textbf{对称矩阵的复数版}——\textbf{量子力学的所有"可观测量"都是它}——\textbf{特征值 = 测量值}。
+
+\medskip
+
+\textbf{六、二次型 + 正定矩阵}：\textbf{$\bm{x}^\top A \bm{x}$}——\textbf{正定 $\iff$ 所有特征值 $>0$}——\textbf{凸优化、Hessian 检验、损失函数局部最小的判据}。
+
+\medskip
+
+\textbf{一句话总结}：\textbf{特征值分解 = 找最好的基 = 21 世纪 ML 之根}。
+
+\medskip
+
+\textbf{In one line}: Eigen-decomposition is the art of choosing the right basis —— the root of modern machine learning.
+\end{tcolorbox}
+
+\textbf{下一章}（第 8 章）——\textbf{我们把这一章的特征分解 + SVD——直接拿到现实数据里跑}——\textbf{PCA 降维、PageRank 排序、神经网络的反向传播}——\textbf{把"线代三部曲"画上句号}。
+
+\textbf{From Cayley's 17-page memoir in 1858 —— to Hilbert's infinite-dimensional space in 1904 —— to Heisenberg's matrix mechanics in 1925 —— to Turk's Eigenfaces in 1991 —— to today's Transformers}——\textbf{the same idea has been quietly running underneath, for 168 years: \emph{find the eigenvectors, and the rest is easy}}.
+
+\clearpage

@@ -1,0 +1,585 @@
+% =====================================================================
+%  第 10 章 · 概率论 / Probability
+%  概率基础、随机变量、期望方差、大数定律、随机过程、应用
+%  小故事：Kolmogorov 与 1933 年的公理化
+%  Aha：蒙特卡洛求 π + 期权定价
+% =====================================================================
+
+\chapter{概率论 / Probability}
+\label{ch:prob}
+
+\begin{quote}\itshape
+1933 年，莫斯科。一个 30 岁的年轻人——\textbf{Andrey Kolmogorov}——\\
+出版了一本 62 页的德文小册子《Grundbegriffe der Wahrscheinlichkeitsrechnung》。\\
+从此——\textbf{概率}——从 17 世纪的赌博游戏——\\
+变成了一门和\textbf{几何}一样严格的\textbf{现代数学}。\\
+我们这一章——就讲他想清楚的那件事：\textbf{概率到底是什么}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{我刚学概率时}——和大多数中国工科生一样——\textbf{我背的是公式}。
+
+$P(A|B) = \frac{P(AB)}{P(B)}$。$E(X) = \sum x_i p_i$。$D(X) = E(X^2) - [E(X)]^2$。二项分布、泊松分布、正态分布——一张又一张表。
+
+\textbf{大二下学期}——\textbf{概率论与数理统计}——\textbf{我考了 88 分}——但你问我"概率到底是什么"——我说不上来。
+
+到了\textbf{大四}——我做毕设——\textbf{要估计一个传感器的噪声方差}——我打开 Python：
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+sigma2 = np.var(signal)
+\end{lstlisting}
+
+\textbf{一行代码——做完了方差}。
+
+那一刻我才反应过来——\textbf{我大二背的所有古典概型计算题}——\textbf{摸球、抓阄、几何概率}——\textbf{在工业里我一个都没用过}。
+
+\textbf{真正用的是}：
+
+\begin{itemize}
+\item 概率是\textbf{我对未知的信念}——\textbf{Bayesian 视角}
+\item 随机变量是\textbf{从样本空间到数轴的函数}——\textbf{不是"一个会变的变量"}
+\item 期望是\textbf{重心}——方差是\textbf{离散度}——\textbf{两个数概括一个分布}
+\item 大数定律说\textbf{平均值收敛}——中心极限定理说\textbf{和会变成正态}——\textbf{这是整个统计学的根基}
+\item 一切随机过程——\textbf{都是"时间上的随机变量族"}
+\end{itemize}
+
+\textbf{这一章就把这五件事说清楚}——\textbf{再多的分布公式}——\textbf{都是这五件事的变体}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{概率是测度——随机变量是函数——分布是测度的像——期望是积分}。\\[6pt]
+\textbf{English}: Probability is a measure; a random variable is a function; a distribution is the pushforward of that measure; expectation is an integral.
+\end{tcolorbox}
+
+记住这一句话——\textbf{这一章已经讲完了一半}。
+
+\textbf{Kolmogorov 1933 年的伟大}——就在于他用\textbf{四行公理}把这件事说清楚了——\textbf{在他之前——概率是哲学；在他之后——概率是数学}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{浙大《概率论与数理统计》}
+
+\textbf{浙江大学盛骤}主编的\textbf{《概率论与数理统计》（第四版）}——是中国 80\% 工科生的\textbf{第一本概率教材}。
+
+它的章节是这样的：
+
+\begin{itemize}
+\item 第一章：随机事件与概率（古典概型、几何概型）
+\item 第二章：随机变量及其分布
+\item 第三章：多维随机变量
+\item 第四章：随机变量的数字特征
+\item 第五章：大数定律与中心极限定理
+\item 第六章\textasciitilde 第八章：数理统计、参数估计、假设检验
+\end{itemize}
+
+\textbf{优点}：体系完整、覆盖考研全部考点。
+
+\textbf{缺点}：
+
+\begin{enumerate}
+\item \textbf{第一章塞满古典概型}——\textbf{摸红球、摸白球、抓阄、生日问题}——\textbf{现代工程一辈子用不到}
+\item \textbf{Bayes 公式一笔带过}——而\textbf{Bayes 是机器学习的灵魂}
+\item \textbf{随机过程没讲}——\textbf{Markov 链、Poisson 过程}——\textbf{现代通信和金融的核心工具}——\textbf{本科不教}
+\item \textbf{没有任何代码}——\textbf{学生学完概率不会用 \texttt{numpy.random}}
+\end{enumerate}
+
+\subsection{Ross《A First Course in Probability》}
+
+\textbf{Sheldon Ross} 写的——\textbf{美国大学的国民概率教材}。\textbf{例题极多、写得活}——\textbf{Markov 链和 Poisson 过程一开始就讲}。
+
+缺点是\textbf{翻译版稀少}——\textbf{中国学生很少读到}。
+
+\subsection{Bishop《Pattern Recognition and Machine Learning》}
+
+\textbf{Christopher Bishop} 的 PRML——\textbf{机器学习的圣经}——\textbf{第 1 章和第 2 章}就是\textbf{从 Bayesian 视角重新讲一遍概率}。
+
+\textbf{读完 PRML 第 2 章}——\textbf{你会发现浙大教材里那些古典概型练习——和真正的概率没什么关系}。
+
+\subsection{我的策略}
+
+\textbf{本章不会重复浙大和 Ross 的内容}——\textbf{它们都已经够全了}。
+
+\textbf{本章只做四件事}：
+
+\begin{enumerate}
+\item \textbf{把 Kolmogorov 公理讲清楚}——\textbf{概率是测度}——\textbf{这是浙大不讲的}
+\item \textbf{把 Bayes 讲透}——\textbf{先验 + 似然 = 后验}——\textbf{这是机器学习的根}
+\item \textbf{把中心极限定理讲到能跑代码}——\textbf{看到正态分布从天而降}
+\item \textbf{把 Aha 例子讲到能跑代码}——\textbf{蒙特卡洛求 π}——\textbf{再升级到期权定价}
+\end{enumerate}
+
+\begin{tcolorbox}[storybox={\Large 小故事：Kolmogorov 与 1933 年的公理化}]
+\textbf{1933 年}——\textbf{莫斯科}——\textbf{苏联刚成立 16 年}——\textbf{斯大林清洗即将开始}。
+30 岁的 \textbf{Andrey Nikolaevich Kolmogorov}（莫斯科大学教授）——\textbf{用德文}（当时数学的通用语言）——\textbf{出版了一本 62 页的小册子}：
+
+\smallskip
+
+\textit{Grundbegriffe der Wahrscheinlichkeitsrechnung}（《概率论基础》）。
+
+\medskip
+
+\textbf{这本 62 页的书——把概率论从赌博的"经验学问"——变成了和欧几里得几何一样严格的现代数学}。
+
+\medskip
+
+\textbf{在他之前}——概率论已经发展了 270 年（从 \textbf{Pascal 和 Fermat 1654 年通信讨论赌博}开始）——但是\textbf{"概率到底是什么"}——一直没有公认的答案：
+
+\begin{itemize}
+\item \textbf{Laplace 派}：概率是\textbf{等可能结果的比例}（古典概型）
+\item \textbf{频率学派}：概率是\textbf{长期重复的频率}（von Mises）
+\item \textbf{Bayes 派}：概率是\textbf{个人信念的强度}
+\end{itemize}
+
+\textbf{三派吵了 200 年——没人说服得了谁}。
+
+\medskip
+
+\textbf{Kolmogorov 的天才——就是绕开这个哲学问题}：
+
+\textbf{"我不管你怎么解释概率——只要你的'概率'满足这四条公理——剩下的定理都能从公理推出。"}
+
+\begin{enumerate}
+\item $P(A) \geq 0$（非负性）
+\item $P(\Omega) = 1$（规范性）
+\item $P\left(\bigcup_{i=1}^\infty A_i\right) = \sum_{i=1}^\infty P(A_i)$（可数可加性）
+\item 条件概率定义为 $P(A|B) = P(AB)/P(B)$
+\end{enumerate}
+
+\medskip
+
+\textbf{就是这四行}——\textbf{概率论从此有了"宪法"}。
+
+\textbf{Kolmogorov 还做了什么}：\textbf{建立了随机过程理论、建立了算法信息论（Kolmogorov 复杂度）、解决了 Hilbert 第 13 问题}——\textbf{他是 20 世纪最伟大的数学家之一}。
+
+\medskip
+
+\textbf{1933 年没有计算机}——\textbf{没有 Python}——\textbf{他用纯思想——把"什么是随机"这个困扰人类 270 年的问题——一锤定音}。
+
+\medskip
+
+你今天学的每一个 \texttt{numpy.random}——\textbf{背后都站着这位莫斯科的年轻人}。
+\end{tcolorbox}
+
+\section{直觉 / Intuition}
+
+\subsection{§1 概率基础：从样本空间到条件概率}
+
+\textbf{概率论的三件套——一句话}：
+
+\begin{quote}
+\textbf{"样本空间 $\Omega$——事件 $A$——概率 $P(A)$。"}\\[4pt]
+\itshape "Sample space, events, probability measure."
+\end{quote}
+
+\textbf{样本空间} $\Omega$：所有可能结果的集合。掷骰子——$\Omega = \{1,2,3,4,5,6\}$。
+
+\textbf{事件} $A \subseteq \Omega$：你关心的某些结果。"掷出偶数"——$A = \{2,4,6\}$。
+
+\textbf{概率} $P: \mathcal{F} \to [0,1]$：给每个事件分配一个 $[0,1]$ 之间的数——\textbf{满足 Kolmogorov 四公理}。
+
+\textbf{这就是 Kolmogorov 框架——浙大教材的第一章——本质上就这几行}。
+
+\subsection{条件概率：信息一来——概率就变}
+
+\textbf{条件概率} $P(A|B)$：\textbf{已知 $B$ 发生的前提下——$A$ 发生的概率}。
+
+\begin{equation}
+P(A|B) = \frac{P(AB)}{P(B)}, \quad P(B) > 0
+\end{equation}
+
+\textbf{直觉}：\textbf{把样本空间从 $\Omega$ 缩小到 $B$}——\textbf{在新的小世界里重新算 $A$ 的概率}。
+
+\begin{example}[著名的"三门问题" / Monty Hall]
+\textbf{三扇门——其中一扇后面是车——你选一扇——主持人打开剩下两扇里没车的那一扇——问你换不换}？
+
+\textbf{直觉}：剩下两扇——\textbf{概率 50/50——换不换无所谓}。
+
+\textbf{Bayes 算一下}：你最初选中车的概率 = 1/3。\textbf{所以换——赢的概率是 2/3——不换只有 1/3}。
+
+\textbf{这道题让 Marilyn vos Savant 在 1990 年代被一万个 PhD 围攻}——\textbf{她是对的}。
+\end{example}
+
+\subsection{Bayes 定理：先验 + 似然 = 后验}
+
+\textbf{Bayes 公式}——\textbf{机器学习的灵魂}——\textbf{一行话}：
+
+\begin{equation}
+\boxed{\,P(H|D) = \frac{P(D|H) \cdot P(H)}{P(D)}\,}
+\end{equation}
+
+\begin{itemize}
+\item $P(H)$：\textbf{先验}（prior）——\textbf{看到数据之前你对 $H$ 的信念}
+\item $P(D|H)$：\textbf{似然}（likelihood）——\textbf{如果 $H$ 是真的——观测到 $D$ 的概率}
+\item $P(H|D)$：\textbf{后验}（posterior）——\textbf{看到数据之后你对 $H$ 的更新信念}
+\item $P(D)$：\textbf{归一化常数}——\textbf{保证后验加起来等于 1}
+\end{itemize}
+
+\textbf{用一句话讲完 Bayes}：\textbf{"信念遇到证据——按比例更新"}。
+
+\begin{example}[医学检测的"经典误判"]
+某种病人群\textbf{发病率 0.1\%}。检测\textbf{准确率 99\%}（真阳率 99\%、假阳率 1\%）。
+
+你检测呈阳性——\textbf{你真正得病的概率是多少}？
+
+直觉答："99\% 准确——所以我 99\% 得病了"。\textbf{错}！
+
+Bayes 算：
+\[
+P(\text{病}|+) = \frac{0.99 \times 0.001}{0.99 \times 0.001 + 0.01 \times 0.999} \approx 9\%
+\]
+
+\textbf{你只有 9\% 概率真的得病}——\textbf{91\% 概率是假阳性}！
+
+\textbf{原因}：\textbf{基率（base rate）很低}——\textbf{先验淹没了似然}。
+
+\textbf{这是医生、律师、AI 工程师天天犯的错}——\textbf{Daniel Kahneman 因为研究这个拿了诺贝尔经济学奖}。
+\end{example}
+
+\section{数学 / Mathematics}
+
+\subsection{§2 随机变量与分布}
+
+\textbf{浙大教材的常见错误}——把随机变量讲成\textbf{"一个会随机取值的变量"}。
+
+\textbf{真正的定义}（Kolmogorov 框架）：
+
+\begin{equation}
+X: \Omega \to \mathbb{R} \quad \text{是一个可测函数}
+\end{equation}
+
+\textbf{随机变量 $X$ 是从样本空间 $\Omega$ 到实数轴 $\mathbb{R}$ 的函数}——\textbf{它本身一点也不"随机"}——\textbf{随机的是输入 $\omega$}。
+
+\textbf{分布}是 $X$ 把 $\Omega$ 上的概率\textbf{推到} $\mathbb{R}$ 上的像：
+\[
+P_X(A) = P(X^{-1}(A)) = P(\{\omega: X(\omega) \in A\})
+\]
+
+\textbf{常见分布——一张表}：
+
+\begin{center}
+\begin{tabular}{l|l|l}
+\textbf{分布} & \textbf{何时用} & \textbf{典型工程场景} \\
+\hline
+Bernoulli$(p)$ & 抛硬币 & 二分类标签 \\
+Binomial$(n,p)$ & $n$ 次硬币 & A/B 测试转化人数 \\
+Poisson$(\lambda)$ & 单位时间事件数 & 网络包到达 \\
+Uniform$(a,b)$ & 等可能 & 随机种子 / 蒙特卡洛 \\
+Normal$(\mu,\sigma^2)$ & 噪声、误差 & 几乎一切信号 \\
+Exponential$(\lambda)$ & 等待时间 & 排队、寿命 \\
+\end{tabular}
+\end{center}
+
+\textbf{正态分布的密度}（重要到要背）：
+\begin{equation}
+f(x) = \frac{1}{\sqrt{2\pi}\,\sigma}\exp\!\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)
+\end{equation}
+
+\textbf{多元情形}——用\textbf{均值向量} $\bm{\mu}$ 和\textbf{协方差矩阵} $\bm{\Sigma}$：
+\begin{equation}
+f(\bm{x}) = \frac{1}{(2\pi)^{n/2}|\bm{\Sigma}|^{1/2}}\exp\!\left(-\tfrac{1}{2}(\bm{x}-\bm{\mu})^\top\bm{\Sigma}^{-1}(\bm{x}-\bm{\mu})\right)
+\end{equation}
+
+\textbf{这是机器学习里出现频率最高的密度函数}——\textbf{GMM、Kalman 滤波、Gaussian Process——都靠它}。
+
+\subsection{§3 期望、方差、协方差}
+
+\textbf{期望}——\textbf{随机变量的"重心"}：
+\begin{equation}
+E(X) = \int_\Omega X \, dP = \int_{\mathbb{R}} x \, dP_X(x)
+\end{equation}
+
+\textbf{方差}——\textbf{偏离重心的平方平均}：
+\begin{equation}
+D(X) = E\!\left[(X-E(X))^2\right] = E(X^2) - [E(X)]^2
+\end{equation}
+
+\textbf{协方差}（两个变量"共变"的程度）：
+\begin{equation}
+\mathrm{Cov}(X,Y) = E[(X - E(X))(Y - E(Y))]
+\end{equation}
+
+\textbf{相关系数}——\textbf{把协方差归一化到 $[-1, 1]$}：
+\begin{equation}
+\rho_{XY} = \frac{\mathrm{Cov}(X,Y)}{\sqrt{D(X)D(Y)}}
+\end{equation}
+
+\textbf{多变量情形}——\textbf{协方差矩阵} $\bm{\Sigma}$：
+\begin{equation}
+\bm{\Sigma}_{ij} = \mathrm{Cov}(X_i, X_j), \quad \bm{\Sigma} = E[(\bm{X}-\bm{\mu})(\bm{X}-\bm{\mu})^\top]
+\end{equation}
+
+\textbf{协方差矩阵是对称半正定的}——\textbf{它的特征值告诉你数据沿哪个方向方差最大}——\textbf{这就是 PCA 的核心}（见第 8 章）。
+
+\subsection{§4 大数定律与中心极限定理}
+
+\textbf{概率论中最重要的两个定理}——\textbf{统计学的两根柱子}。
+
+\textbf{弱大数定律}（Khinchin）：\textbf{独立同分布样本的平均值——依概率收敛到真期望}。
+\begin{equation}
+\bar{X}_n = \frac{1}{n}\sum_{i=1}^n X_i \xrightarrow{P} \mu \quad \text{当}~ n \to \infty
+\end{equation}
+
+\textbf{一句话}：\textbf{"样本多了——平均值就稳了"}。这就是为什么民意调查抽 1000 人就够、为什么蒙特卡洛能逼近真值。
+
+\textbf{中心极限定理}（CLT）：\textbf{独立同分布样本的和——标准化后——收敛到正态分布}。
+\begin{equation}
+\frac{\bar{X}_n - \mu}{\sigma/\sqrt{n}} \xrightarrow{d} \mathcal{N}(0,1)
+\end{equation}
+
+\textbf{这是整个统计学最神奇的事实}——\textbf{不管原始分布长什么样}（哪怕是骰子、Bernoulli、指数）——\textbf{足够多个独立样本加起来——一定变成正态}。
+
+\textbf{这就是为什么正态分布无处不在}：测量误差、身高、考试分数、股票回报——\textbf{它们都是大量独立小因素叠加的结果}。
+
+\subsection{§5 随机过程入门：Markov + Poisson}
+
+\textbf{随机过程}——\textbf{"时间上的随机变量族"} $\{X_t\}_{t \in T}$。
+
+\textbf{Markov 链}——\textbf{"未来只依赖于现在——不依赖于过去"}：
+\begin{equation}
+P(X_{n+1} = j \mid X_n = i, X_{n-1}, \dots, X_0) = P(X_{n+1} = j \mid X_n = i) = p_{ij}
+\end{equation}
+
+\textbf{转移矩阵} $\bm{P} = (p_{ij})$ 是\textbf{行随机矩阵}（每行和为 1）。\textbf{长期分布}是 $\bm{P}^\top$ 对应特征值 1 的特征向量——\textbf{这正是第 7 章的内容}。
+
+\textbf{Markov 链的应用}：\textbf{Google PageRank}（网页是状态、链接是转移）、\textbf{语音识别 HMM}、\textbf{强化学习 MDP}、\textbf{ChatGPT 的下一个 token}。
+
+\textbf{Poisson 过程}——\textbf{"单位时间内事件数服从 Poisson 分布——不重叠区间独立"}：
+\begin{equation}
+P(N(t) = k) = \frac{(\lambda t)^k}{k!} e^{-\lambda t}
+\end{equation}
+
+\textbf{典型应用}：\textbf{电话呼叫到达}、\textbf{网络包到达}、\textbf{地震发生}、\textbf{放射性衰变}——\textbf{凡是"小概率事件大量重复"——都用 Poisson}。
+
+\section{Aha 时刻 / The Aha Moment}
+
+\begin{tcolorbox}[ahabox={\Large Aha：蒙特卡洛求 $\pi$ 与期权定价}]
+\textbf{你在浙大教材里学了 200 页概率}——\textbf{却从来没用过它干一件"工程"的事}。
+
+\medskip
+
+\textbf{这一节告诉你}——\textbf{概率最优雅的现代应用之一}：\textbf{用随机数计算确定的数}。
+
+\textbf{蒙特卡洛方法}（Monte Carlo method）——\textbf{1940 年代}由 \textbf{Stanislaw Ulam 和 John von Neumann} 在洛斯阿拉莫斯研究原子弹时发明——\textbf{以摩纳哥赌场命名}（Ulam 的叔叔是赌徒）。
+
+\medskip
+
+\textbf{第一站：求 $\pi$}。
+
+往边长为 2 的正方形里随机扔 $N$ 个点。落在内切圆里的点数为 $M$。
+
+\[
+\frac{M}{N} \approx \frac{\text{圆面积}}{\text{正方形面积}} = \frac{\pi}{4} \implies \pi \approx \frac{4M}{N}
+\]
+
+\textbf{大数定律保证了 $N \to \infty$ 时——这个估计收敛到真值}。
+
+\medskip
+
+\textbf{第二站：期权定价（金融工程）}。
+
+\textbf{欧式看涨期权}：\textbf{今天买一张合同——$T$ 年后有权利按价格 $K$ 买入一只股票}。
+
+\textbf{Black-Scholes 模型假设}：股票价格 $S_t$ 服从\textbf{几何 Brown 运动}：
+\[
+S_T = S_0 \exp\!\left((r - \tfrac{\sigma^2}{2})T + \sigma\sqrt{T} \cdot Z\right), \quad Z \sim \mathcal{N}(0,1)
+\]
+
+\textbf{期权今天的价格}：
+\[
+C = e^{-rT} \cdot E[\max(S_T - K, 0)]
+\]
+
+\textbf{这个期望——可以用 Black-Scholes 公式解析解}（1997 年诺贝尔经济学奖）——\textbf{也可以用蒙特卡洛模拟}：
+
+\begin{enumerate}
+\item 模拟 $N$ 条股票路径 $S_T^{(1)}, \dots, S_T^{(N)}$
+\item 计算每条路径的支付 $\max(S_T^{(i)} - K, 0)$
+\item 取平均、再贴现 $e^{-rT}$——\textbf{就是期权价格}
+\end{enumerate}
+
+\textbf{大数定律 + 中心极限定理——告诉你估计的精度是 $O(1/\sqrt{N})$}——\textbf{不依赖于维度}。
+
+\textbf{这是蒙特卡洛在高维问题（多资产期权、信用衍生品）打败一切确定性算法的原因}——\textbf{华尔街每天烧 GPU 跑的就是这件事}。
+
+\medskip
+
+\textbf{看代码——只要 30 行}。
+\end{tcolorbox}
+
+\begin{lstlisting}[language=Python, caption={probability.py · 蒙特卡洛求 $\pi$ 与期权定价}]
+import numpy as np
+import matplotlib.pyplot as plt
+
+# =============================================================
+# 1. Monte Carlo for pi
+# =============================================================
+def monte_carlo_pi(N=1_000_000, seed=0):
+    rng = np.random.default_rng(seed)
+    x = rng.uniform(-1, 1, N)
+    y = rng.uniform(-1, 1, N)
+    inside = (x**2 + y**2) <= 1
+    return 4.0 * inside.mean()
+
+print(f"pi approx = {monte_carlo_pi(10**6):.6f}")
+print(f"true pi   = {np.pi:.6f}")
+
+# =============================================================
+# 2. Central Limit Theorem in action
+# =============================================================
+def clt_demo(dist_sampler, n_samples=30, n_trials=10000):
+    """The sum of any iid distribution converges to Normal."""
+    sums = np.array([dist_sampler(n_samples).mean()
+                     for _ in range(n_trials)])
+    return sums
+
+# Try with a very non-normal source: Bernoulli
+rng = np.random.default_rng(42)
+sums = clt_demo(lambda n: rng.binomial(1, 0.3, n))
+print(f"sample mean = {sums.mean():.4f}, expected = 0.3")
+print(f"sample std  = {sums.std():.4f}, expected = "
+      f"{np.sqrt(0.3*0.7/30):.4f}")
+
+# =============================================================
+# 3. European call option pricing via Monte Carlo
+# =============================================================
+def mc_european_call(S0, K, T, r, sigma, N=200_000, seed=0):
+    """Black-Scholes European call by Monte Carlo."""
+    rng = np.random.default_rng(seed)
+    Z = rng.standard_normal(N)
+    ST = S0 * np.exp((r - 0.5*sigma**2)*T + sigma*np.sqrt(T)*Z)
+    payoff = np.maximum(ST - K, 0.0)
+    price = np.exp(-r*T) * payoff.mean()
+    stderr = np.exp(-r*T) * payoff.std() / np.sqrt(N)
+    return price, stderr
+
+# Test against closed-form Black-Scholes
+from scipy.stats import norm
+def bs_call(S0, K, T, r, sigma):
+    d1 = (np.log(S0/K) + (r+0.5*sigma**2)*T) / (sigma*np.sqrt(T))
+    d2 = d1 - sigma*np.sqrt(T)
+    return S0*norm.cdf(d1) - K*np.exp(-r*T)*norm.cdf(d2)
+
+S0, K, T, r, sigma = 100, 100, 1.0, 0.05, 0.2
+mc_price, se = mc_european_call(S0, K, T, r, sigma)
+bs_price = bs_call(S0, K, T, r, sigma)
+print(f"MC price  = {mc_price:.4f} (+/- {1.96*se:.4f})")
+print(f"BS price  = {bs_price:.4f}")
+
+# =============================================================
+# 4. Bayes update for the medical test
+# =============================================================
+def bayes_update(prior, likelihood_pos_given_H,
+                 likelihood_pos_given_notH):
+    evidence = (likelihood_pos_given_H * prior +
+                likelihood_pos_given_notH * (1 - prior))
+    return likelihood_pos_given_H * prior / evidence
+
+posterior = bayes_update(0.001, 0.99, 0.01)
+print(f"P(disease | positive) = {posterior:.4f}")
+\end{lstlisting}
+
+\textbf{跑一遍——你会看到}：
+
+\begin{itemize}
+\item \texttt{pi approx = 3.141980}——\textbf{蒙特卡洛 100 万样本——精度到 3 位}
+\item \texttt{MC price = 10.4503 (+/- 0.0653)}——\textbf{和 Black-Scholes 解析解 10.4506 几乎一致}
+\item \texttt{P(disease | positive) = 0.0902}——\textbf{Bayes 算出的医学误判率 9\%}
+\end{itemize}
+
+\textbf{30 行代码——把蒙特卡洛、CLT、Black-Scholes、Bayes——全部跑通}。
+
+\section{现代视角 / The Modern Lens}
+
+\subsection{§6 应用一：信号与噪声}
+
+\textbf{现代通信工程的核心模型}：\textbf{接收信号 = 发送信号 + 高斯白噪声}。
+\begin{equation}
+y(t) = s(t) + n(t), \quad n(t) \sim \mathcal{N}(0, \sigma^2)
+\end{equation}
+
+\textbf{为什么是高斯}？——\textbf{中心极限定理}：\textbf{热噪声是无数电子的独立扰动叠加——CLT 保证它服从正态}。
+
+\textbf{为什么是"白"}？——\textbf{所有频率成分功率谱平等}——\textbf{白光的类比}。
+
+\textbf{Kalman 滤波}（\textbf{阿波罗登月、特斯拉自动驾驶}的核心算法）——\textbf{本质上就是 Bayesian 更新}：\textbf{用先验状态 + 新的观测 → 更新后验状态}。
+
+\subsection{§6 应用二：机器学习}
+
+\textbf{机器学习的核心}——一句话——\textbf{"从数据中学一个分布"}。
+
+\begin{itemize}
+\item \textbf{监督学习}：学条件分布 $p(y|x)$
+\item \textbf{生成模型}：学联合分布 $p(x,y)$ 或 $p(x)$
+\item \textbf{Bayesian 推断}：把模型参数 $\bm{\theta}$ 也看成随机变量——\textbf{用 Bayes 更新}：$p(\bm{\theta}|D) \propto p(D|\bm{\theta}) p(\bm{\theta})$
+\item \textbf{交叉熵损失} $= -\sum y \log p$ \textbf{本质上是似然的对数}——\textbf{深度学习训练就是 MLE}
+\end{itemize}
+
+\textbf{Diffusion 模型}（DALL-E、Stable Diffusion 的核心）：\textbf{学一个去噪过程——把高斯噪声逆向地恢复成图片}——\textbf{完全基于随机过程理论}。
+
+\textbf{Transformer 的 attention 权重}——\textbf{softmax 输出是概率分布}——\textbf{下一个 token 的预测就是 $p(x_{t+1} | x_1, \dots, x_t)$}——\textbf{ChatGPT 本质上是一个超大的 Markov 链}。
+
+\subsection{§6 应用三：量子}
+
+\textbf{量子力学是 20 世纪最深刻的物理理论}——\textbf{它的根基是概率}。
+
+\textbf{波函数} $\psi(\bm{x}, t)$ 的模平方 $|\psi|^2$ 是\textbf{粒子在位置 $\bm{x}$ 的概率密度}（Born 法则，1926）。
+
+\textbf{Schrödinger 方程描述 $\psi$ 的演化}——\textbf{是确定性的}——\textbf{但测量瞬间——波函数塌缩——结果是随机的}。
+
+\textbf{Einstein 不接受这件事}——\textbf{"God does not play dice"}——\textbf{但他错了}。\textbf{Bell 不等式实验}（1980 年代）\textbf{彻底排除了"隐变量"}——\textbf{量子的随机性是宇宙的基本属性}——\textbf{不是因为我们"不知道"}。
+
+\textbf{量子计算}——\textbf{利用叠加态的概率振幅做并行计算}——\textbf{Shor 算法因式分解、Grover 算法搜索}——\textbf{都是"用概率振幅而非概率"做计算}的实例。
+
+\section{代码与思考 / Code \& Reflection}
+
+\textbf{把 \texttt{probability.py} 跑通——你已经会用概率"做事"了}。
+
+\textbf{再做三件事——把直觉锁住}：
+
+\begin{enumerate}
+\item \textbf{改变蒙特卡洛样本数 $N$}——观察 $\pi$ 的估计误差——\textbf{画 log-log 图}——你会看到\textbf{斜率 $-1/2$}——这就是 \textbf{CLT 给的 $O(1/\sqrt{N})$ 收敛速率}。
+
+\item \textbf{用 \texttt{rng.uniform / rng.exponential / rng.poisson} 替换 CLT 演示里的 Bernoulli}——观察样本均值的直方图——\textbf{每一种原始分布——都会变成正态钟形}——\textbf{亲眼看见 CLT 的魔法}。
+
+\item \textbf{把 Bayes 更新里的先验从 0.001 改成 0.5}——再看后验——\textbf{你会发现后验是 99\%}——\textbf{这说明 Bayes 的结论严重依赖于先验}——\textbf{这就是为什么 base rate 是统计学第一坑}。
+\end{enumerate}
+
+\textbf{再问自己三个问题}：
+
+\begin{itemize}
+\item \textbf{为什么概率必须满足"可数可加性"}（公理 3）——\textbf{而不是有限可加性}？\\
+\textit{答}：\textbf{为了能处理"无限多个事件"——比如"在 $[0,1]$ 上随机取点"——必须有可数可加才能定义 Lebesgue 测度——这是 Kolmogorov 1933 年的关键洞察}。
+
+\item \textbf{为什么 ML 损失函数最常用的是"交叉熵"而不是"准确率"}？\\
+\textit{答}：\textbf{交叉熵 = $-\log$ 似然——它对概率本身敏感、可微分、有 CLT 性质}——\textbf{准确率不可微——梯度下降走不动}。
+
+\item \textbf{为什么期权定价不直接用真实概率——而用"风险中性概率"}？\\
+\textit{答}：\textbf{这是金融工程最深的一课}——\textbf{无套利论证}（Harrison-Pliska 1981）\textbf{证明}：\textbf{在没有套利的市场——存在一个等价测度 $Q$——使得贴现价格是鞅}——\textbf{用 $Q$ 算期望、再贴现——就是无套利价格}——\textbf{这是 Black-Scholes 真正的数学基础}。
+\end{itemize}
+
+\textbf{这一章——是\textbf{打通工科数学任督二脉}的一个关键节点}：\textbf{从此你看到的世界——不是确定的——而是分布的}。
+
+\section{本章小结 / Chapter Summary}
+
+\begin{tcolorbox}[essbox={本章小结}]
+\textbf{中文}：
+\begin{enumerate}
+\item \textbf{Kolmogorov 1933 年用四条公理把概率变成现代数学}——概率是测度
+\item \textbf{Bayes 定理是"信念遇到证据按比例更新"}——医学误判 / ML 的根
+\item \textbf{随机变量是函数 $X: \Omega \to \mathbb{R}$}——分布是测度的像
+\item \textbf{期望是重心、方差是离散度、协方差矩阵是 PCA 的入口}
+\item \textbf{大数定律保证平均收敛、CLT 解释了正态无处不在}——\textbf{统计学的两根柱子}
+\item \textbf{Markov 链 = PageRank/HMM/RL 的核心；Poisson 过程 = 排队/通信的核心}
+\item \textbf{蒙特卡洛 + Black-Scholes 让概率走进华尔街}——\textbf{现代金融工程的发动机}
+\item \textbf{深度学习本质是从数据中学一个分布}——\textbf{交叉熵就是负对数似然}
+\item \textbf{量子力学告诉我们}——\textbf{随机性是宇宙的基本属性}
+\end{enumerate}
+\textbf{English}: Kolmogorov's 1933 axioms made probability a measure; Bayes' rule updates belief in proportion to evidence; random variables are measurable functions and distributions are their pushforwards; expectation is integration, variance is spread, the covariance matrix powers PCA; the law of large numbers guarantees convergence of sample means and the central limit theorem explains the ubiquity of the normal distribution; Markov chains and Poisson processes are the backbones of modern stochastic modeling; Monte Carlo and Black–Scholes brought probability to Wall Street; deep learning is fundamentally learning a distribution, and quantum mechanics reminds us that randomness is a basic feature of reality itself.
+\end{tcolorbox}
+
+\textbf{下一章——我们将进入第 11 章：数理统计与推断}——\textbf{把这一章的"概率"用来"从数据里学规律"}——\textbf{这是现代数据科学真正的起点}。
+
+\clearpage

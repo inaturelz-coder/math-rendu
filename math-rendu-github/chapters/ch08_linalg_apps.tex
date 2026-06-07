@@ -1,0 +1,709 @@
+% =====================================================================
+%  第 8 章 · 线代应用 / Linear Algebra III
+%  SVD、PCA、最小二乘、Markov 链 + PageRank、矩阵分解、神经网络、量子比特
+%  小故事：Larry Page 的博士论文与 1.5 万亿美元的矩阵（1998）
+%  Aha：PageRank——一个特征向量是如何统治互联网的
+% =====================================================================
+
+\chapter{线代应用 / Linear Algebra III}
+\label{ch:linalg3}
+
+\begin{quote}\itshape
+1998 年——斯坦福大学计算机系——一个 25 岁的博士生坐在 Gates Hall 三楼的小办公室里。\\
+他叫 \textbf{Larry Page}。\\
+他的博士题目本来是\textbf{"超文本链接的逆向引用结构"}——\textbf{听起来很无聊}。\\
+但他写下了一个方程——一个看起来人畜无害的特征向量方程——\\
+\[
+\bm{r} = M \bm{r}
+\]
+\\[6pt]
+\textbf{20 年后}——这个特征向量值\textbf{1.5 万亿美元}——\textbf{它的名字叫 Google}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{这是"线性代数三部曲"的第三章——也是整本书的高潮章节之一}。
+
+第 6 章我们学了\textbf{矩阵 = 线性变换}——\textbf{是骨架}。\\
+第 7 章我们学了\textbf{特征值、特征向量、SVD、对角化}——\textbf{是内功}。\\
+\textbf{这一章——我们终于要让线代"出招"}——\textbf{看它如何变成 PageRank、PCA、神经网络、量子计算}。
+
+\textbf{为什么把"应用"单独写一章}？因为\textbf{在我的工科朋友里}——\textbf{90\% 的人会算特征值——但 50\% 的人不知道特征值能干什么}——\textbf{这是中国线代教育最大的断层}。
+
+\textbf{后来我做机器人感知}——\textbf{每一篇论文里出现的"奇异值分解"——其实是大三那道"求 SVD"题目的真实模样}。\textbf{在那一刻——题目变成了刀——线代变成了武功}。
+
+\textbf{这一章的七个应用——是工科 + ML + 物理学共用的"七把武器"}：
+
+\begin{enumerate}
+\item \textbf{SVD}——\textbf{最有用的矩阵分解——没有之一}
+\item \textbf{PCA}——\textbf{数据科学的"根"}
+\item \textbf{最小二乘 + 投影}——\textbf{回归与机器学习的最古老形式}
+\item \textbf{Markov 链 + PageRank}——\textbf{1.5 万亿美元的特征向量}
+\item \textbf{矩阵分解（LU、QR、Cholesky）}——\textbf{数值计算的瑞士军刀}
+\item \textbf{神经网络与线代}——\textbf{前馈 = 矩阵乘法的链}
+\item \textbf{量子比特 + 量子门}——\textbf{物理学和线代的握手}
+\end{enumerate}
+
+\textbf{读完这一章——你会明白}：\textbf{线代不是给考研用的——它是给"造世界"用的}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{现代世界的"大数据 + AI + 物理引擎"——本质上都是\textbf{在巨大的矩阵上反复做"分解 + 投影 + 迭代"}}——\textbf{而线代——就是这一切的语言}。\\[6pt]
+\textbf{English}: The modern world of big data, AI and physics engines is essentially \emph{decomposing, projecting and iterating on enormous matrices} —— and linear algebra is the language in which it speaks.
+\end{tcolorbox}
+
+\textbf{记住一个公式}——\textbf{记住整个 21 世纪的计算}：
+
+\[
+A = U \Sigma V^{\!\top}
+\]
+
+\textbf{这是 SVD}——\textbf{第 7 章我们已经见过它了}——\textbf{这一章我们要看它如何"统治世界"}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{中国教材的"应用空白"}
+
+\textbf{同济《线性代数》第 6 版——一共 200 页}。\textbf{我把它从头翻到尾}：\textbf{"应用"两个字出现 0 次}——\textbf{"PCA"出现 0 次}——\textbf{"SVD"出现 0 次}——\textbf{"PageRank"出现 0 次}。
+
+\textbf{它的最后一章}——\textbf{"二次型"}——\textbf{讲了 30 页矩阵的合同变换}——\textbf{但是没有一句话告诉你}：\textbf{二次型 = 一个椭球的方程——也是 PCA 的几何核心}。
+
+\textbf{这就是中国线代教育的"两张皮"}——\textbf{学的全是技巧——用的全在外面}。
+
+\subsection{Strang《Linear Algebra and Learning from Data》}
+
+\textbf{2019 年——Gilbert Strang 84 岁那年}——\textbf{写了一本新书}——\textbf{《Linear Algebra and Learning from Data》}。
+
+\textbf{他在前言里写}：\textbf{"我教了 60 年线性代数——直到机器学习出现——我才看到线代的全部威力。"}
+
+\textbf{这本书的结构}：\textbf{第一部分讲 SVD}——\textbf{第二部分讲优化与神经网络}——\textbf{第三部分讲概率与统计}。\textbf{300 页——全部都是"线代的应用"}。
+
+\textbf{这是世界顶级教授对中国线代教材的隐性回答}——\textbf{线代的灵魂不在行列式——在 SVD + 应用}。
+
+\subsection{Trefethen \& Bau《Numerical Linear Algebra》}
+
+\textbf{Cornell + Oxford 两位教授合写}——\textbf{这是数值线性代数的圣经}。
+
+\textbf{开篇第 1 节}——\textbf{讲的就是 SVD}——\textbf{第 1 句话}：\textbf{"Singular Value Decomposition is the most important matrix decomposition."}
+
+\textbf{这本书里}——\textbf{LU、QR、Cholesky}——\textbf{都不是\textbf{算法的细节}}——\textbf{是\textbf{"如何让浮点数不爆掉"的工程艺术}}。
+
+\subsection{我的策略}
+
+\textbf{本章不讲行列式——也不讲考研技巧}。\textbf{本章只做一件事}：\textbf{把第 7 章的特征值/SVD 全部"激活"——变成 7 个真实工程系统}。
+
+\textbf{每一节——都是\textbf{"理论 1 页 + 公式 1 页 + 代码 1 页"}的三件套}。
+
+\begin{tcolorbox}[storybox={\Large 小故事：Larry Page 与 1.5 万亿美元的矩阵（1998）}]
+\textbf{1995 年秋天——斯坦福大学计算机系新生 orientation}——\textbf{一个 22 岁的密歇根男孩 Larry Page} 见到了带他参观校园的研究生 Sergey Brin。\textbf{两个人吵了一路}——\textbf{谁都觉得对方讨厌}。
+
+\medskip
+
+\textbf{两年后——他们成了搭档}——\textbf{合写一篇论文}——\textbf{题目叫《The Anatomy of a Large-Scale Hypertextual Web Search Engine》}——\textbf{这就是 Google 的诞生论文}。
+
+\medskip
+
+\textbf{核心问题}：\textbf{1998 年的搜索引擎——AltaVista、Yahoo、Lycos}——\textbf{排序的方法是"关键词匹配次数"}——\textbf{结果}：\textbf{你搜"汽车"——第一页全是堆满"汽车汽车汽车"的垃圾网页}。
+
+\medskip
+
+\textbf{Larry Page 的想法}：\textbf{用网页之间的"链接结构"——给每个网页打一个分}——\textbf{这个分——他叫 PageRank}（注：\textbf{"Page" 不是网页的意思——是他自己的姓}）。
+
+\medskip
+
+\textbf{核心思想——一句话}：\textbf{"一个网页的重要性——取决于多少重要的网页指向它"}。
+
+\medskip
+
+\textbf{这是一个递归定义}——\textbf{看起来无解}——\textbf{但 Larry Page 写下了它的数学形式}：
+
+\[
+\bm{r} = M \bm{r}
+\]
+
+\medskip
+
+\textbf{这是一个特征向量方程}——\textbf{特征值 = 1}——\textbf{$M$ 是\textbf{网页之间链接关系构成的转移矩阵}}——\textbf{$\bm{r}$ 是\textbf{每个网页的"重要性分数"}}。
+
+\medskip
+
+\textbf{Larry Page 的这一念之差}——\textbf{把一个工程问题——变成了一个特征向量问题}——\textbf{把"我有 1 亿个网页该怎么排序"——变成了"我求这个 1 亿 × 1 亿矩阵最大特征值对应的特征向量"}。
+
+\medskip
+
+\textbf{1998 年 9 月 4 日——Google 公司在朋友家的车库里成立}——\textbf{创业资本 10 万美元——一台二手服务器}。
+
+\medskip
+
+\textbf{2004 年 IPO}——\textbf{市值 230 亿美元}。\\
+\textbf{2010 年}——\textbf{1900 亿美元}。\\
+\textbf{2020 年}——\textbf{1 万亿美元}。\\
+\textbf{2024 年}——\textbf{2 万亿美元}（峰值）。
+
+\medskip
+
+\textbf{Larry Page 的博士论文最终没有完成}——\textbf{他在 1998 年休学创业}——\textbf{斯坦福至今欠他一个 PhD}——\textbf{但他用一个特征向量——造了一家\textbf{1.5 万亿美元的公司}}。
+
+\medskip
+
+\textbf{这是数学史上回报率最高的特征向量}——\textbf{也是线性代数最美的"出招"}。
+
+\medskip
+
+\textbf{这一章——我们要复现它}——\textbf{用 30 行 Python 代码——给一个小型互联网算 PageRank}。
+\end{tcolorbox}
+
+\section{直觉 / Intuition}
+
+\subsection{SVD：把任何矩阵"拆成三件"}
+
+\textbf{SVD 的本质——一句话}：\textbf{任何矩阵——都可以拆成"旋转 + 拉伸 + 旋转"}。
+
+\[
+A = U \Sigma V^{\!\top}
+\]
+
+\textbf{其中}：
+\begin{itemize}
+\item \textbf{$V^{\!\top}$}——\textbf{第一次旋转}（把输入空间转到一个"好"的方向）
+\item \textbf{$\Sigma$}——\textbf{沿每个坐标轴拉伸}（拉伸的倍数 = 奇异值）
+\item \textbf{$U$}——\textbf{第二次旋转}（把结果转到输出空间）
+\end{itemize}
+
+\textbf{为什么这件事重要}？因为\textbf{奇异值 $\sigma_1 \ge \sigma_2 \ge \cdots \ge \sigma_r$ 告诉你"矩阵的能量分布"}——\textbf{前几个大——后面的小或者 0}——\textbf{这就是"压缩"的物理来源}。
+
+\textbf{记住一句话}：\textbf{SVD 是矩阵的"DNA 检测"——它告诉你矩阵的"主成分"是什么}。
+
+\subsection{PCA：找到数据"最胖的方向"}
+
+\textbf{PCA 的本质——一句话}：\textbf{在数据云里——找一条"穿过去最胖"的方向——把数据投到那条方向上}。
+
+\textbf{为什么这件事重要}？因为\textbf{人脸有 10000 个像素——但"人脸的本质"可能只有 50 个方向}（眼睛大小、鼻子高度、肤色\dots）——\textbf{PCA 帮你把 10000 维压成 50 维——精度损失 5\% 不到}。
+
+\textbf{PCA 的数学一句话}：\textbf{它就是数据协方差矩阵的 SVD}。\textbf{所以——SVD 是 PCA 的"母亲"}。
+
+\subsection{最小二乘：找一条"离所有点都最近"的线}
+
+\textbf{你大一物理实验}——\textbf{画 $y = ax + b$ 拟合曲线}——\textbf{你按的是 Excel 的 LINEST 函数}——\textbf{它背后是最小二乘法}：
+
+\[
+\min_{\bm{x}} \|A \bm{x} - \bm{b}\|^2
+\]
+
+\textbf{几何含义}——\textbf{把 $\bm{b}$ 投影到 $A$ 的列空间上}——\textbf{投影点 = 最佳拟合}——\textbf{投影误差 = 最小残差}。
+
+\textbf{结果一行公式}：
+
+\[
+\bm{x}^* = (A^{\!\top} A)^{-1} A^{\!\top} \bm{b}
+\]
+
+\textbf{这就是回归分析的"祖宗公式"}——\textbf{从 Gauss 1809 年到今天——200 多年没变过}。
+
+\subsection{Markov 链：状态在矩阵里"散步"}
+
+\textbf{Markov 链的本质}——\textbf{当前状态只取决于上一步——和更早的状态无关}（无记忆性）。\textbf{每一步——状态向量乘上一个"转移矩阵"}：
+
+\[
+\bm{p}_{t+1} = M \bm{p}_t
+\]
+
+\textbf{反复迭代}——\textbf{状态向量收敛到一个"平稳分布"}——\textbf{这个平稳分布 = $M$ 的特征值 1 对应的特征向量}。
+
+\textbf{PageRank——就是把"互联网"当成一条 Markov 链}——\textbf{用户在网页之间随机游走}——\textbf{平稳分布 = 每个网页的访问概率 = 网页的重要性}。
+
+\subsection{神经网络：矩阵乘法的链}
+
+\textbf{ChatGPT 的核心 Transformer——本质上是}：
+
+\[
+\bm{y} = f_n(W_n \, f_{n-1}(W_{n-1} \, \cdots f_1(W_1 \bm{x} + \bm{b}_1) \cdots + \bm{b}_{n-1}) + \bm{b}_n)
+\]
+
+\textbf{把激活函数 $f$ 暂时遮起来}——\textbf{它就是 $n$ 个矩阵的连乘}——\textbf{$W_n W_{n-1} \cdots W_1 \bm{x}$}。
+
+\textbf{所有的"深度学习"——本质上都是"高维线性变换 + 一点点非线性"——堆叠几十层}。\textbf{99\% 的计算量——是矩阵乘法}。
+
+\subsection{量子比特：单位球面上的复向量}
+
+\textbf{一个量子比特 = $\mathbb{C}^2$ 里一个长度为 1 的复向量}：
+
+\[
+|\psi\rangle = \alpha |0\rangle + \beta |1\rangle, \quad |\alpha|^2 + |\beta|^2 = 1
+\]
+
+\textbf{量子门 = $\mathbb{C}^2$ 上的酉矩阵}（$U^\dagger U = I$）——\textbf{它把一个量子比特变成另一个量子比特}——\textbf{不增加信息——也不丢失信息}。
+
+\textbf{量子计算的本质}——\textbf{一长串酉矩阵乘上初始状态 $|0\rangle$}——\textbf{最后做一次"测量"得到 0 或 1}。\textbf{这就是 IBM Q、Google Sycamore 的全部数学}。
+
+\section{数学 / The Math}
+
+\subsection{SVD 的精确陈述}
+
+\begin{theorem}[SVD 定理]
+设 $A \in \mathbb{R}^{m \times n}$——\textbf{rank} $= r$。\textbf{存在}：
+\begin{itemize}
+\item \textbf{$U \in \mathbb{R}^{m \times m}$}——\textbf{正交矩阵}（$U^{\!\top} U = I_m$）
+\item \textbf{$V \in \mathbb{R}^{n \times n}$}——\textbf{正交矩阵}（$V^{\!\top} V = I_n$）
+\item \textbf{$\Sigma \in \mathbb{R}^{m \times n}$}——\textbf{对角矩阵——对角元 $\sigma_1 \ge \sigma_2 \ge \cdots \ge \sigma_r > 0$——其余为 0}
+\end{itemize}
+使得
+\[
+A = U \Sigma V^{\!\top}
+\]
+$\sigma_i$ 称为\textbf{奇异值}——\textbf{$U$ 的列称为左奇异向量}——\textbf{$V$ 的列称为右奇异向量}。
+\end{theorem}
+
+\textbf{关键事实}：
+\begin{itemize}
+\item \textbf{$\sigma_i^2 = $ $A^{\!\top} A$ 的特征值}——\textbf{所以 SVD = 对称矩阵 $A^{\!\top} A$ 的特征分解的"升级版"}
+\item \textbf{$V$ 的列 = $A^{\!\top} A$ 的特征向量}
+\item \textbf{$U$ 的列 = $A A^{\!\top}$ 的特征向量}
+\item \textbf{秩 $r$ 截断}：\textbf{把 $\Sigma$ 只保留前 $k$ 个奇异值——得到 $A$ 的"最佳秩-$k$ 近似"}（Eckart--Young 定理）
+\end{itemize}
+
+\subsection{Eckart--Young 定理（SVD 的"压缩定理"）}
+
+\begin{theorem}[Eckart--Young, 1936]
+设 $A = U \Sigma V^{\!\top}$——\textbf{令}
+\[
+A_k = \sum_{i=1}^{k} \sigma_i \bm{u}_i \bm{v}_i^{\!\top}
+\]
+\textbf{则 $A_k$ 是所有秩不超过 $k$ 的矩阵中——离 $A$ 最近的}（Frobenius 范数下）：
+\[
+\|A - A_k\|_F = \min_{\mathrm{rank}(B) \le k} \|A - B\|_F = \sqrt{\sigma_{k+1}^2 + \cdots + \sigma_r^2}
+\]
+\end{theorem}
+
+\textbf{这一句话——是图像压缩、推荐系统、LoRA 微调的数学基础}。
+
+\subsection{PCA 的精确推导}
+
+\textbf{设数据矩阵 $X \in \mathbb{R}^{n \times d}$}——\textbf{每行一个样本——共 $n$ 个样本——每个 $d$ 维}。\textbf{先减去均值得到中心化矩阵 $\tilde{X}$}。
+
+\textbf{协方差矩阵}：
+
+\[
+C = \frac{1}{n-1} \tilde{X}^{\!\top} \tilde{X}
+\]
+
+\textbf{$C$ 是对称半正定矩阵}——\textbf{它的特征分解}：
+
+\[
+C = V \Lambda V^{\!\top}
+\]
+
+\textbf{$\Lambda = \mathrm{diag}(\lambda_1, \lambda_2, \dots, \lambda_d)$, $\lambda_1 \ge \lambda_2 \ge \cdots \ge \lambda_d \ge 0$}。
+
+\textbf{$V$ 的列称为主成分方向}——\textbf{$\lambda_i$ = 第 $i$ 个主成分上的方差}。
+
+\textbf{保留前 $k$ 个主成分}——\textbf{得到降维表示}：
+
+\[
+Z = \tilde{X} V_k \in \mathbb{R}^{n \times k}
+\]
+
+\textbf{解释方差比例}：
+
+\[
+\text{Explained variance ratio} = \frac{\lambda_1 + \cdots + \lambda_k}{\lambda_1 + \cdots + \lambda_d}
+\]
+
+\textbf{通常我们选 $k$ 使得比例 $\ge 95\%$}——\textbf{你就压缩了几十倍——丢失不到 5\%}。
+
+\subsection{最小二乘 = 正交投影}
+
+\textbf{问题}：\textbf{$A \in \mathbb{R}^{m \times n}$，$m \gg n$（行多于列——超定方程组）}——\textbf{$A\bm{x} = \bm{b}$ 一般无解}。
+
+\textbf{最小二乘解}：
+
+\[
+\bm{x}^* = \arg\min_{\bm{x}} \|A \bm{x} - \bm{b}\|^2
+\]
+
+\textbf{法方程}：
+
+\[
+A^{\!\top} A \bm{x}^* = A^{\!\top} \bm{b} \quad \Longrightarrow \quad \bm{x}^* = (A^{\!\top} A)^{-1} A^{\!\top} \bm{b}
+\]
+
+\textbf{几何解释}——\textbf{$A \bm{x}^*$ 是 $\bm{b}$ 在 $A$ 的列空间上的正交投影}——\textbf{投影矩阵}：
+
+\[
+P = A (A^{\!\top} A)^{-1} A^{\!\top}
+\]
+
+\textbf{$P$ 满足 $P^2 = P$, $P^{\!\top} = P$——这是正交投影的两个标志}。
+
+\subsection{Markov 链与平稳分布}
+
+\textbf{$M \in \mathbb{R}^{n \times n}$——列随机矩阵}（每列和 = 1——元素非负）——\textbf{则}：
+
+\begin{itemize}
+\item \textbf{$M$ 的最大特征值 = 1}（Perron--Frobenius 定理）
+\item \textbf{对应的特征向量 $\bm{\pi}$（归一化）就是平稳分布}：$M \bm{\pi} = \bm{\pi}$
+\item \textbf{若 $M$ 不可约且非周期}——\textbf{$\bm{\pi}$ 唯一}——\textbf{任何初始分布 $\bm{p}_0$ 经 $\bm{p}_t = M^t \bm{p}_0$ 都收敛到 $\bm{\pi}$}
+\end{itemize}
+
+\subsection{PageRank 的数学公式}
+
+\textbf{设 $G$ = 互联网的链接图}——\textbf{$n$ 个网页}——\textbf{$L_{ij} = 1$ 若网页 $j$ 指向网页 $i$}——\textbf{否则 0}。
+
+\textbf{令 $c_j = $ 网页 $j$ 的出链数}——\textbf{则转移矩阵}：
+
+\[
+M_{ij} = \frac{L_{ij}}{c_j}
+\]
+
+\textbf{这个 $M$ 是列随机矩阵}——\textbf{但存在两个问题}：
+\begin{itemize}
+\item \textbf{Dead end}（出链为 0 的网页）——\textbf{概率会"漏出去"}
+\item \textbf{Spider trap}（自闭环）——\textbf{用户被困住}
+\end{itemize}
+
+\textbf{Larry Page 的天才修正}——\textbf{引入"传送概率" $d$（damping factor）}：
+
+\[
+\hat{M} = d M + \frac{1-d}{n} \bm{1} \bm{1}^{\!\top}
+\]
+
+\textbf{$d = 0.85$}——\textbf{意思}：\textbf{用户 85\% 概率沿链接点击——15\% 概率随机跳到一个网页}。
+
+\textbf{PageRank 方程}：
+
+\[
+\bm{r} = \hat{M} \bm{r}
+\]
+
+\textbf{$\bm{r}$ = $\hat{M}$ 最大特征值（=1）对应的特征向量}——\textbf{这就是 PageRank 向量}。
+
+\textbf{数值求法——幂迭代}：
+
+\[
+\bm{r}_{t+1} = \hat{M} \bm{r}_t
+\]
+
+\textbf{通常 30--50 次迭代即收敛}——\textbf{即便对几十亿个网页}。
+
+\subsection{矩阵分解三件套}
+
+\textbf{LU 分解}（Gauss 消元的"现代化"）：
+
+\[
+A = LU
+\]
+
+\textbf{$L$ 是下三角——$U$ 是上三角}——\textbf{用于解 $A \bm{x} = \bm{b}$}（先解 $L \bm{y} = \bm{b}$——再解 $U \bm{x} = \bm{y}$）。\textbf{复杂度 $O(n^3)$——但解多个右端项时只需 $O(n^2)$ 一次}。
+
+\medskip
+
+\textbf{QR 分解}（最小二乘的"数值核心"）：
+
+\[
+A = QR
+\]
+
+\textbf{$Q$ 是正交矩阵——$R$ 是上三角}——\textbf{用于最小二乘}：\textbf{$R \bm{x}^* = Q^{\!\top} \bm{b}$}——\textbf{比 $(A^{\!\top} A)^{-1}$ 数值上稳定得多}。
+
+\medskip
+
+\textbf{Cholesky 分解}（对称正定矩阵专用——速度最快）：
+
+\[
+A = L L^{\!\top}
+\]
+
+\textbf{要求 $A$ 对称正定}——\textbf{复杂度 $\frac{1}{2} n^3$——是 LU 的一半}。\textbf{在统计学（协方差矩阵）和优化（Hessian 矩阵）里用得最多}。
+
+\subsection{神经网络的线代写法}
+
+\textbf{一个 $L$ 层全连接网络}：
+
+\[
+\begin{aligned}
+\bm{a}^{(0)} &= \bm{x} \\
+\bm{z}^{(\ell)} &= W^{(\ell)} \bm{a}^{(\ell-1)} + \bm{b}^{(\ell)}, \quad \ell = 1, \dots, L \\
+\bm{a}^{(\ell)} &= \sigma(\bm{z}^{(\ell)}) \\
+\hat{\bm{y}} &= \bm{a}^{(L)}
+\end{aligned}
+\]
+
+\textbf{反向传播 = 链式法则在矩阵上的写法}：
+
+\[
+\frac{\partial \mathcal{L}}{\partial W^{(\ell)}} = \bm{\delta}^{(\ell)} (\bm{a}^{(\ell-1)})^{\!\top}, \quad \bm{\delta}^{(\ell-1)} = (W^{(\ell)})^{\!\top} \bm{\delta}^{(\ell)} \odot \sigma'(\bm{z}^{(\ell-1)})
+\]
+
+\textbf{这就是为什么深度学习的训练 = 大量矩阵乘法}——\textbf{每次 forward + backward 都是$2L$ 次大矩阵乘}。
+
+\subsection{量子门的酉矩阵}
+
+\textbf{常见的单比特门}：
+
+\[
+H = \frac{1}{\sqrt{2}} \begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix} \quad \text{(Hadamard——叠加门)}
+\]
+
+\[
+X = \begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}, \quad Y = \begin{pmatrix} 0 & -i \\ i & 0 \end{pmatrix}, \quad Z = \begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix} \quad \text{(Pauli 矩阵)}
+\]
+
+\textbf{两比特门——CNOT}：
+
+\[
+\mathrm{CNOT} = \begin{pmatrix} 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \\ 0 & 0 & 0 & 1 \\ 0 & 0 & 1 & 0 \end{pmatrix}
+\]
+
+\textbf{所有量子算法（Shor、Grover）——都是\textbf{这些酉矩阵的乘积} + \textbf{最后一次测量}}。
+
+\section{Aha 例子：PageRank 与 PCA / Aha: PageRank and PCA}
+
+\subsection{Aha 例子 1：用 30 行代码复现 Google}
+
+\textbf{我们构造一个"迷你互联网"——5 个网页 A, B, C, D, E}——\textbf{链接结构}：
+
+\begin{itemize}
+\item \textbf{A} 指向 B, C, D
+\item \textbf{B} 指向 C
+\item \textbf{C} 指向 A, B
+\item \textbf{D} 指向 A, B, C
+\item \textbf{E} 指向 A, B, C, D
+\end{itemize}
+
+\textbf{对应的链接矩阵 $L$（行是被指向——列是源）}：
+
+\[
+L = \begin{pmatrix}
+0 & 0 & 1 & 1 & 1 \\
+1 & 0 & 1 & 1 & 1 \\
+1 & 1 & 0 & 1 & 1 \\
+1 & 0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 0 & 0
+\end{pmatrix}
+\]
+
+\textbf{出链数}：\textbf{$c_A = 3, c_B = 1, c_C = 2, c_D = 3, c_E = 4$}。
+
+\textbf{转移矩阵 $M_{ij} = L_{ij} / c_j$}：
+
+\[
+M = \begin{pmatrix}
+0 & 0 & 1/2 & 1/3 & 1/4 \\
+1/3 & 0 & 1/2 & 1/3 & 1/4 \\
+1/3 & 1 & 0 & 1/3 & 1/4 \\
+1/3 & 0 & 0 & 0 & 1/4 \\
+0 & 0 & 0 & 0 & 0
+\end{pmatrix}
+\]
+
+\textbf{加上 damping}——\textbf{$\hat{M} = 0.85 M + 0.15/5 \cdot \bm{1} \bm{1}^{\!\top}$}。
+
+\textbf{初始 $\bm{r}_0 = (0.2, 0.2, 0.2, 0.2, 0.2)^{\!\top}$}——\textbf{迭代 30 次}——\textbf{结果}：
+
+\[
+\bm{r} \approx (0.27, 0.30, 0.27, 0.13, 0.03)^{\!\top}
+\]
+
+\textbf{解读}：\textbf{B 最重要}（被多个高分网页指向）——\textbf{E 最不重要}（没人指它）——\textbf{尽管 E 自己很"勤奋"指向所有人}。
+
+\textbf{这就是 PageRank 的灵魂}——\textbf{"重要性来自被引用——不来自自己叫嚣"}。\textbf{这也是为什么垃圾网页堆关键词没用}——\textbf{它没有"被引用"的资本}。
+
+\begin{tcolorbox}[ahabox={\Large Aha：PageRank = 互联网的特征向量}]
+\textbf{1 亿个网页的 PageRank}——\textbf{就是一个 1 亿 × 1 亿 矩阵的最大特征向量}。
+
+\medskip
+
+\textbf{1998 年——Larry Page 用 Sun 工作站算这个特征向量}——\textbf{算了一周}。\\
+\textbf{2024 年——Google 每天重新算一次}——\textbf{用 TPU 集群——几分钟搞定}。
+
+\medskip
+
+\textbf{一个特征向量}——\textbf{一个数学概念}——\textbf{催生了人类历史上最大的信息公司}——\textbf{这是线性代数最美的"出招"}。
+\end{tcolorbox}
+
+\subsection{Aha 例子 2：PCA 把人脸压成 50 维}
+
+\textbf{Olivetti 人脸数据集}——\textbf{40 个人——每人 10 张人脸照片}——\textbf{每张 $64 \times 64 = 4096$ 像素}。
+
+\textbf{步骤}：
+
+\begin{enumerate}
+\item \textbf{把 400 张人脸展平成 $X \in \mathbb{R}^{400 \times 4096}$}
+\item \textbf{中心化}——\textbf{每列减去均值}
+\item \textbf{算 SVD}——\textbf{$X = U \Sigma V^{\!\top}$}
+\item \textbf{保留前 $k = 50$ 个主成分}——\textbf{$V_{50} \in \mathbb{R}^{4096 \times 50}$}
+\item \textbf{投影}——\textbf{$Z = X V_{50} \in \mathbb{R}^{400 \times 50}$}（每张脸用 50 个数表示）
+\item \textbf{重建}——\textbf{$\hat{X} = Z V_{50}^{\!\top}$}——\textbf{把 50 维数据"还原"成 4096 像素的人脸}
+\end{enumerate}
+
+\textbf{结果}：\textbf{压缩比 = 4096 / 50 ≈ 80 倍}——\textbf{人脸视觉上几乎看不出差别}——\textbf{解释方差 > 90\%}。
+
+\textbf{$V_{50}$ 的每一列——本身可以"画出来"}——\textbf{你会看到 50 张"特征脸"（Eigenfaces）}——\textbf{它们是人脸空间的"标准基"}——\textbf{1991 年 Turk \& Pentland 发明 Eigenfaces——是计算机视觉的早期里程碑}。
+
+\textbf{这就是 PCA 的力量}——\textbf{它告诉你}：\textbf{4096 维的人脸——本质上活在 50 维子空间里}。
+
+\section{现代视角：线代统治数字世界 / Modern: Linear Algebra Rules the Digital World}
+
+\subsection{推荐系统 = 矩阵分解}
+
+\textbf{Netflix Prize（2006--2009）}——\textbf{100 万美元奖金}——\textbf{题目}：\textbf{给定一个"用户 × 电影"评分矩阵 $R$（绝大多数元素缺失）——预测缺失的评分}。
+
+\textbf{冠军方法的核心}：
+
+\[
+R \approx U V^{\!\top}, \quad U \in \mathbb{R}^{n \times k}, V \in \mathbb{R}^{m \times k}, \quad k \ll \min(n, m)
+\]
+
+\textbf{这就是\textbf{低秩近似}——\textbf{是 SVD 的"带缺失值"版本}}。\textbf{$U$ 的每一行是\textbf{用户的"潜在偏好向量"}}——\textbf{$V$ 的每一行是\textbf{电影的"潜在风格向量"}}——\textbf{两者点乘 = 预测评分}。
+
+\textbf{2024 年的 TikTok、抖音、YouTube 推荐}——\textbf{都是这个思路的"深度学习增强版"}——\textbf{核心还是低秩矩阵分解}。
+
+\subsection{大模型与 LoRA = SVD 的实战}
+
+\textbf{2022 年 Microsoft 提出 LoRA（Low-Rank Adaptation）}——\textbf{微调大模型的革命性方法}。
+
+\textbf{核心想法}——\textbf{大模型权重 $W \in \mathbb{R}^{d \times d}$ 太大}——\textbf{微调时用一个低秩更新}：
+
+\[
+W' = W + \Delta W, \quad \Delta W = A B^{\!\top}, \quad A \in \mathbb{R}^{d \times r}, B \in \mathbb{R}^{d \times r}, r \ll d
+\]
+
+\textbf{典型 $d = 4096, r = 8$}——\textbf{参数量从 $1600 万$ 降到 $6.6 万$}——\textbf{压缩 250 倍——精度损失 < 1\%}。
+
+\textbf{LoRA 的合法性——来自 Eckart--Young 定理}——\textbf{低秩近似的精度可控}。\textbf{现在所有的 ChatGLM、Llama、Mistral 微调——都用 LoRA}。
+
+\subsection{自动驾驶 = 大型最小二乘}
+
+\textbf{Tesla FSD、Waymo、华为 ADS}——\textbf{车上的激光雷达、摄像头、IMU、GPS}——\textbf{每秒产生 GB 级数据}——\textbf{最终都要解一个最小二乘问题}：
+
+\[
+\min \|H \bm{x} - \bm{z}\|^2
+\]
+
+\textbf{$\bm{x}$ = 车的位置 + 姿态 + 速度}——\textbf{$\bm{z}$ = 所有传感器的观测}——\textbf{$H$ = 几何关系矩阵}。\textbf{每秒解几百次}——\textbf{用 QR 分解和卡尔曼滤波}。
+
+\textbf{你在高速公路上 120 km/h 巡航——背后是 Gauss 1809 年的最小二乘法每秒被解 1000 次}。
+
+\subsection{量子计算 = 巨型酉矩阵的乘法}
+
+\textbf{Google Sycamore 量子处理器（2019）}——\textbf{53 个量子比特}——\textbf{状态空间维度 = $2^{53} \approx 9 \times 10^{15}$}。
+
+\textbf{量子算法 = 一系列 $2^{53} \times 2^{53}$ 酉矩阵的乘法}——\textbf{这是经典计算机绝对算不动的事}——\textbf{但物理本身可以"算"——因为宇宙就是按这个规则演化的}。
+
+\textbf{Shor 算法分解大整数}——\textbf{Grover 算法搜索无序数据库}——\textbf{都是"酉矩阵乘法 + 测量"}——\textbf{量子计算的全部数学语言——就是线性代数}。
+
+\subsection{结论：现代计算 = 巨型矩阵的"减法艺术"}
+
+\textbf{我把 21 世纪的计算总结成一句话}——\textbf{现代算力 = 用"低秩"逼近"高维"}——\textbf{用 SVD、PCA、矩阵分解、LoRA、神经网络剪枝——把"看似无穷大"的问题压成"工程上可算"的问题}。
+
+\textbf{所以——线代不是"过时的工具"}——\textbf{它是"减法的艺术"}——\textbf{是计算的"瑞士军刀"}。
+
+\section{代码与思考 / Code and Exercises}
+
+\subsection{配套模块 \texttt{linalg\_apps.py}}
+
+GitHub 上的 \texttt{modules/linalg\_apps.py} 包含\textbf{7 个 demo}——\textbf{对应本章 7 个应用}：
+
+\begin{enumerate}
+\item \texttt{demo\_svd\_image\_compress()}——\textbf{用 SVD 压缩一张图片}——\textbf{保留前 $k$ 个奇异值——画出压缩比 vs 失真曲线}
+\item \texttt{demo\_pca\_faces()}——\textbf{Olivetti 人脸数据集 PCA 降维}——\textbf{可视化 50 张"特征脸"}
+\item \texttt{demo\_least\_squares\_fit()}——\textbf{用最小二乘拟合 $y = ax^2 + bx + c$}——\textbf{对比 \texttt{np.linalg.lstsq} 和手工 $(A^{\!\top} A)^{-1} A^{\!\top} \bm{b}$}
+\item \texttt{demo\_pagerank()}——\textbf{本章 Aha 例子 1}——\textbf{5 网页迷你互联网的 PageRank 计算}
+\item \texttt{demo\_matrix\_decomp()}——\textbf{对比 LU / QR / Cholesky 在同一个问题上的速度和精度}
+\item \texttt{demo\_nn\_as\_matmul()}——\textbf{用纯 NumPy 实现一个 3 层 MLP}——\textbf{每一步都是矩阵乘法}
+\item \texttt{demo\_qubit\_gates()}——\textbf{用 NumPy 实现 H、X、CNOT 门}——\textbf{展示 Bell 态的产生}
+\end{enumerate}
+
+\textbf{核心代码片段——PageRank 的 30 行}：
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+
+def pagerank(L, d=0.85, n_iter=50, tol=1e-8):
+    """
+    L : (n, n) ndarray
+        Link matrix: L[i, j] = 1 if page j links to page i.
+    d : float
+        Damping factor (Google uses 0.85).
+    Returns the PageRank vector r of length n.
+    """
+    n = L.shape[0]
+    # Column-normalize: M[:, j] = L[:, j] / sum(L[:, j])
+    col_sum = L.sum(axis=0)
+    # Handle dead ends (column of zeros): treat as uniform jump.
+    col_sum[col_sum == 0] = n
+    M = L / col_sum
+    M[:, L.sum(axis=0) == 0] = 1.0 / n
+    # Google matrix with damping.
+    G = d * M + (1 - d) / n * np.ones((n, n))
+    # Power iteration.
+    r = np.ones(n) / n
+    for k in range(n_iter):
+        r_new = G @ r
+        if np.linalg.norm(r_new - r, 1) < tol:
+            break
+        r = r_new
+    return r / r.sum()  # Normalize to probability vector.
+
+# Mini-internet: 5 pages A, B, C, D, E.
+L = np.array([
+    [0, 0, 1, 1, 1],
+    [1, 0, 1, 1, 1],
+    [1, 1, 0, 1, 1],
+    [1, 0, 0, 0, 1],
+    [0, 0, 0, 0, 0]
+])
+r = pagerank(L)
+print("PageRank vector:", np.round(r, 3))
+# Expected: [0.27, 0.30, 0.27, 0.13, 0.03]
+\end{lstlisting}
+
+\textbf{运行}：
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/inaturelz-coder/math-rendu
+cd math-rendu
+pip install -r requirements.txt
+python modules/linalg_apps.py
+\end{lstlisting}
+
+\subsection{思考题 / Exercises}
+
+\begin{enumerate}
+\item \textbf{[SVD]} 给一个 $3 \times 2$ 矩阵 $A = \begin{pmatrix} 1 & 0 \\ 0 & 1 \\ 1 & 1 \end{pmatrix}$——\textbf{手算 $A^{\!\top} A$ 的特征值——得到奇异值}——\textbf{然后用 \texttt{np.linalg.svd} 验证}。
+\item \textbf{[SVD 压缩]} 找一张 $512 \times 512$ 的灰度图——\textbf{算 SVD}——\textbf{画出"保留前 $k$ 个奇异值后的图像"对 $k = 1, 5, 20, 50, 100$}——\textbf{说说你"什么时候开始看不出差别"}。
+\item \textbf{[PCA]} 在 sklearn 里加载 iris 数据集（150 朵花——4 维特征）——\textbf{用 PCA 降到 2 维并画散点图}——\textbf{看 3 类花是否在 2D 平面上分开了}。
+\item \textbf{[最小二乘]} 给一组实验数据 $(x_i, y_i)$——\textbf{$x = [1, 2, 3, 4, 5]$，$y = [2.1, 3.9, 6.2, 7.8, 10.1]$}——\textbf{用最小二乘拟合 $y = ax + b$}——\textbf{算出 $a, b$ 并画图}。
+\item \textbf{[PageRank]} 把本章迷你互联网改成\textbf{加一个新网页 F——只指向 E}——\textbf{重新算 PageRank}——\textbf{看看 E 的分数是否提升}。
+\item \textbf{[PageRank 收敛]} 把 $d$ 从 0.85 改成 0.5、0.95、1.0——\textbf{观察收敛速度和最终结果}——\textbf{为什么 $d = 1.0$ 时算法可能不收敛}？
+\item \textbf{[矩阵分解]} 对一个 $100 \times 100$ 的对称正定矩阵——\textbf{分别用 LU、QR、Cholesky 解 $A \bm{x} = \bm{b}$}——\textbf{用 \texttt{time.time()} 比较三者的耗时}——\textbf{Cholesky 是否最快}？
+\item \textbf{[神经网络]} 用 NumPy 实现一个 2 层 MLP（输入 2 维——隐层 4 维——输出 1 维）——\textbf{学习 XOR 函数}——\textbf{只用矩阵乘法 + ReLU + 平方损失 + 手算梯度}。
+\item \textbf{[量子]} 用 NumPy 实现 $H \otimes H |00\rangle$——\textbf{验证结果是 $\frac{1}{2}(|00\rangle + |01\rangle + |10\rangle + |11\rangle)$}（均匀叠加）。
+\item \textbf{[历史]} 查一查 Larry Page 的博士论文最后到底完成了没有——\textbf{Google 早年的服务器叫什么名字}（hint: BackRub）——\textbf{它和 PageRank 的关系是什么}？
+\item \textbf{[综合]} 找一个你身边的"排名问题"（比如\textbf{大学排名、足球队排名、推荐朋友}）——\textbf{把它建模成 PageRank 问题}——\textbf{写出 $M$ 并计算}。
+\end{enumerate}
+
+\section{本章小结 / Chapter Summary}
+
+\begin{tcolorbox}[essbox={本章核心}]
+\begin{itemize}
+\item \textbf{SVD $A = U \Sigma V^{\!\top}$}——\textbf{最有用的矩阵分解——压缩 / 推荐 / LoRA 的基石}——\textbf{Eckart--Young 保证"低秩近似最优"}
+\item \textbf{PCA}——\textbf{协方差矩阵的特征分解}——\textbf{= 数据 SVD 的几何版本}——\textbf{"找最胖方向"压缩高维数据}
+\item \textbf{最小二乘}——\textbf{$\bm{x}^* = (A^{\!\top} A)^{-1} A^{\!\top} \bm{b}$}——\textbf{= 把 $\bm{b}$ 投影到 $A$ 的列空间}——\textbf{回归 / 滤波 / 定位的祖宗公式}
+\item \textbf{Markov 链}——\textbf{$\bm{p}_{t+1} = M \bm{p}_t$}——\textbf{平稳分布 = 特征值 1 的特征向量}（Perron--Frobenius）
+\item \textbf{PageRank}——\textbf{$\bm{r} = \hat{M} \bm{r}$}——\textbf{$\hat{M} = 0.85 M + 0.03 \bm{1} \bm{1}^{\!\top}$}——\textbf{Larry Page 1998 年的 1.5 万亿美元特征向量}
+\item \textbf{LU / QR / Cholesky}——\textbf{数值线代三件套}——\textbf{对应解方程 / 最小二乘 / 对称正定问题}
+\item \textbf{神经网络}——\textbf{= 矩阵乘法的链 + 一点点非线性}——\textbf{99\% 的计算量是 BLAS}
+\item \textbf{量子比特 + 量子门}——\textbf{= $\mathbb{C}^2$ 上的酉矩阵}——\textbf{物理学和线代握手的地方}
+\item \textbf{现代视角}——\textbf{推荐系统 / LoRA / 自动驾驶 / 量子计算}——\textbf{统统是"巨型矩阵的减法艺术"}
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{至此——"线代三部曲"全部讲完了}。\textbf{从第 6 章的"矩阵 = 变换"——到第 7 章的"特征值 = 不变方向"——到第 8 章的"PageRank = 1.5 万亿美元的特征向量"}——\textbf{我们走完了从抽象到工程的全部旅程}。
+
+\textbf{下一章——复变函数}——\textbf{我们要从"实数世界"走到"复数世界"}——\textbf{看 Euler $e^{i\pi} + 1 = 0$ 如何统一三角、指数和复指数}——\textbf{以及为什么 5G 通信、信号处理、量子力学全部需要复数}。
+
+\textbf{线代是"空间的语言"}——\textbf{复变函数是"波的语言"}——\textbf{两者合起来——你就拥有了整个工程世界的"双语能力"}。
+
+\clearpage

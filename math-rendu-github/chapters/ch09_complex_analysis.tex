@@ -1,0 +1,595 @@
+% =====================================================================
+%  第 9 章 · 复变函数 / Complex Analysis
+%  复数、欧拉公式、解析函数、Cauchy 积分、留数、Fourier
+%  小故事：Euler 最美的公式 e^{iπ} + 1 = 0
+%  Aha：Fourier 变换在 MP3 压缩里的工作
+% =====================================================================
+
+\chapter{复变函数 / Complex Analysis}
+\label{ch:complex}
+
+\begin{quote}\itshape
+1748 年——\textbf{Leonhard Euler} 在他的《无穷分析引论》里写下一行公式：
+\[
+e^{i\pi} + 1 = 0
+\]
+\textbf{五个最重要的常数}——$0$、$1$、$i$、$\pi$、$e$——\textbf{被一行字串在了一起}。\\
+\textbf{当代物理学家 Richard Feynman} 称它为\textbf{"数学界最伟大的公式"}——\textbf{犹如物理界的广义相对论}。\\
+这一章——\textbf{就讲这一行公式背后的整个世界}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{我大二第一次学复变}——\textbf{老师上来就讲"复数域 $\mathbb{C}$ 在拓扑上同胚于 $\mathbb{R}^2$"}——\textbf{我整个人都懵了}。
+
+\textbf{后来才知道——这门课在中国工科——叫"复变函数与积分变换"}——\textbf{很多老师把它当成"高数 + 1"来教}——\textbf{讲一堆 Cauchy-Riemann 方程的偏导验证}——\textbf{然后期末算几个留数题}。
+
+\textbf{我做硕士那年}——\textbf{在信号处理实验室}——\textbf{我第一次用 \texttt{scipy.fft} 把一段音频拆成频率}——
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+spectrum = np.fft.fft(audio_signal)
+\end{lstlisting}
+
+\textbf{一行代码——做完了 Fourier 变换}——\textbf{返回的是一个复数数组}。
+
+\textbf{那一刻我才反应过来}：\textbf{复数不是"虚的"}——\textbf{它是"旋转的"}——\textbf{Fourier 变换的每一个值——都是一个"频率成分"的\textbf{幅度}和\textbf{相位}}——\textbf{$|z|$ 是幅度——$\arg(z)$ 是相位}——\textbf{这就是复数最自然的应用}。
+
+\textbf{这一章只讲三件事}：
+
+\begin{itemize}
+\item \textbf{复数 = 旋转}——\textbf{欧拉公式 $e^{i\theta} = \cos\theta + i\sin\theta$ 是一切的源头}
+\item \textbf{解析函数}——\textbf{为什么"可导"在复数里这么强大}
+\item \textbf{留数定理}——\textbf{为什么它能算实数积分}
+\end{itemize}
+
+\textbf{再加一件 Aha 的事}——\textbf{Fourier 变换为什么必须用复数}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{复数不是"虚的"——它是"旋转的"}——\textbf{$i$ 是"逆时针转 90 度"的算符}——\textbf{欧拉公式 $e^{i\theta} = \cos\theta + i\sin\theta$ 把"指数增长"与"圆周旋转"统一为同一回事}。\\[6pt]
+\textbf{English}: Complex numbers are not "imaginary" —— they are \emph{rotational}. The unit $i$ is the operator "rotate 90 degrees counter-clockwise". Euler's formula $e^{i\theta} = \cos\theta + i\sin\theta$ unifies exponential growth and circular rotation as one and the same.
+\end{tcolorbox}
+
+记住这一句话——\textbf{这一章已经讲完了一半}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{钟玉泉《复变函数论》}
+
+\textbf{中国工科最常用的复变教材}——\textbf{钟玉泉的《复变函数论》（高等教育出版社）}。
+
+\textbf{优点}：体系完整、定理严格、习题大量。
+
+\textbf{缺点}：
+
+\begin{enumerate}
+\item \textbf{从"复数定义"开始}——\textbf{2 页就上 Cauchy-Riemann}——\textbf{完全没讲"为什么要研究复数"}
+\item \textbf{留数那一章塞满了"求实积分的 6 种套路"}——\textbf{但不告诉你这些积分在工程里出现在哪里}
+\item \textbf{Fourier / Laplace 变换被压在最后两章}——\textbf{很多老师讲不到——而这恰恰是工程里唯一真正用的}
+\end{enumerate}
+
+\subsection{Brown \& Churchill《Complex Variables and Applications》}
+
+\textbf{美国的"国民复变教材"}——\textbf{Brown \& Churchill}——\textbf{Stewart 级别的国民读物}。
+
+\textbf{它比国内教材好的地方}：\textbf{讲"流体力学怎么用复势函数"、"电磁场怎么用 conformal mapping"}——\textbf{应用是 19 世纪经典物理的应用}。
+
+\textbf{它的缺点}：\textbf{现代信号处理 / 控制论 / 量子力学的内容——它也没讲}。
+
+\subsection{Needham《Visual Complex Analysis》}
+
+\textbf{Tristan Needham} 的《Visual Complex Analysis》——\textbf{这本书是复变界的"3Blue1Brown"}——\textbf{用几何 + 图——把每一个公式都画了出来}。
+
+\textbf{读这本书}——\textbf{你会突然"看见"复数}。\textbf{我个人最推荐的复变补充读物}——\textbf{中文有翻译版}。
+
+\subsection{我的策略}
+
+\textbf{本章只做三件事}：
+
+\begin{enumerate}
+\item \textbf{把"复数 = 旋转"讲到你看见图}——\textbf{这是 Needham 的思路——也是工程师最该有的直觉}
+\item \textbf{把解析、Cauchy、留数串成一条线}——\textbf{它们其实是同一件事的三个层次}
+\item \textbf{把 Aha 例子讲到能跑代码}——\textbf{Fourier 变换 + MP3 压缩——\texttt{scipy.fft}}
+\end{enumerate}
+
+\begin{tcolorbox}[storybox={\Large 小故事：Euler 与最美的公式}]
+\textbf{1748 年}——\textbf{Leonhard Euler}（瑞士数学家，时年 41 岁，已经一只眼睛失明）——\textbf{在他的《无穷分析引论》里——写下了我们今天叫"欧拉恒等式"的公式}：
+
+\[
+e^{i\pi} + 1 = 0
+\]
+
+\medskip
+
+\textbf{这一行——只有 7 个符号}——\textbf{把数学里五个最重要的常数串了起来}：
+
+\begin{itemize}
+\item \textbf{$0$}——\textbf{加法的单位元}
+\item \textbf{$1$}——\textbf{乘法的单位元}
+\item \textbf{$\pi$}——\textbf{圆周与直径之比——几何的根基}
+\item \textbf{$e$}——\textbf{自然指数的底——微积分的根基}
+\item \textbf{$i$}——\textbf{$\sqrt{-1}$——复数的根基}
+\end{itemize}
+
+\medskip
+
+\textbf{它还用了 3 种基本运算}——\textbf{加法、乘法（指数是反复乘法）、相等}——\textbf{完美}。
+
+\medskip
+
+\textbf{Richard Feynman} 在 1977 年的《Lectures on Physics》第 22 章——\textbf{称它为}：\\
+\textbf{"the most remarkable formula in mathematics"}——\textbf{"数学里最非凡的公式"}。
+
+\medskip
+
+\textbf{有人说它是数学界的 $E = mc^2$}——\textbf{但我觉得不对}——\textbf{$E = mc^2$ 是一个物理事实}——\textbf{而欧拉恒等式是一个\textbf{数学必然}}。
+
+\medskip
+
+\textbf{它更像\textbf{广义相对论}}——\textbf{把"看似无关的几个领域"——指数、三角、虚数——\textbf{统一在一个最简公式里}}。
+
+\medskip
+
+\textbf{2004 年}——\textbf{美国《Physics World》杂志做读者投票}——\textbf{"历史上最美的方程"}——\textbf{欧拉恒等式}和\textbf{Maxwell 方程组}并列第一。
+
+\medskip
+
+\textbf{Euler 一生发表了 866 篇论文}——\textbf{即使失明后——也由学生记录、出版}——\textbf{是历史上最高产的数学家之一}。\textbf{Laplace 评价他}：\textbf{"读 Euler，读 Euler，他是我们所有人的老师"}。
+\end{tcolorbox}
+
+\section{直觉 / Intuition}
+
+\subsection{复数：被误解了 400 年的概念}
+
+\textbf{16 世纪}——\textbf{意大利数学家 Cardano 在解三次方程时}——\textbf{第一次写下了 $\sqrt{-1}$}——\textbf{他自己也觉得"莫名其妙"}——\textbf{说这种东西"as subtle as it is useless"（既精巧又无用）}。
+
+\textbf{Descartes 在 1637 年}——\textbf{给这种"假数"起了个名字}——\textbf{imaginary numbers}——\textbf{虚数}——\textbf{这个名字\textbf{流毒至今}}——\textbf{让无数学生以为"虚数是假的"}。
+
+\textbf{1799 年}——\textbf{Caspar Wessel}（挪威测量员，不是职业数学家）——\textbf{画出了第一个"复平面"}——\textbf{$x$ 轴是实数、$y$ 轴是虚数}——\textbf{从此复数有了\textbf{几何意义}}。
+
+\textbf{1806 年}——\textbf{Argand 独立发现了同一件事}——\textbf{所以今天叫 Argand 图}。
+
+\textbf{1831 年}——\textbf{Gauss 正式提出 "复平面" 一词}——\textbf{并把复数当作 $\mathbb{R}^2$ 上的点处理}——\textbf{复数从此\textbf{合法化}}。
+
+\subsection{$i$ 不是"虚"——是"旋转 90 度"}
+
+\textbf{看这个事实}：
+
+\[
+1 \xrightarrow{\times i} i \xrightarrow{\times i} -1 \xrightarrow{\times i} -i \xrightarrow{\times i} 1
+\]
+
+\textbf{乘以 $i$ 一次}——\textbf{把 1 转到了 $i$}——\textbf{在复平面上——这是\textbf{逆时针转 90 度}}。
+
+\textbf{乘以 $i$ 四次}——\textbf{转回原位}——\textbf{这就是为什么 $i^4 = 1$}。
+
+\textbf{所以 $i$ 的真正含义不是"$\sqrt{-1}$"}——\textbf{而是\textbf{"逆时针旋转 90 度的算符"}}——\textbf{$i^2 = -1$ 的几何意义就是"转 90 度两次 = 转 180 度 = 反向"}。
+
+\begin{tcolorbox}[ahabox={Aha: $i$ 是动词不是名词}]
+\textbf{中学老师告诉你}——\textbf{$i$ 是一个数}——\textbf{满足 $i^2 = -1$}。
+
+\medskip
+
+\textbf{但更深刻的理解}——\textbf{$i$ 是一个\textbf{动作}}——\textbf{"逆时针转 90 度"}。
+
+\medskip
+
+\textbf{从这个角度看}——\textbf{$3 + 4i$ 就是}——\textbf{先沿 $x$ 走 3 步}——\textbf{再沿 $y$ 走 4 步}——\textbf{终点是复平面上的一个点}——\textbf{距离原点 $|3+4i| = 5$ 单位}——\textbf{方向是 $\arctan(4/3) \approx 53°$}。
+
+\medskip
+
+\textbf{这就是复数的\textbf{极坐标表示}}——\textbf{$z = r e^{i\theta}$}——\textbf{$r$ 是长度——$\theta$ 是角度}。
+
+\medskip
+
+\textbf{两个复数相乘}——\textbf{在极坐标下\textbf{长度相乘、角度相加}}：
+\[
+r_1 e^{i\theta_1} \cdot r_2 e^{i\theta_2} = r_1 r_2 \, e^{i(\theta_1 + \theta_2)}
+\]
+\textbf{这就是复数最优美的性质}——\textbf{乘法 = 旋转 + 伸缩}。
+\end{tcolorbox}
+
+\subsection{欧拉公式：把指数和三角拼到一起}
+
+\textbf{欧拉公式}：
+
+\[
+\boxed{\;e^{i\theta} = \cos\theta + i\sin\theta\;}
+\]
+
+\textbf{怎么"看出"这个公式}？——\textbf{用 Taylor 级数}：
+
+\begin{align*}
+e^x &= 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \frac{x^4}{4!} + \cdots \\
+\cos x &= 1 - \frac{x^2}{2!} + \frac{x^4}{4!} - \cdots \\
+\sin x &= x - \frac{x^3}{3!} + \frac{x^5}{5!} - \cdots
+\end{align*}
+
+\textbf{把 $x = i\theta$ 代入 $e^x$}——\textbf{利用 $i^2 = -1, i^3 = -i, i^4 = 1$}——\textbf{重新排列实部和虚部}：
+
+\[
+e^{i\theta} = \underbrace{\left(1 - \frac{\theta^2}{2!} + \frac{\theta^4}{4!} - \cdots\right)}_{\cos\theta} + i\underbrace{\left(\theta - \frac{\theta^3}{3!} + \frac{\theta^5}{5!} - \cdots\right)}_{\sin\theta}
+\]
+
+\textbf{原来如此}——\textbf{$\cos$ 是 $e^x$ 的\textbf{偶次幂部分}}——\textbf{$\sin$ 是\textbf{奇次幂部分}}——\textbf{它们本来就藏在指数函数里}——\textbf{虚数只是\textbf{把它们抽出来的提取器}}。
+
+\textbf{欧拉恒等式}——\textbf{是欧拉公式在 $\theta = \pi$ 时的特殊情形}：
+
+\[
+e^{i\pi} = \cos\pi + i\sin\pi = -1 + 0i = -1 \Longrightarrow e^{i\pi} + 1 = 0
+\]
+
+\section{数学 / The Math}
+
+\subsection{复数的四种表示}
+
+同一个复数 $z = 3 + 4i$——\textbf{有四种写法}——\textbf{工程师都要熟}：
+
+\begin{enumerate}
+\item \textbf{代数形式}：$z = a + bi$，$a, b \in \mathbb{R}$
+\item \textbf{几何形式}：复平面上的点 $(a, b)$ 或向量
+\item \textbf{极坐标形式}：$z = r(\cos\theta + i\sin\theta)$，$r = |z|, \theta = \arg z$
+\item \textbf{指数形式}：$z = r e^{i\theta}$——\textbf{最有用}——\textbf{乘法、幂、开方都最简单}
+\end{enumerate}
+
+\textbf{转换公式}：
+
+\[
+r = \sqrt{a^2 + b^2}, \qquad \theta = \arctan(b/a), \qquad a = r\cos\theta, \qquad b = r\sin\theta
+\]
+
+\subsection{De Moivre 公式}
+
+\[
+(\cos\theta + i\sin\theta)^n = \cos(n\theta) + i\sin(n\theta)
+\]
+
+\textbf{用欧拉公式一句话证完}：$\bigl(e^{i\theta}\bigr)^n = e^{in\theta}$。
+
+\textbf{这是\textbf{开方}的工具}——\textbf{$z^n = w$ 在复数域里恰有 $n$ 个根}——\textbf{均匀分布在以原点为圆心、$|w|^{1/n}$ 为半径的圆上}。
+
+\subsection{复变函数：把 $\mathbb{C}$ 映到 $\mathbb{C}$}
+
+\textbf{复变函数 $f: \mathbb{C} \to \mathbb{C}$}——\textbf{就是把一个复数变成另一个复数}。
+
+\textbf{几个基本函数}（从实数函数自然推广）：
+
+\begin{align*}
+e^z &= e^{x+iy} = e^x(\cos y + i\sin y) \quad \text{(永远不为 0)} \\
+\sin z &= \frac{e^{iz} - e^{-iz}}{2i}, \qquad \cos z = \frac{e^{iz} + e^{-iz}}{2} \\
+\log z &= \ln|z| + i\arg z \quad \text{(多值！每个 $2\pi$ 是一个分支)}
+\end{align*}
+
+\textbf{注意 $\log z$ 是\textbf{多值函数}}——\textbf{因为 $\arg z$ 加 $2\pi$ 都对应同一个 $z$}——\textbf{这是复变里第一次出现的"新事物"}。
+
+\textbf{$\sin z$ 在复数里\textbf{不再有界}}——\textbf{比如 $\sin(iy) = i\sinh y$——可以无穷大}。
+
+\subsection{解析函数与 Cauchy-Riemann 方程}
+
+\textbf{复函数 $f(z) = u(x,y) + iv(x,y)$ 在 $z_0$ 处\textbf{可导}}——\textbf{要求极限}
+
+\[
+f'(z_0) = \lim_{\Delta z \to 0} \frac{f(z_0 + \Delta z) - f(z_0)}{\Delta z}
+\]
+
+\textbf{存在}——\textbf{并且\textbf{与 $\Delta z$ 趋近 0 的方向无关}}。
+
+\textbf{这个"方向无关"的要求——比实数严苛得多}——\textbf{$\Delta z$ 在复平面可以从\textbf{任何方向}靠近 0}——\textbf{所以"复可导" $\Longleftrightarrow$ Cauchy-Riemann 方程}：
+
+\[
+\boxed{\;\frac{\partial u}{\partial x} = \frac{\partial v}{\partial y}, \qquad \frac{\partial u}{\partial y} = -\frac{\partial v}{\partial x}\;}
+\]
+
+\textbf{如果 $f$ 在某区域内\textbf{处处可导}}——\textbf{我们说 $f$ 在该区域\textbf{解析}（analytic / holomorphic）}。
+
+\begin{tcolorbox}[ahabox={Aha: 复可导 = 实可导 ×10}]
+\textbf{在实数里}——\textbf{可导 $\Rightarrow$ 有切线}——\textbf{仅此而已}——\textbf{可导一次的函数未必可导二次}。
+
+\medskip
+
+\textbf{在复数里}——\textbf{解析（可导一次）}——\textbf{自动可导无穷次}——\textbf{自动等于自己的 Taylor 级数}——\textbf{自动满足 Laplace 方程 $u_{xx} + u_{yy} = 0$（调和函数）}——\textbf{自动可以用围线积分公式恢复}。
+
+\medskip
+
+\textbf{这就是复变最神奇的地方}——\textbf{一个看似简单的条件}（方向无关）——\textbf{推出了一连串极强的性质}——\textbf{这种"以小博大"的现象——在数学里叫\textbf{rigidity}（刚性）}。
+\end{tcolorbox}
+
+\subsection{复积分与 Cauchy 积分公式}
+
+\textbf{复积分}——\textbf{沿复平面上一条曲线 $C$ 的积分}：
+
+\[
+\int_C f(z)\, dz
+\]
+
+\textbf{Cauchy 积分定理}（1825）：\textbf{如果 $f$ 在闭曲线 $C$ 内部解析}——\textbf{则}
+
+\[
+\oint_C f(z)\, dz = 0
+\]
+
+\textbf{Cauchy 积分公式}：\textbf{如果 $f$ 在闭曲线 $C$ 内部解析}——\textbf{$z_0$ 在 $C$ 内部}——\textbf{则}
+
+\[
+f(z_0) = \frac{1}{2\pi i} \oint_C \frac{f(z)}{z - z_0}\, dz
+\]
+
+\textbf{这条公式的震撼之处}——\textbf{函数在区域\textbf{内部}的值——完全由它在\textbf{边界}上的值决定}——\textbf{解析函数是"被边界完全束缚"的}——\textbf{这就是 rigidity 的最直接体现}。
+
+\subsection{留数定理}
+
+\textbf{留数（residue）}——\textbf{是解析函数 $f$ 在\textbf{孤立奇点 $z_0$} 处 Laurent 级数中 $(z-z_0)^{-1}$ 项的系数}：
+
+\[
+f(z) = \sum_{n=-\infty}^{\infty} a_n (z - z_0)^n, \qquad \text{Res}(f, z_0) = a_{-1}
+\]
+
+\textbf{留数定理}：\textbf{若 $f$ 在闭曲线 $C$ 内部除有限个孤立奇点 $z_1, \ldots, z_k$ 外解析}——\textbf{则}
+
+\[
+\boxed{\;\oint_C f(z)\, dz = 2\pi i \sum_{j=1}^{k} \text{Res}(f, z_j)\;}
+\]
+
+\textbf{这条定理的工程价值}——\textbf{把"算积分"变成了"算奇点处的留数"}——\textbf{把分析问题变成了代数问题}。
+
+\subsection{用留数算实积分}
+
+\textbf{经典例子}：算
+
+\[
+I = \int_{-\infty}^{\infty} \frac{1}{1 + x^2}\, dx
+\]
+
+\textbf{传统办法}：用反正切——$I = \arctan x \big|_{-\infty}^{\infty} = \pi$。
+
+\textbf{复变办法}：考虑复函数 $f(z) = \frac{1}{1+z^2}$——\textbf{它在 $z = \pm i$ 处有极点}。
+
+\textbf{取一个半径 $R$ 的上半圆围线}——\textbf{包含极点 $z = i$}：
+
+\[
+\oint_C \frac{dz}{1+z^2} = 2\pi i \cdot \text{Res}\left(\frac{1}{1+z^2}, i\right) = 2\pi i \cdot \frac{1}{2i} = \pi
+\]
+
+\textbf{当 $R \to \infty$ 时}——\textbf{上半圆的积分趋于 0}——\textbf{剩下的就是实轴上的积分}——\textbf{所以 $I = \pi$}。
+
+\textbf{看上去比"反正切"还复杂}——\textbf{但对于\textbf{大多数没有初等原函数的实积分}（比如 $\int \frac{\sin x}{x} dx$）}——\textbf{留数法是\textbf{唯一可行的解析方法}}。
+
+\section{Aha 例子：Fourier 变换与 MP3 压缩 / Aha: Fourier and MP3}
+
+\textbf{场景}——\textbf{你录了一段 \textbf{3 分钟、44.1 kHz、16 bit 立体声}的音乐}——\textbf{原始文件大约 \textbf{30 MB}}——\textbf{压成 MP3 之后大约 \textbf{3 MB}}——\textbf{为什么能压缩\textbf{10 倍}而你听不出区别}？
+
+\textbf{答案}——\textbf{Fourier 变换 + 人耳的"心理声学"}。
+
+\subsection{Fourier 变换：把信号拆成频率}
+
+\textbf{Fourier 变换的定义}：
+
+\[
+\hat{f}(\omega) = \int_{-\infty}^{\infty} f(t)\, e^{-i\omega t}\, dt
+\]
+
+\textbf{注意}——\textbf{被积函数里有 $e^{-i\omega t}$}——\textbf{这是\textbf{复数}}——\textbf{所以 Fourier 变换的结果\textbf{天然是复数}}。
+
+\textbf{每一个 $\hat{f}(\omega)$ 告诉我们}：
+
+\begin{itemize}
+\item \textbf{$|\hat{f}(\omega)|$}——\textbf{在频率 $\omega$ 上的\textbf{幅度}}——\textbf{这个频率"多响"}
+\item \textbf{$\arg \hat{f}(\omega)$}——\textbf{在频率 $\omega$ 上的\textbf{相位}}——\textbf{这个频率"什么时候到达峰值"}
+\end{itemize}
+
+\textbf{$e^{-i\omega t}$ 的真正含义}——\textbf{用欧拉公式拆开}：
+
+\[
+e^{-i\omega t} = \cos(\omega t) - i\sin(\omega t)
+\]
+
+\textbf{所以 Fourier 变换实际上是}：
+
+\[
+\hat{f}(\omega) = \underbrace{\int f(t)\cos(\omega t)\, dt}_{\text{余弦分量}} - i\underbrace{\int f(t)\sin(\omega t)\, dt}_{\text{正弦分量}}
+\]
+
+\textbf{为什么必须用复数}——\textbf{因为\textbf{相位}}——\textbf{如果只用实数（只用 cos）}——\textbf{你无法区分\textbf{"先到峰值"还是"后到峰值"}}——\textbf{用 cos + i·sin}——\textbf{就同时记录了\textbf{"多响"和"什么时候响"}}。
+
+\begin{tcolorbox}[ahabox={Aha: Fourier 变换为什么必须用复数}]
+\textbf{设想两段音乐}——\textbf{都是 440 Hz 的"标准 A"}——\textbf{但一段从 $t=0$ 开始响}——\textbf{另一段从 $t=0.5\,\text{ms}$ 开始响}。
+
+\medskip
+
+\textbf{它们的\textbf{振幅谱（只看 $|\hat{f}|$）}\textbf{完全相同}}——\textbf{都是在 440 Hz 处一个尖峰}。
+
+\medskip
+
+\textbf{它们的\textbf{相位谱（看 $\arg \hat{f}$）}\textbf{不同}}——\textbf{第二段的所有频率都"晚到了 $0.5\,\text{ms}$"}——\textbf{相位差 = $\omega \cdot 0.5\,\text{ms}$}。
+
+\medskip
+
+\textbf{如果只用实数 Fourier（cos 展开）}——\textbf{你无法恢复"什么时候开始"这个信息}——\textbf{所以必须用复数}。
+
+\medskip
+
+\textbf{在工程上}——\textbf{"幅度 + 相位"——就是"How loud + When loud"}——\textbf{这正是复数的几何意义}——\textbf{$|z| + \arg z$}——\textbf{长度 + 角度}。
+
+\medskip
+
+\textbf{这就是为什么——Fourier 变换天然是复数运算}——\textbf{不是"为了好看"——是"为了完整"}。
+\end{tcolorbox}
+
+\subsection{MP3 怎么压缩}
+
+\textbf{MP3 的核心算法}（极简版）：
+
+\begin{enumerate}
+\item \textbf{把音频切成 \textbf{1152 个采样点}一帧}（约 26 ms）
+\item \textbf{对每一帧做 \textbf{MDCT}（Modified Discrete Cosine Transform——本质就是 Fourier 变换的变种）}
+\item \textbf{得到这一帧的\textbf{频谱}}——\textbf{各频率成分的幅度}
+\item \textbf{利用\textbf{心理声学模型}——找出"人耳听不见"的频率成分}（比如被强信号\textbf{掩蔽}的弱信号）
+\item \textbf{把这些频率成分\textbf{用更少的比特存储}（甚至直接丢弃）}
+\item \textbf{用 Huffman 编码进一步压缩}
+\end{enumerate}
+
+\textbf{核心 idea}——\textbf{在\textbf{频域}里}——\textbf{很多频率成分\textbf{人耳根本听不见}}——\textbf{丢掉它们——你完全察觉不到}——\textbf{但文件小了 10 倍}。
+
+\textbf{在\textbf{时域}里你做不到这一步}——\textbf{因为时域里每一个采样点都"看起来差不多重要"}——\textbf{只有 Fourier 把它转成频域}——\textbf{才能区分"重要频率"和"听不见的频率"}。
+
+\subsection{Python 代码：看见频谱}
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 合成一段信号：440 Hz (A4) + 880 Hz (A5) + 一点噪声
+fs = 8000              # 采样率
+t  = np.linspace(0, 1, fs, endpoint=False)
+sig = (np.sin(2*np.pi*440*t)
+     + 0.5*np.sin(2*np.pi*880*t)
+     + 0.1*np.random.randn(fs))
+
+# 做 FFT——返回复数数组
+X = np.fft.fft(sig)
+freqs = np.fft.fftfreq(fs, 1/fs)
+
+# 只看正频率部分
+mask = freqs > 0
+mag = np.abs(X[mask])      # 幅度
+phase = np.angle(X[mask])  # 相位
+
+fig, ax = plt.subplots(2, 1, figsize=(8, 5))
+ax[0].plot(freqs[mask], mag)
+ax[0].set_xlim(0, 1500)
+ax[0].set_xlabel("Frequency (Hz)"); ax[0].set_ylabel("|X|")
+ax[0].set_title("Magnitude —— 440 Hz 和 880 Hz 两个尖峰")
+
+ax[1].plot(freqs[mask], phase)
+ax[1].set_xlim(0, 1500)
+ax[1].set_xlabel("Frequency (Hz)"); ax[1].set_ylabel("arg(X)")
+plt.tight_layout(); plt.show()
+
+# 压缩演示：只保留最大的 5% 系数
+threshold = np.sort(np.abs(X))[int(0.95*len(X))]
+X_compressed = np.where(np.abs(X) >= threshold, X, 0)
+sig_reconstructed = np.fft.ifft(X_compressed).real
+
+# 误差
+print("压缩比:", np.count_nonzero(X) / np.count_nonzero(X_compressed))
+print("均方误差:", np.mean((sig - sig_reconstructed)**2))
+\end{lstlisting}
+
+\textbf{这段代码 30 行}——\textbf{涵盖了 MP3 压缩的核心思想}：\textbf{FFT 拆频率 → 丢小系数 → IFFT 恢复}。
+
+\section{现代视角：复变在工程中 / Modern: Complex Analysis in Engineering}
+
+\subsection{Laplace 变换：控制论的"通用语言"}
+
+\textbf{Laplace 变换}是 Fourier 变换的"复数加强版"——\textbf{把 $i\omega$ 换成复变量 $s = \sigma + i\omega$}：
+
+\[
+F(s) = \int_0^\infty f(t)\, e^{-st}\, dt
+\]
+
+\textbf{为什么要换}——\textbf{因为很多工程信号（指数增长的、不稳定的）}——\textbf{在 Fourier 域里发散}——\textbf{但在 Laplace 域里收敛}。
+
+\textbf{Laplace 把\textbf{微分方程}变成\textbf{代数方程}}：
+
+\[
+\mathcal{L}\{y'\} = sY(s) - y(0)
+\]
+
+\textbf{自动化控制的"传递函数 $H(s)$"——本质就是 Laplace 域里的输入输出比}——\textbf{你在大三的"自动控制原理"里画的\textbf{Bode 图、Nyquist 图}}——\textbf{全在复平面上}。
+
+\subsection{Z 变换：数字信号处理的"Laplace"}
+
+\textbf{Z 变换}——\textbf{Laplace 变换在\textbf{离散时间}的版本}：
+
+\[
+X(z) = \sum_{n=0}^{\infty} x[n]\, z^{-n}, \qquad z \in \mathbb{C}
+\]
+
+\textbf{每一个数字滤波器（FIR、IIR）}——\textbf{它的\textbf{零点和极点}就在 $z$-平面上}——\textbf{设计滤波器 = 在复平面里摆放极点}。
+
+\subsection{量子力学：复数是世界的"本原"}
+
+\textbf{Schr\"odinger 方程}：
+
+\[
+i\hbar\, \frac{\partial \psi}{\partial t} = -\frac{\hbar^2}{2m}\nabla^2 \psi + V \psi
+\]
+
+\textbf{注意左边有 $i$}——\textbf{波函数 $\psi$ \textbf{本质上是复值函数}}——\textbf{$|\psi|^2$ 是粒子在某位置的概率密度}。
+
+\textbf{量子力学里复数不是"工具"——是\textbf{物理实体}}——\textbf{20 世纪最伟大的发现之一就是}：\textbf{我们的世界——在最深的层次——是用复数描述的}。
+
+\subsection{保形映射：流体与电磁的几何工具}
+
+\textbf{解析函数有一个性质}——\textbf{在它的导数不为 0 处——保持角度不变}——\textbf{叫做\textbf{保形映射}（conformal mapping）}。
+
+\textbf{应用}：\textbf{把"复杂边界的流体绕流问题"——通过保形映射——\textbf{变到"圆周"或"半平面"上}}——\textbf{然后用已知解返回}——\textbf{这是 19 世纪流体力学的核心工具}。
+
+\textbf{今天}——\textbf{保形映射用在}：\textbf{大脑皮层平面化（医学影像）}、\textbf{芯片版图等价检查}、\textbf{Escher 风格的艺术变形}。
+
+\section{代码与思考 / Code and Exercises}
+
+\subsection{配套模块 \texttt{complex\_analysis.py}}
+
+GitHub 上的 \texttt{modules/complex\_analysis.py} 包含\textbf{8 个 demo}：
+
+\begin{enumerate}
+\item \texttt{demo\_complex\_basics()}——画复平面、可视化加法和乘法（旋转 + 伸缩）
+\item \texttt{demo\_euler\_formula()}——\textbf{核心 demo}——动画展示 $e^{i\theta}$ 在单位圆上跑——\textbf{你"看见"欧拉公式}
+\item \texttt{demo\_roots\_of\_unity()}——画 $z^n = 1$ 的 $n$ 个根——均匀分布在单位圆上
+\item \texttt{demo\_cauchy\_riemann()}——给定 $u(x,y)$，自动检测是否解析
+\item \texttt{demo\_contour\_integral()}——数值围线积分——验证 Cauchy 定理
+\item \texttt{demo\_residue\_real\_integral()}——用留数算 $\int_{-\infty}^{\infty} \frac{1}{1+x^2}dx$
+\item \texttt{demo\_fft\_audio()}——\textbf{本章 Aha 例子}——FFT 拆音频 + 重建
+\item \texttt{demo\_mp3\_compression()}——保留前 $k\%$ 的频率系数——观察听感损失
+\end{enumerate}
+
+\textbf{使用}：
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/inaturelz-coder/math-rendu
+cd math-rendu
+pip install -r requirements.txt
+python modules/complex_analysis.py
+\end{lstlisting}
+
+\subsection{思考题 / Exercises}
+
+\begin{enumerate}
+\item \textbf{[直觉]} 用一句话向你的高中同桌解释"$i$ 是什么"——\textbf{不许说"$\sqrt{-1}$"}。
+\item \textbf{[几何]} 把复数 $z = 1 + i$ 乘以 $i$、$i^2$、$i^3$——画出每次乘法之后的位置——验证"乘以 $i$ = 转 90 度"。
+\item \textbf{[Euler]} 用欧拉公式证明 $\cos(\alpha+\beta) = \cos\alpha\cos\beta - \sin\alpha\sin\beta$——\textbf{比中学三角公式漂亮多了}。
+\item \textbf{[De Moivre]} 求 $z^4 = 16$ 的所有复根——画在复平面上。
+\item \textbf{[C-R 方程]} 验证 $f(z) = z^2$ 处处解析——验证 $f(z) = \bar z$ 处处不解析。
+\item \textbf{[积分]} 用留数定理算 $\int_{-\infty}^{\infty} \frac{\cos x}{1+x^2}\, dx$——\textbf{答案 $\pi/e$}。
+\item \textbf{[FFT]} 自己录一段 3 秒钟的"你好"——\textbf{用 \texttt{scipy.io.wavfile}}——\textbf{做 FFT}——\textbf{找出最强的几个频率}——\textbf{你的声音的"基频"是多少 Hz}？
+\item \textbf{[压缩]} 在 FFT 之后\textbf{只保留 10\% 最大的系数}——\textbf{用 IFFT 恢复}——\textbf{对比原始音频}——\textbf{听得出区别吗}？
+\item \textbf{[Laplace]} 求 $f(t) = e^{-at}\cos(\omega t)$ 的 Laplace 变换。
+\item \textbf{[历史]} 查一查：\textbf{为什么 Descartes 给复数起了 "imaginary" 这个流毒至今的名字}？\textbf{他真的觉得这种数"不存在"吗}？
+\end{enumerate}
+
+\section{本章小结 / Chapter Summary}
+
+\begin{tcolorbox}[essbox={本章核心}]
+\begin{itemize}
+\item \textbf{复数 = 旋转}——\textbf{$i$ 是"逆时针转 90 度"的算符}——\textbf{不是"虚的"}
+\item \textbf{欧拉公式}——\textbf{$e^{i\theta} = \cos\theta + i\sin\theta$}——\textbf{把指数和三角统一}
+\item \textbf{欧拉恒等式}——\textbf{$e^{i\pi} + 1 = 0$}——\textbf{数学界的广义相对论}
+\item \textbf{解析函数}——\textbf{复可导（方向无关）}——\textbf{等价于 Cauchy-Riemann 方程}
+\item \textbf{Cauchy 定理}——\textbf{解析函数沿闭曲线积分为 0}
+\item \textbf{Cauchy 积分公式}——\textbf{函数内部值 = 边界值的积分}——\textbf{rigidity 的核心}
+\item \textbf{留数定理}——\textbf{$\oint f\,dz = 2\pi i \sum \text{Res}$}——\textbf{把分析变代数}
+\item \textbf{Fourier 变换}——\textbf{天然是复数}——\textbf{记录幅度和相位}
+\item \textbf{应用}——\textbf{MP3 压缩、Laplace 控制论、量子力学、保形映射}
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{这一章是\textbf{工科数学的最后一块拼图}}——\textbf{从这里开始}——\textbf{你的"任督二脉"已经打通}——\textbf{微积分 + 线性代数 + 微分方程 + 概率统计 + 复变 + Fourier}——\textbf{这就是现代工程师的\textbf{六脉神剑}}。
+
+\textbf{接下来——你要做的不是"再多学一门数学"}——\textbf{而是\textbf{把这些工具放到你的真实工程问题里去}}——\textbf{在写代码、调实验、看 paper 的过程中}——\textbf{反复\textbf{遇见它们}}——\textbf{才会真正\textbf{属于你}}。
+
+\textbf{数学之美}——\textbf{不在于公式有多漂亮}——\textbf{而在于}——\textbf{当你某天调试一个 bug 时}——\textbf{脑子里突然蹦出一句}——\textbf{"这不就是 Cauchy 积分公式吗"}——\textbf{那一刻}——\textbf{这本书的使命才算完成}。
+
+\clearpage

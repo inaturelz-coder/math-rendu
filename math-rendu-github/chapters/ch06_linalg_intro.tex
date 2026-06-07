@@ -1,0 +1,783 @@
+% =====================================================================
+%  第 6 章 · 线代入门 / Linear Algebra I
+%  矢量空间、矩阵 = 线性变换、行列式、矩阵的逆、Gauss 消元
+%  小故事：Cayley 与"矩阵的抽象"（1858）
+%  Aha：3D 游戏旋转
+% =====================================================================
+
+\chapter{线代入门 / Linear Algebra I}
+\label{ch:linalg1}
+
+\begin{quote}\itshape
+1858 年，英国剑桥。一位 37 岁的律师——白天打官司——晚上写数学。\\
+他叫 \textbf{Arthur Cayley}。\\
+那一年，他写下一篇 17 页的论文：\\
+\textbf{《A Memoir on the Theory of Matrices》}。\\
+人类历史上第一次——把"矩阵"当成一个\textbf{独立的对象}——\textbf{而不是方程组的附属品}。\\[6pt]
+今天你打开 PyTorch——敲下 \texttt{torch.matmul(A, B)}——背后是这位律师 168 年前的一念之差。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{大一下学期我学线性代数}——\textbf{同济版的浅蓝色课本}——\textbf{第一章就是"行列式"}——\textbf{第二章是"矩阵"}——\textbf{第三章是"向量"}。
+
+\textbf{这个顺序——是我学过最反直觉的顺序之一}。
+
+为什么？因为它\textbf{把答案放在了问题前面}——你还没明白\textbf{"矩阵是干什么的"}——就被要求\textbf{算 4 阶行列式}——\textbf{展开 + 化三角 + 按行按列}——\textbf{三套办法换着练 20 道题}。
+
+\textbf{结果是}：我考了 88 分——\textbf{但我大三做信号处理时}——\textbf{看到 MATLAB 里的 \texttt{A \textbackslash b}——还是发愣}。
+
+到了\textbf{研究生}——我做\textbf{机器人运动学}——\textbf{第一次需要把一个 3D 点从机器人坐标系转到世界坐标系}——\textbf{老板甩给我一个 4×4 矩阵}——说"乘上去就行"——\textbf{我懂了"矩阵是变换"的那一刻}——\textbf{比我所有大一题目加起来都管用}。
+
+\textbf{从那以后我学线代——再也没有从行列式开始过}。
+
+我的顺序是这样的：
+
+\begin{itemize}
+\item \textbf{第一步}：\textbf{什么是向量}——\textbf{从 2D 箭头开始}
+\item \textbf{第二步}：\textbf{什么是矩阵}——\textbf{它是一个变换}——\textbf{不是一堆数}
+\item \textbf{第三步}：\textbf{矩阵怎么乘}——\textbf{为什么这么乘}
+\item \textbf{第四步}：\textbf{行列式是什么}——\textbf{它告诉我们"变换把面积缩放了多少倍"}
+\item \textbf{第五步}：\textbf{解方程组}——\textbf{Gauss 消元 + 矩阵的逆}
+\end{itemize}
+
+\textbf{这一章——就是这个顺序}。
+
+\textbf{这是本书第六章——也是"线性代数三部曲"的第一章}。后面两章是\textbf{第 7 章（线代核心）}讲\textbf{特征值、SVD、对角化}——\textbf{第 8 章（线代应用）}讲\textbf{PCA、PageRank、神经网络}。\textbf{三章合起来——就是整个工科+ML 用得到的线代}。
+
+\textbf{如果整本书有一个"任督二脉"的核心}——\textbf{就是这三章}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{矩阵不是一堆数——矩阵是一个线性变换——它把向量从一个空间送到另一个空间}。\\[6pt]
+\textbf{English}: A matrix is not a grid of numbers; it is a linear transformation that maps vectors from one space to another.
+\end{tcolorbox}
+
+记住这一句——\textbf{这一章已经讲完了 70\%}。剩下的 30\% 是\textbf{怎么算、怎么用}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{同济《线性代数》}
+
+\textbf{同济大学应用数学系编的《线性代数》（第六版）}——\textbf{大一下学期的国民教材}——\textbf{薄薄的一本——200 页左右}。
+
+它的章节顺序：
+
+\begin{enumerate}
+\item 行列式
+\item 矩阵及其运算
+\item 矩阵的初等变换与线性方程组
+\item 向量组的线性相关性
+\item 相似矩阵及二次型
+\end{enumerate}
+
+\textbf{优点}：\textbf{薄、便宜、考研覆盖}——\textbf{中国考研 80\% 的线代题它都罩得住}。
+
+\textbf{缺点}（致命）：
+
+\begin{enumerate}
+\item \textbf{从行列式开始}——\textbf{用一个高度抽象的"求和符号定义"砸学生的脸}——\textbf{学生根本不知道行列式有什么用}
+\item \textbf{"矩阵"和"线性变换"完全脱节}——\textbf{矩阵讲了 50 页——"变换"两个字出现不到 5 次}
+\item \textbf{应用部分几乎没有}——\textbf{所有题目都是"求行列式、求秩、解方程"}——\textbf{没有一张图、没有一行代码}
+\end{enumerate}
+
+\subsection{Gilbert Strang《Introduction to Linear Algebra》}
+
+\textbf{MIT 的 Gilbert Strang}——\textbf{线性代数教科书届的"教皇"}。
+
+他的《Introduction to Linear Algebra》——\textbf{开篇就是"列空间"和"向量的线性组合"}——\textbf{把矩阵当成"列向量的容器"}——\textbf{把矩阵乘法解释成"列的线性组合"}。
+
+\textbf{他在 MIT 18.06 的课程视频}——\textbf{B 站、YouTube 都有}——\textbf{是全世界线代学生的圣经}。
+
+\textbf{Strang 的优点}：\textbf{从几何讲起、图多、贯穿线性变换思想}。
+
+\textbf{Strang 的缺点}：\textbf{英语原版稍贵}——\textbf{排版偏美式繁复}——\textbf{部分章节顺序对中国学生有点跳跃}。
+
+\subsection{3Blue1Brown《Essence of Linear Algebra》}
+
+\textbf{这不是一本书}——\textbf{是 YouTube 上的一个视频系列}——\textbf{Grant Sanderson 制作}——\textbf{共 15 集——每集 10 分钟左右}。
+
+\textbf{这是 21 世纪线性代数教学最伟大的成果}——\textbf{没有之一}。
+
+\textbf{它的核心}：\textbf{每一个矩阵的概念——都用动画表示成"空间的变形"}。\textbf{你看一遍——就懂了矩阵 = 线性变换这件事——比读 300 页课本还有用}。
+
+\textbf{中文字幕版在 B 站上有几百万播放量}——\textbf{凡是没看过的——立刻去看}。
+
+\subsection{我的策略}
+
+\textbf{本章不和同济硬碰硬}——\textbf{它的计算技巧——你刷它的题就行}。
+
+\textbf{本章只做三件事}：
+
+\begin{enumerate}
+\item \textbf{把"矩阵 = 线性变换"讲到刻进骨子里}——\textbf{这是 3Blue1Brown 和 Strang 共同的核心}
+\item \textbf{把行列式的几何意义讲清楚}——\textbf{它是"变换的面积/体积缩放因子"}——\textbf{不是"按某行展开的求和"}
+\item \textbf{把 Gauss 消元和矩阵的逆讲到能解 3D 游戏的旋转问题}
+\end{enumerate}
+
+\begin{tcolorbox}[storybox={\Large 小故事：Cayley 与"矩阵的抽象"（1858）}]
+\textbf{Arthur Cayley}（1821--1895）——\textbf{英国数学家}——\textbf{也是律师}。
+
+\medskip
+
+\textbf{他的本职工作是律师}——\textbf{在伦敦执业 14 年}——\textbf{白天打官司——晚上写数学论文}——\textbf{这 14 年里他写了 250 多篇数学论文}（你没看错——250 篇）。
+
+\medskip
+
+\textbf{1858 年——他 37 岁那年——发表了《A Memoir on the Theory of Matrices》}——\textbf{这是人类历史上第一篇把"矩阵"作为独立研究对象的论文}。
+
+\medskip
+
+在他之前——人们写出一堆数排成方阵——只是为了\textbf{方便写线性方程组的系数}——\textbf{矩阵本身没有名字}——\textbf{更没有运算}。
+
+\medskip
+
+\textbf{Cayley 做了三件革命性的事}：
+
+\begin{enumerate}
+\item \textbf{给"矩阵"起了名字}（matrix——来自拉丁文"子宫、母体"——\textbf{矩阵孕育了向量}）
+\item \textbf{定义了矩阵的加法、乘法、逆}——\textbf{特别是乘法——他第一次写下 $AB$ 不等于 $BA$}
+\item \textbf{发现了 Cayley-Hamilton 定理}——\textbf{每个矩阵都满足它自己的特征方程}（这是第 7 章的内容）
+\end{enumerate}
+
+\medskip
+
+\textbf{Cayley 那篇 17 页论文的核心}——\textbf{"我们应该把矩阵当成一种新的数——而不是数的集合"}。
+
+\medskip
+
+\textbf{这是数学史上著名的"抽象一跃"}——\textbf{把一个具体对象抽象成一类东西}——\textbf{从此整个代数学进入了"抽象代数"的时代}。
+
+\medskip
+
+\textbf{50 年后}——\textbf{Heisenberg} 在量子力学里用矩阵描述粒子状态——\textbf{他承认自己"重新发明了 Cayley 的矩阵"}——\textbf{因为他不知道 Cayley}。
+
+\medskip
+
+\textbf{100 年后}——\textbf{John von Neumann} 用矩阵设计第一台电子计算机——\textbf{现代 BLAS 库的核心是矩阵乘法}。
+
+\medskip
+
+\textbf{160 年后}——\textbf{你打开 PyTorch}——\textbf{torch.matmul(A, B)}——\textbf{每一次 GPU 上 10\^{}{12} 次矩阵乘法}——\textbf{都在向 Cayley 致敬}。
+\end{tcolorbox}
+
+\section{直觉 / Intuition}
+
+\subsection{向量：从 2D 箭头开始}
+
+\textbf{向量是什么}？——\textbf{最简单的回答}：\textbf{一个箭头}。
+
+\textbf{它有两个属性}：\textbf{方向} + \textbf{长度}。
+
+在二维平面上——\textbf{我们用一对数 $(x, y)$ 表示一个向量}：
+
+\[
+\vec{v} = \begin{pmatrix} 3 \\ 2 \end{pmatrix}
+\]
+
+\textbf{这个 $(3,2)$ 的意思}——\textbf{从原点出发——向右走 3 步——向上走 2 步——画一个箭头到终点}。
+
+\textbf{向量的三个基本身份}（必须同时记住）：
+
+\begin{itemize}
+\item \textbf{几何上}——\textbf{它是一个箭头}
+\item \textbf{代数上}——\textbf{它是一个有序的数对（或数组）}
+\item \textbf{物理上}——\textbf{它是位移、速度、力——任何"有方向 + 有大小"的量}
+\end{itemize}
+
+\textbf{为什么我们要"既几何又代数"？}——\textbf{因为几何让你"看懂"——代数让你"算"}。
+
+\textbf{这是 Descartes 1637 年发明解析几何时的核心思想}——\textbf{把几何问题转成代数问题}——\textbf{从此数学进入了新时代}。
+
+\subsection{向量空间与基}
+
+\textbf{把所有的 2D 向量放在一起}——\textbf{这个集合}——\textbf{就是 2D 向量空间 $\mathbb{R}^2$}。
+
+\textbf{它有两个核心运算}：
+
+\begin{itemize}
+\item \textbf{加法}：$\vec{u} + \vec{v}$——\textbf{对应位置相加}——\textbf{几何上是"首尾相接"}
+\item \textbf{数乘}：$c \vec{v}$——\textbf{每个分量都乘 $c$}——\textbf{几何上是"拉长 / 缩短 / 反向"}
+\end{itemize}
+
+\textbf{基（basis）是什么}？——\textbf{基是"标尺"}——\textbf{一组特殊的向量——你能用它们的线性组合表示空间里的任何向量}。
+
+\textbf{标准基}（最常用）：
+
+\[
+\vec{e}_1 = \begin{pmatrix} 1 \\ 0 \end{pmatrix}, \quad
+\vec{e}_2 = \begin{pmatrix} 0 \\ 1 \end{pmatrix}
+\]
+
+\textbf{任何 2D 向量 $\vec{v} = (3, 2)$ 都能写成}：
+
+\[
+\vec{v} = 3 \vec{e}_1 + 2 \vec{e}_2
+\]
+
+\textbf{这就是"线性组合"}——\textbf{每个分量乘上对应的基向量——再加起来}。
+
+\textbf{推广到 3D}——\textbf{$\mathbb{R}^3$ 的标准基}：
+
+\[
+\vec{e}_1 = \begin{pmatrix} 1 \\ 0 \\ 0 \end{pmatrix}, \quad
+\vec{e}_2 = \begin{pmatrix} 0 \\ 1 \\ 0 \end{pmatrix}, \quad
+\vec{e}_3 = \begin{pmatrix} 0 \\ 0 \\ 1 \end{pmatrix}
+\]
+
+\textbf{"维度"是什么}？——\textbf{基里向量的个数}——\textbf{$\mathbb{R}^2$ 是 2 维——$\mathbb{R}^3$ 是 3 维——$\mathbb{R}^n$ 是 $n$ 维}。
+
+\textbf{基不是唯一的}——\textbf{你可以选别的}。比如 2D 里——\textbf{$\{(1,1), (1,-1)\}$ 也是一组基}——\textbf{它们也能"撑起"整个 $\mathbb{R}^2$}。
+
+\textbf{选不同的基——同一个向量的"坐标"会变}——\textbf{但向量本身没变}——\textbf{这是"换基"的核心}（第 7 章详细讲）。
+
+\subsection{矩阵 = 线性变换（核心中的核心）}
+
+\textbf{现在到这一章最重要的一句话}——\textbf{画重点——背下来}：
+
+\begin{quote}
+\textbf{矩阵不是一堆数——矩阵是一个变换——它把一个向量变成另一个向量}。
+\end{quote}
+
+\textbf{什么叫"变换"}？——\textbf{你给它一个输入向量——它吐给你一个输出向量}——\textbf{就像函数 $f(x) = 2x + 1$ 一样——只不过现在的输入和输出都是向量}。
+
+\textbf{什么叫"线性"}？——\textbf{它满足两条性质}：
+
+\begin{enumerate}
+\item \textbf{$T(\vec{u} + \vec{v}) = T(\vec{u}) + T(\vec{v})$}——\textbf{加法保持}
+\item \textbf{$T(c \vec{v}) = c T(\vec{v})$}——\textbf{数乘保持}
+\end{enumerate}
+
+\textbf{用大白话说}——\textbf{"先加再变" = "先变再加"}——\textbf{"先乘再变" = "先变再乘"}——\textbf{这就是线性}。
+
+\textbf{核心定理}（这是整章的"任督二脉"）：
+
+\begin{tcolorbox}[essbox={矩阵的真正定义}]
+\textbf{每一个线性变换 $T: \mathbb{R}^n \to \mathbb{R}^m$——都对应唯一的一个 $m \times n$ 矩阵 $A$——使得 $T(\vec{v}) = A \vec{v}$}。\\[4pt]
+\textbf{反过来——每一个 $m \times n$ 矩阵——都是从 $\mathbb{R}^n$ 到 $\mathbb{R}^m$ 的一个线性变换}。
+\end{tcolorbox}
+
+\textbf{矩阵 = 线性变换的"坐标表示"}。
+
+\subsection{具体例子：看见变换}
+
+\textbf{看一个矩阵——立刻想象它对 2D 空间做了什么}：
+
+\textbf{例 1：恒等矩阵（什么也不做）}：
+\[
+I = \begin{pmatrix} 1 & 0 \\ 0 & 1 \end{pmatrix}
+\]
+\textbf{效果}：\textbf{每个向量原地不动}——\textbf{这是"恒等变换"}。
+
+\textbf{例 2：放大 2 倍}：
+\[
+A = \begin{pmatrix} 2 & 0 \\ 0 & 2 \end{pmatrix}
+\]
+\textbf{效果}：\textbf{每个向量长度变成 2 倍}——\textbf{整个平面"撑大了"}。
+
+\textbf{例 3：水平翻转}：
+\[
+A = \begin{pmatrix} -1 & 0 \\ 0 & 1 \end{pmatrix}
+\]
+\textbf{效果}：\textbf{x 坐标取反}——\textbf{整个平面"镜像翻转"}。
+
+\textbf{例 4：旋转 90 度}：
+\[
+A = \begin{pmatrix} 0 & -1 \\ 1 & 0 \end{pmatrix}
+\]
+\textbf{效果}：\textbf{每个向量逆时针转 90 度}——\textbf{这是旋转矩阵}。
+
+\textbf{例 5：剪切（shear）}：
+\[
+A = \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix}
+\]
+\textbf{效果}：\textbf{矩形被"推歪"成平行四边形}——\textbf{这就是"剪切变换"}。
+
+\textbf{关键观察}：\textbf{矩阵的列——就是"基向量被变换后的样子"}。
+
+\textbf{看矩阵 $A = \begin{pmatrix} a & b \\ c & d \end{pmatrix}$ 时}——\textbf{要这样读它}：
+
+\begin{itemize}
+\item \textbf{第一列 $\begin{pmatrix}a\\c\end{pmatrix}$ = $\vec{e}_1$ 被变换后的样子}
+\item \textbf{第二列 $\begin{pmatrix}b\\d\end{pmatrix}$ = $\vec{e}_2$ 被变换后的样子}
+\end{itemize}
+
+\textbf{这是"看懂矩阵"的最重要技巧}——\textbf{它是 Strang 和 3Blue1Brown 共同强调的}。
+
+\section{数学 / The Math}
+
+\subsection{矩阵 × 向量}
+
+矩阵乘向量的公式：
+
+\[
+\begin{pmatrix} a & b \\ c & d \end{pmatrix}
+\begin{pmatrix} x \\ y \end{pmatrix}
+=
+\begin{pmatrix} ax + by \\ cx + dy \end{pmatrix}
+\]
+
+\textbf{这个公式不是凭空捏造的}——\textbf{它来自"线性组合"}：
+
+\[
+\begin{pmatrix} a & b \\ c & d \end{pmatrix}
+\begin{pmatrix} x \\ y \end{pmatrix}
+= x \begin{pmatrix} a \\ c \end{pmatrix} + y \begin{pmatrix} b \\ d \end{pmatrix}
+\]
+
+\textbf{看见了吗}？——\textbf{输出 = "新坐标 $x$" 乘"第一列"——加"新坐标 $y$" 乘"第二列"}。
+
+\textbf{这就是变换的几何意义}——\textbf{$x$ 倍的"新 $\vec{e}_1$" + $y$ 倍的"新 $\vec{e}_2$"}。
+
+\subsection{矩阵 × 矩阵（最容易记错的运算）}
+
+矩阵乘矩阵——\textbf{为什么是"行乘列"}？
+
+\textbf{答案}：\textbf{矩阵乘法 = 复合变换}。
+
+如果 $A$ 表示一个变换——$B$ 表示另一个变换——\textbf{那么 $AB$ 表示"先做 $B$，再做 $A$"的复合变换}。
+
+\textbf{注意顺序}——\textbf{右边的先做}——\textbf{这是函数复合 $f \circ g$ 的同一个习惯}。
+
+\textbf{乘法公式}：若 $A$ 是 $m \times n$，$B$ 是 $n \times p$，则 $AB$ 是 $m \times p$，且
+
+\[
+(AB)_{ij} = \sum_{k=1}^{n} A_{ik} B_{kj}
+\]
+
+\textbf{记忆口诀}：\textbf{"左行右列"}——\textbf{结果第 $i$ 行第 $j$ 列 = $A$ 的第 $i$ 行 · $B$ 的第 $j$ 列}（点积）。
+
+\textbf{关键性质}：
+
+\begin{itemize}
+\item \textbf{$AB \ne BA$}——\textbf{矩阵乘法不交换}——\textbf{这是 Cayley 1858 年的大发现}
+\item \textbf{$(AB)C = A(BC)$}——\textbf{结合律成立}
+\item \textbf{$A(B+C) = AB + AC$}——\textbf{分配律成立}
+\item \textbf{$AI = IA = A$}——\textbf{单位矩阵 $I$ 是"乘法的 1"}
+\end{itemize}
+
+\begin{example}[$AB \ne BA$ 的反例]
+取 $A = \begin{pmatrix}0&1\\0&0\end{pmatrix}$，$B = \begin{pmatrix}0&0\\1&0\end{pmatrix}$。\\
+\textbf{计算}：$AB = \begin{pmatrix}1&0\\0&0\end{pmatrix}$，$BA = \begin{pmatrix}0&0\\0&1\end{pmatrix}$。\\
+\textbf{完全不相等}——\textbf{这告诉你——做事的顺序——很重要}。
+\end{example}
+
+\subsection{矩阵的转置}
+
+\textbf{转置}：\textbf{把矩阵的行变列、列变行}——\textbf{记作 $A^T$}。
+
+\[
+A = \begin{pmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \end{pmatrix}, \quad
+A^T = \begin{pmatrix} 1 & 4 \\ 2 & 5 \\ 3 & 6 \end{pmatrix}
+\]
+
+\textbf{转置的性质}：
+
+\begin{align}
+(A^T)^T &= A \\
+(A+B)^T &= A^T + B^T \\
+(AB)^T &= B^T A^T \quad \text{(注意顺序反了)}\\
+(cA)^T &= c A^T
+\end{align}
+
+\textbf{转置在工程里的两个核心用途}：
+
+\begin{itemize}
+\item \textbf{内积}：$\vec{u} \cdot \vec{v} = \vec{u}^T \vec{v}$——\textbf{把"两个向量"变成"一个数"}
+\item \textbf{对称矩阵}：$A = A^T$——\textbf{协方差矩阵、Hessian 矩阵——都是对称的}
+\end{itemize}
+
+\subsection{行列式：变换的"面积缩放因子"}
+
+\textbf{行列式（determinant）}——\textbf{记作 $\det(A)$ 或 $|A|$}——\textbf{它是一个数}（标量）。
+
+\textbf{它的几何意义——一句话}：
+
+\begin{quote}
+\textbf{行列式告诉我们——这个矩阵把"单位正方形的面积"放大了多少倍}。
+\end{quote}
+
+\textbf{对 2 阶矩阵}：
+
+\[
+\det\begin{pmatrix} a & b \\ c & d \end{pmatrix} = ad - bc
+\]
+
+\textbf{解释}：\textbf{矩阵的两个列向量}（$\vec{e}_1$ 被变换后的样子 和 $\vec{e}_2$ 被变换后的样子）\textbf{张成的平行四边形——它的面积——就是 $|ad - bc|$}。
+
+\textbf{绝对值是面积——符号告诉你"方向"}：
+
+\begin{itemize}
+\item \textbf{$\det > 0$}——\textbf{变换"保持方向"}（不翻面）
+\item \textbf{$\det < 0$}——\textbf{变换"翻面了"}（镜像翻转）
+\item \textbf{$\det = 0$}——\textbf{变换把空间"压扁"了}——\textbf{平行四边形面积为 0——意味着两个列向量在同一条线上}——\textbf{矩阵"退化"了}（不可逆）
+\end{itemize}
+
+\textbf{对 3 阶矩阵}——\textbf{它是"体积缩放因子"}——\textbf{三个列向量张成的平行六面体的体积}。
+
+\textbf{对 $n$ 阶}——\textbf{它是"$n$ 维体积缩放因子"}。
+
+\textbf{这才是行列式的真正定义}——\textbf{不是同济书里那个吓人的求和公式}。
+
+\subsection{行列式的计算}
+
+\textbf{2 阶}：\textbf{交叉相乘相减}——\textbf{$ad - bc$}——\textbf{秒算}。
+
+\textbf{3 阶}：\textbf{"对角线法则"（Sarrus 规则）}——\textbf{只对 3 阶有效}：
+
+\[
+\det\begin{pmatrix} a & b & c \\ d & e & f \\ g & h & i \end{pmatrix}
+= aei + bfg + cdh - ceg - bdi - afh
+\]
+
+\textbf{4 阶及以上}——\textbf{用"按行/列展开"或"化为三角形"}。
+
+\textbf{现代做法——用 Gauss 消元化为上三角}——\textbf{然后对角线相乘}——\textbf{效率 $O(n^3)$}——\textbf{电脑用的就是这种方法}。
+
+\textbf{行列式的关键性质}：
+
+\begin{itemize}
+\item \textbf{$\det(AB) = \det(A) \det(B)$}——\textbf{乘法保持}——\textbf{这告诉我们"复合变换的缩放 = 两个变换缩放的乘积"}
+\item \textbf{$\det(A^T) = \det(A)$}——\textbf{转置不变}
+\item \textbf{$\det(A^{-1}) = 1/\det(A)$}——\textbf{逆的行列式}
+\item \textbf{$\det(I) = 1$}——\textbf{恒等变换不缩放}
+\end{itemize}
+
+\subsection{矩阵的逆}
+
+\textbf{矩阵的逆}——\textbf{记作 $A^{-1}$}——\textbf{它"撤销" $A$ 的变换}。
+
+\textbf{定义}：\textbf{若存在 $B$ 使得 $AB = BA = I$——则 $B = A^{-1}$}。
+
+\textbf{逆存在的条件}：\textbf{$\det(A) \ne 0$}——\textbf{方阵 + 非退化}。
+
+\textbf{$\det = 0$ 时为什么没有逆}？——\textbf{因为 $A$ 把空间"压扁"了}——\textbf{从压扁后的空间——无法"反推"回原来的空间}——\textbf{信息丢了——逆变换不存在}。
+
+\textbf{2 阶逆的公式}（背熟）：
+
+\[
+\begin{pmatrix} a & b \\ c & d \end{pmatrix}^{-1}
+= \frac{1}{ad - bc} \begin{pmatrix} d & -b \\ -c & a \end{pmatrix}
+\]
+
+\textbf{记忆}——\textbf{"主对角交换、副对角变号、再除以行列式"}。
+
+\textbf{逆的性质}：
+
+\begin{align}
+(A^{-1})^{-1} &= A \\
+(AB)^{-1} &= B^{-1} A^{-1} \quad \text{(顺序又反了)}\\
+(A^T)^{-1} &= (A^{-1})^T
+\end{align}
+
+\subsection{Gauss 消元：解 $Ax = b$ 的"瑞士军刀"}
+
+\textbf{线性方程组的核心问题}：
+
+\[
+\begin{cases}
+2x + y + z = 5 \\
+x - y + 2z = 3 \\
+3x + 2y - z = 4
+\end{cases}
+\]
+
+\textbf{用矩阵写出}：
+
+\[
+\underbrace{\begin{pmatrix} 2 & 1 & 1 \\ 1 & -1 & 2 \\ 3 & 2 & -1 \end{pmatrix}}_{A}
+\underbrace{\begin{pmatrix} x \\ y \\ z \end{pmatrix}}_{\vec{x}}
+=
+\underbrace{\begin{pmatrix} 5 \\ 3 \\ 4 \end{pmatrix}}_{\vec{b}}
+\]
+
+\textbf{Gauss 消元法的三个允许操作}（行变换）：
+
+\begin{enumerate}
+\item \textbf{两行互换}
+\item \textbf{某一行乘以非零常数}
+\item \textbf{某一行加上另一行的常数倍}
+\end{enumerate}
+
+\textbf{目标}：\textbf{把增广矩阵 $[A | \vec{b}]$ 化为上三角形}——\textbf{然后从最后一行回代}。
+
+\textbf{这个算法叫"Gauss-Jordan 消元"}——\textbf{Gauss 1810 年代发明}（其实中国人 2000 年前在《九章算术》"方程"章里就用过类似方法——\textbf{叫"消首法"}）。
+
+\textbf{现代实现}——\textbf{LU 分解}：\textbf{把 $A$ 拆成 $L \cdot U$}（下三角 × 上三角）——\textbf{然后两步回代}——\textbf{这是 LAPACK / NumPy 里 \texttt{linalg.solve} 的底层算法}。
+
+\begin{theorem}[$Ax = b$ 的解结构]
+设 $A$ 是 $n \times n$ 方阵。则：
+\begin{enumerate}
+\item \textbf{$\det(A) \ne 0$}——\textbf{方程有唯一解}——\textbf{$\vec{x} = A^{-1} \vec{b}$}
+\item \textbf{$\det(A) = 0$}——\textbf{要么无解——要么有无穷多解}（取决于 $\vec{b}$）
+\end{enumerate}
+\end{theorem}
+
+\textbf{工程实践}——\textbf{永远不要计算 $A^{-1}$ 然后乘 $\vec{b}$}——\textbf{要用 \texttt{np.linalg.solve(A, b)}}——\textbf{它做 LU 分解 + 回代}——\textbf{更快、更稳定、误差更小}。
+
+\section{Aha 例子：3D 游戏旋转 / Aha: 3D Game Rotation}
+
+\textbf{场景}：你在做一个 3D 游戏——\textbf{《我的世界》风格的方块世界}。
+
+玩家按下 \textbf{A 键}——\textbf{要把摄像机水平转 5 度}——\textbf{然后按 \textbf{W 键}——再前进 1 米}。
+
+\textbf{问题}：\textbf{游戏里的每一个方块、每一个角色——它们的位置都要重新算}。
+
+\textbf{用什么算}？——\textbf{矩阵乘法}。
+
+\subsection{3D 旋转矩阵}
+
+\textbf{绕 z 轴（垂直轴）旋转角度 $\theta$ 的矩阵}：
+
+\[
+R_z(\theta) = \begin{pmatrix}
+\cos\theta & -\sin\theta & 0 \\
+\sin\theta & \cos\theta & 0 \\
+0 & 0 & 1
+\end{pmatrix}
+\]
+
+\textbf{绕 x 轴}：
+
+\[
+R_x(\theta) = \begin{pmatrix}
+1 & 0 & 0 \\
+0 & \cos\theta & -\sin\theta \\
+0 & \sin\theta & \cos\theta
+\end{pmatrix}
+\]
+
+\textbf{绕 y 轴}：
+
+\[
+R_y(\theta) = \begin{pmatrix}
+\cos\theta & 0 & \sin\theta \\
+0 & 1 & 0 \\
+-\sin\theta & 0 & \cos\theta
+\end{pmatrix}
+\]
+
+\textbf{任意 3D 旋转}——\textbf{都是这三个的组合}——\textbf{乘起来就行}。
+
+\subsection{为什么这件事是 Aha 时刻}
+
+\begin{tcolorbox}[ahabox={Aha: 矩阵乘法不交换——是游戏的物理}]
+\textbf{你在游戏里——先水平转 90 度——再向前走 1 米——你到的地方}——
+
+\medskip
+
+\textbf{和——先向前走 1 米——再水平转 90 度——你到的地方}——
+
+\medskip
+
+\textbf{完！全！不！一！样！}
+
+\medskip
+
+\textbf{这就是 $AB \ne BA$ 的物理意义}——\textbf{矩阵乘法的顺序——就是动作的顺序}。
+
+\medskip
+
+Cayley 1858 年发现的\textbf{"$AB$ 不等于 $BA$"}——\textbf{在 2026 年的每一款 3D 游戏里——每秒被 GPU 验证几亿次}——\textbf{它不是抽象的怪事——它是空间的本性}。
+
+\medskip
+
+\textbf{再补一刀}——\textbf{在量子力学里——位置算符 $\hat{x}$ 和动量算符 $\hat{p}$——也满足 $\hat{x}\hat{p} \ne \hat{p}\hat{x}$}——\textbf{这就是 Heisenberg 不确定性原理的数学根源}。
+
+\medskip
+
+\textbf{从游戏到量子力学——背后是同一个数学事实}——\textbf{矩阵乘法不交换}。
+\end{tcolorbox}
+
+\textbf{完整的旋转 + 平移 = 齐次坐标}：
+
+在游戏里——\textbf{我们要同时做"旋转"和"平移"}——但平移不是线性变换（它不满足 $T(\vec{0}) = \vec{0}$）。
+
+\textbf{解决方法}：\textbf{把 3D 点扩成 4D 齐次坐标 $(x, y, z, 1)$}——\textbf{然后用 4×4 矩阵处理}：
+
+\[
+\begin{pmatrix} R_{3\times3} & \vec{t} \\ \vec{0}^T & 1 \end{pmatrix}
+\begin{pmatrix} \vec{p} \\ 1 \end{pmatrix}
+= \begin{pmatrix} R\vec{p} + \vec{t} \\ 1 \end{pmatrix}
+\]
+
+\textbf{这就是 OpenGL / Unity / Unreal 引擎里 \texttt{ModelViewMatrix} 的本质}——\textbf{每一个像素的位置——都是一次 4×4 矩阵 × 4×1 向量}。
+
+\subsection{Python 代码}
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+
+def rot_z(theta):
+    """绕 z 轴旋转 theta 弧度"""
+    c, s = np.cos(theta), np.sin(theta)
+    return np.array([
+        [c, -s, 0],
+        [s,  c, 0],
+        [0,  0, 1]
+    ])
+
+def rot_x(theta):
+    c, s = np.cos(theta), np.sin(theta)
+    return np.array([
+        [1, 0,  0],
+        [0, c, -s],
+        [0, s,  c]
+    ])
+
+# 一个 3D 点
+p = np.array([1, 0, 0])    # 沿 x 轴方向 1 米的点
+
+# 绕 z 轴转 90 度
+p_rotated = rot_z(np.pi / 2) @ p
+print("旋转后:", p_rotated)   # [0, 1, 0]——确实转到了 y 轴
+
+# 复合：先绕 z 转 90 度——再绕 x 转 90 度
+R_combined = rot_x(np.pi / 2) @ rot_z(np.pi / 2)
+p_combined = R_combined @ p
+print("复合后:", p_combined)
+
+# 验证：AB != BA
+R1 = rot_x(np.pi / 2) @ rot_z(np.pi / 2)
+R2 = rot_z(np.pi / 2) @ rot_x(np.pi / 2)
+print("R1 == R2 吗?", np.allclose(R1, R2))   # False!
+
+# 行列式：旋转矩阵的 det 应该 = 1（保持体积、保持方向）
+print("det(R_combined) =", np.linalg.det(R_combined))   # 1.0
+
+# 解一个线性方程组
+A = np.array([[2, 1, 1], [1, -1, 2], [3, 2, -1]])
+b = np.array([5, 3, 4])
+x = np.linalg.solve(A, b)
+print("方程的解:", x)
+\end{lstlisting}
+
+\textbf{这段代码——\textbf{30 行}——\textbf{涵盖了本章 80\% 的内容}}：
+
+\begin{itemize}
+\item \textbf{矩阵 = 旋转变换}
+\item \textbf{矩阵乘法 = 复合}
+\item \textbf{$AB \ne BA$}
+\item \textbf{行列式 = 1（旋转不缩放）}
+\item \textbf{\texttt{np.linalg.solve} = Gauss 消元的现代化}
+\end{itemize}
+
+\section{现代视角：矩阵在 ML 与图形学 / Modern: Matrices in ML and Graphics}
+
+\subsection{深度学习 = 大型矩阵运算}
+
+\textbf{一个最简单的神经网络层}：
+
+\[
+\vec{y} = \sigma(W \vec{x} + \vec{b})
+\]
+
+\textbf{这里}：
+\begin{itemize}
+\item \textbf{$\vec{x}$}——输入向量（比如 784 维——MNIST 图片展平）
+\item \textbf{$W$}——权重矩阵（比如 $128 \times 784$——把 784 维映射到 128 维）
+\item \textbf{$\vec{b}$}——偏置向量
+\item \textbf{$\sigma$}——非线性激活函数（ReLU、sigmoid 等）
+\end{itemize}
+
+\textbf{$W \vec{x}$——就是矩阵乘向量——就是线性变换}。
+
+\textbf{多层堆叠}——\textbf{就是多次线性变换的复合}——\textbf{再加非线性}。
+
+\textbf{ChatGPT 的核心 Transformer——每一层都是几十个大矩阵乘法}——\textbf{一次前向传播——几百亿次浮点运算}——\textbf{全部用 GPU 上的 BLAS 库实现}。
+
+\textbf{你今天和 ChatGPT 说"你好"——背后是几十亿次 Cayley 1858 年定义的矩阵乘法}。
+
+\subsection{图形学 = 4×4 矩阵的世界}
+
+\textbf{所有 3D 图形}——\textbf{从《英雄联盟》到《赛博朋克 2077》}——\textbf{都建立在 4×4 矩阵之上}：
+
+\begin{itemize}
+\item \textbf{Model Matrix}——\textbf{把模型从局部坐标系转到世界坐标系}
+\item \textbf{View Matrix}——\textbf{把世界坐标系转到摄像机坐标系}
+\item \textbf{Projection Matrix}——\textbf{把 3D 投影到 2D 屏幕}
+\end{itemize}
+
+\textbf{每个像素的位置 = Projection × View × Model × 顶点坐标}——\textbf{4×4 矩阵乘 4×4 矩阵乘 4×4 矩阵乘 4×1 向量}——\textbf{你每帧看的画面——是 GPU 跑了几百万次这个公式}。
+
+\subsection{数值线性代数：工程世界的基石}
+
+\textbf{LAPACK + BLAS}——\textbf{Linear Algebra PACKage + Basic Linear Algebra Subprograms}——\textbf{是 1970 年代以来一直在演化的"数学软件"}——\textbf{用 Fortran / C / 汇编写成}。
+
+\textbf{你今天用的}：
+
+\begin{itemize}
+\item \textbf{NumPy} 的 \texttt{linalg.solve}——\textbf{底层是 LAPACK}
+\item \textbf{PyTorch} 的 \texttt{torch.matmul}——\textbf{底层是 cuBLAS（GPU 上的 BLAS）}
+\item \textbf{MATLAB} 的 \texttt{A\textbackslash b}——\textbf{底层是 LAPACK}
+\end{itemize}
+
+\textbf{所有的"高级 AI 软件"——本质上都是在调用 50 年前写的数值线性代数库}。
+
+\textbf{这就是为什么——线代是现代工程的"任督二脉"中的"督脉"}——\textbf{它在每一处——你看不见的地方——撑着整个数字世界}。
+
+\section{代码与思考 / Code and Exercises}
+
+\subsection{配套模块 \texttt{linalg\_intro.py}}
+
+GitHub 上的 \texttt{modules/linalg\_intro.py} 包含\textbf{7 个 demo}：
+
+\begin{enumerate}
+\item \texttt{demo\_vector\_basics()}——可视化 2D 向量的加法、数乘
+\item \texttt{demo\_matrix\_as\_transform()}——\textbf{核心 demo}——画"单位正方形被矩阵变换后的样子"——\textbf{你会"看见"线性变换}
+\item \texttt{demo\_matmul\_noncommutative()}——验证 $AB \ne BA$——用旋转 + 剪切的复合
+\item \texttt{demo\_determinant()}——计算并可视化"面积缩放"
+\item \texttt{demo\_gauss\_elimination()}——手工实现 Gauss 消元——和 \texttt{np.linalg.solve} 对比
+\item \texttt{demo\_3d\_rotation()}——本章 Aha 例子：3D 旋转 + 平移 + 齐次坐标
+\item \texttt{demo\_image\_rotation()}——把一张真实图片旋转任意角度——用矩阵实现
+\end{enumerate}
+
+\textbf{使用}：
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/inaturelz-coder/math-rendu
+cd math-rendu
+pip install -r requirements.txt
+python modules/linalg_intro.py
+\end{lstlisting}
+
+\subsection{思考题 / Exercises}
+
+\begin{enumerate}
+\item \textbf{[直觉]} 用一句话向你的高中同桌解释"矩阵是什么"——不许说"一堆数排成方阵"。
+\item \textbf{[几何]} 矩阵 $\begin{pmatrix}2&0\\0&3\end{pmatrix}$ 对单位圆做了什么变换？画出来。
+\item \textbf{[计算]} 求 $A = \begin{pmatrix}1&2\\3&4\end{pmatrix}$ 的行列式、逆矩阵——并验证 $A A^{-1} = I$。
+\item \textbf{[复合]} 取两个 2×2 旋转矩阵 $R(30°)$ 和 $R(60°)$——验证 $R(30°) R(60°) = R(90°)$。\textbf{为什么旋转矩阵的乘法是交换的}（提示：2D 里）？
+\item \textbf{[反例]} 找出两个 2×2 矩阵 $A$、$B$——使得 $AB \ne BA$——并算出两者之差。
+\item \textbf{[应用]} 一个机器人手臂的末端在它自己的坐标系里位置为 $(0.5, 0, 0)$。手臂坐标系相对世界坐标系——\textbf{原点在 $(1, 2, 0)$}——\textbf{绕 z 轴转了 30 度}。求末端在世界坐标系里的位置。
+\item \textbf{[Gauss]} 手算 Gauss 消元——解
+\[
+\begin{cases} x+2y+z=4 \\ 2x+y-z=1 \\ x-y+3z=2 \end{cases}
+\]
+\textbf{然后用 \texttt{np.linalg.solve} 验证}。
+\item \textbf{[历史]} 查一查：为什么 Cayley 1858 年的那篇论文起初\textbf{没什么人引用}？它在数学界"火起来"用了多少年？
+\item \textbf{[现代]} 用 PyTorch 写一个最简单的"线性层"——\textbf{torch.nn.Linear(10, 5)}——\textbf{看看它内部存了什么矩阵}——\textbf{这个矩阵的 shape 是什么}？
+\end{enumerate}
+
+\section{本章小结 / Chapter Summary}
+
+\begin{tcolorbox}[essbox={本章核心}]
+\begin{itemize}
+\item \textbf{向量}——\textbf{箭头 + 数组 + 物理量}——\textbf{三位一体}
+\item \textbf{基}——空间的"标尺"——\textbf{基不唯一——但维度唯一}
+\item \textbf{矩阵 = 线性变换}——\textbf{不是一堆数}——\textbf{是一个"映射"}
+\item \textbf{矩阵的列 = 基向量被变换后的样子}——\textbf{看矩阵的标准姿势}
+\item \textbf{矩阵乘法 = 变换复合}——\textbf{$AB \ne BA$ 是空间的本性}
+\item \textbf{行列式 = 体积缩放因子}——\textbf{$\det = 0$ 意味着空间被压扁}
+\item \textbf{逆矩阵 = 撤销变换}——\textbf{$\det \ne 0$ 时才存在}
+\item \textbf{Gauss 消元 = 解 $Ax = b$ 的瑞士军刀}——\textbf{现代用 \texttt{np.linalg.solve}}
+\item \textbf{现代应用}——\textbf{3D 游戏（4×4 矩阵）}——\textbf{深度学习（大矩阵乘法）}——\textbf{都是矩阵的世界}
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{下一章——线代核心}——\textbf{我们要进入"特征值、特征向量、SVD、对角化"}——\textbf{这是线性代数"内功"的部分}——\textbf{也是 PCA、推荐系统、量子力学共同的数学基础}。
+
+\textbf{今天讲的"矩阵 = 变换"——下章我们要问}：\textbf{这个变换里——有没有"不变"的方向}？——\textbf{答案就是"特征向量"}。
+
+\clearpage

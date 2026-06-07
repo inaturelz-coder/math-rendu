@@ -1,0 +1,678 @@
+% =====================================================================
+%  第 4 章 · 常微分方程 / Ordinary Differential Equations
+%  一阶 ODE、二阶线性、系统与相图、数值解 (Euler/RK4)、应用
+%  小故事：Bernoulli 一家与悬链线之争
+%  Aha：阻尼振子 与 RLC 电路的同构 + SIR 传播模型
+% =====================================================================
+
+\chapter{常微分方程 / Ordinary Differential Equations}
+\label{ch:ode}
+
+\begin{quote}\itshape
+\textbf{1696 年}——\textbf{Johann Bernoulli} 在《教师学报》上向全欧洲数学家挑战：
+"一根均匀的链子两端固定挂着——它形成的曲线是什么？"
+
+\medskip
+
+他自己以为答案是抛物线——\textbf{猜错了}。他哥哥 \textbf{Jakob} 也猜错了。\\
+真正解出来的是\textbf{年轻的 Leibniz、Huygens 和 Johann 自己}——答案是\textbf{双曲余弦} $y = a \cosh(x/a)$。
+
+\medskip
+
+这场\textbf{悬链线之争}（\textit{catenary controversy}），\textbf{是 ODE 的第一次"工业测试"}——\textbf{它告诉人类：很多自然形状不是代数曲线、而是微分方程的解}。
+
+\medskip
+
+我们这一章——讲的就是 Bernoulli 兄弟那一代人发明的工具：\textbf{常微分方程}。
+\end{quote}
+
+\section{写在前面 / Preface}
+
+\textbf{我大二下学《工程数学》}——\textbf{ODE 那一章是最让我崩溃的}。
+
+老师在黑板上一口气写了\textbf{六种"形式"}——可分离变量、齐次、一阶线性、Bernoulli、Riccati、全微分——\textbf{每种形式配一个"对应解法"}——\textbf{再每种配一道难题}。
+
+我抄了\textbf{18 页笔记}——\textbf{期末考了 87 分}——\textbf{然后转身就忘了}。
+
+\textbf{真正让我反应过来 ODE 是什么的}——是大三做\textbf{电力电子的课程设计}——\textbf{RLC 串联电路}：
+
+\[
+L \frac{d^2 i}{dt^2} + R \frac{di}{dt} + \frac{1}{C} i = \frac{dV}{dt}
+\]
+
+\textbf{我盯着这个方程看了 5 秒}——\textbf{突然想起来}——\textbf{这不就是高中物理里的\textbf{弹簧——阻尼——质量}系统？}
+
+\[
+m \ddot{x} + c \dot{x} + k x = F(t)
+\]
+
+\textbf{两个方程长得一模一样}——\textbf{只是物理量换了名字}。
+
+那一刻我才意识到——\textbf{ODE 不是"六种形式 + 六种解法"}——\textbf{ODE 是"自然界写给工程师的母语"}——\textbf{电路、振动、化学反应、人口、传染病、金融——它们说的都是同一种话}。
+
+\textbf{这一章的目的}——\textbf{把那 18 页笔记}——\textbf{压缩成 3 张"通用图"}：
+
+\begin{itemize}
+\item \textbf{一阶 ODE}——"\textbf{当下变化率 = 当下状态}"——\textbf{指数增长 / 衰减}
+\item \textbf{二阶线性 ODE}——"\textbf{加速度 = 弹力 + 阻力 + 外力}"——\textbf{振动 / 电路}
+\item \textbf{ODE 系统}——"\textbf{多个状态互相影响}"——\textbf{捕食者——猎物 / SIR 传染病}
+\end{itemize}
+
+\textbf{再加一招——\texttt{scipy.integrate.solve\_ivp}}——\textbf{你几乎所有的工程 ODE 都能算出来}。
+
+\section{一句话本质 / The Essence in One Sentence}
+
+\begin{tcolorbox}[essbox={一句话本质}]
+\textbf{中文}：\textbf{ODE 是"用变化率描述未来"——给定当下状态——它告诉你下一刻去哪里}。\\[6pt]
+\textbf{English}: An ODE describes the future through rates of change——given the present state, it tells you where the next instant goes.
+\end{tcolorbox}
+
+\textbf{再说一遍}——\textbf{ODE 不是"解方程"}——\textbf{ODE 是"写一条规则——让时间帮你演化"}。
+
+\section{教材里你看到的 / What the Textbook Tells You}
+
+\subsection{同济《高等数学下册》第十二章}
+
+同济把 ODE 放在\textbf{下册的倒数第二章}——\textbf{30 多页}——\textbf{讲了 8 节}：
+
+\begin{itemize}
+\item 微分方程的基本概念
+\item 可分离变量的微分方程
+\item 齐次方程
+\item 一阶线性方程
+\item 可降阶的高阶方程
+\item 高阶线性方程
+\item 常系数齐次线性方程
+\item 常系数非齐次线性方程
+\end{itemize}
+
+\textbf{优点}：\textbf{完整}——所有"分类与解法"都覆盖了——\textbf{考研够用}。
+
+\textbf{缺点}：
+
+\begin{enumerate}
+\item \textbf{只讲"解法"——不讲"为什么这么解"}——\textbf{学生背了 6 套口诀——不知道哪一套对哪一种物理}
+\item \textbf{没有相图}——没有"\textbf{用几何看 ODE}"——这是\textbf{现代动力系统的入门视角}
+\item \textbf{没有数值方法}——\textbf{Euler 法、RK4——这是工业里 99\% 的 ODE 解法}——同济一字不提
+\item \textbf{应用部分孤立}——讲了"\textbf{LR 电路}"——但\textbf{没讲它和"弹簧振子"是同一件事}
+\end{enumerate}
+
+\subsection{Boyce \& DiPrima《Elementary Differential Equations》}
+
+\textbf{美国的国民 ODE 教材}——\textbf{900 页}——\textbf{讲得活、图多、相图齐全}。
+
+它比同济好的地方：\textbf{有相图、有数值方法（一整章 Euler + RK4）、有 Laplace 变换的完整故事}。
+
+它的缺点：\textbf{900 页太长}——\textbf{中国工程师没时间通读}。
+
+\subsection{Strogatz《Nonlinear Dynamics and Chaos》}
+
+\textbf{Strogatz 这本是非线性 ODE 的"必读"}——\textbf{用"几何 + 故事"讲分岔、混沌、Lorenz 吸引子}——\textbf{读起来像小说}。
+
+\textbf{它不教解法}——\textbf{它教你"看相图"的本能}。\textbf{推荐每个工程师都翻一遍}。
+
+\subsection{我的策略}
+
+本章只做三件事：
+
+\begin{enumerate}
+\item \textbf{把"六种解法"压缩成两条主线}——\textbf{一阶 = 指数家族}——\textbf{二阶线性 = 振动家族}
+\item \textbf{第一次引入相图}——\textbf{让你"看见" ODE 的解——而不只是"算出"它}
+\item \textbf{把数值方法说透到一行代码}——\textbf{\texttt{solve\_ivp(...)} 背后是 Euler + RK4 的现代化}
+\end{enumerate}
+
+\begin{tcolorbox}[storybox={\Large 小故事：Bernoulli 一家与悬链线之争}]
+\textbf{17 世纪末的瑞士巴塞尔}——\textbf{有一个特殊的家族}——\textbf{Bernoulli 家族}——\textbf{三代人里出了八位数学家}——\textbf{史无前例}。
+
+\medskip
+
+\textbf{Jakob Bernoulli}（1654--1705）——\textbf{大哥}——\textbf{巴塞尔大学数学教授}——\textbf{发明了"Bernoulli 数"和"大数定律"}。
+
+\textbf{Johann Bernoulli}（1667--1748）——\textbf{弟弟}——\textbf{比 Jakob 小 13 岁}——\textbf{脾气暴躁、好胜心强}——\textbf{后来教出了 Euler}。
+
+\textbf{Daniel Bernoulli}（1700--1782）——\textbf{Johann 的儿子}——\textbf{流体力学里"Bernoulli 方程"就是他的工作}。
+
+\medskip
+
+\textbf{1690 年}——\textbf{Jakob 在《教师学报》（Acta Eruditorum）上提了一个问题}：
+
+\medskip
+
+\centerline{\itshape "一根均匀柔软的链子，两端固定，自然下垂——它的形状是什么曲线？"}
+
+\medskip
+
+\textbf{Galileo 在 1638 年猜过}——\textbf{他说是\textbf{抛物线}}——\textbf{听起来很合理}（抛物线也长那样）。
+
+\medskip
+
+\textbf{1691 年}——\textbf{Leibniz、Huygens、Johann Bernoulli 三个人独立解出来了}——\textbf{答案不是抛物线}——\textbf{是}：
+
+\[
+y = a \cosh\!\left(\frac{x}{a}\right) = \frac{a}{2}\left(e^{x/a} + e^{-x/a}\right)
+\]
+
+\medskip
+
+这个曲线叫\textbf{悬链线（catenary）}——\textbf{源自拉丁语 catena（链子）}。
+
+\medskip
+
+\textbf{怎么解出来的？}——\textbf{他们写下了一个二阶 ODE}：
+
+\[
+y'' = \frac{1}{a}\sqrt{1 + (y')^2}
+\]
+
+\textbf{背后的物理}——\textbf{链子上每一小段——受重力 + 两端张力}——\textbf{力平衡——化成微分方程}——\textbf{再积分}。
+
+\medskip
+
+\textbf{这是 ODE 的"第一次公开胜利"}——\textbf{它解出了一个\textbf{2000 年没人能用代数搞定的几何问题}}。
+
+\medskip
+
+\textbf{Johann 后来在书信里偷偷得意}——\textbf{"我用了\textbf{一晚上}就解出来了——我哥哥 Jakob 想了\textbf{一整年}才追上"}——\textbf{兄弟俩从此结下梁子——一辈子打数学口水仗}。
+
+\medskip
+
+\textbf{今天}——\textbf{St. Louis Gateway Arch}（圣路易斯大拱门）——\textbf{Antoni Gaud{\'i} 的圣家堂}——\textbf{都是按悬链线（倒过来）设计的}——\textbf{因为这是\textbf{纯压缩——没有弯矩}的天然结构}。
+
+\medskip
+
+\textbf{Bernoulli 兄弟 330 年前为之吵架的曲线}——\textbf{今天还在撑着 192 米高的拱门}。
+\end{tcolorbox}
+
+\section{直觉 / Intuition}
+
+\subsection{ODE 的本质——"局部规则"决定"全局轨迹"}
+
+\textbf{一句话——ODE 是这样工作的}：
+
+\begin{quote}
+\textbf{"你告诉我现在在哪——我告诉你下一刻往哪走。"}\\[4pt]
+\itshape "Tell me where you are now——I'll tell you where to go next."
+\end{quote}
+
+\textbf{每个 ODE 都长这样}：
+\[
+\frac{dy}{dt} = f(t, y)
+\]
+
+\textbf{这个 $f$——就是"游戏规则"}——\textbf{它告诉时间——在每个状态 $y$ 下——下一刻该怎么变}。
+
+\textbf{ODE 不像代数方程"求未知数"}——\textbf{ODE 是"求未知函数"}——\textbf{它的答案是\textbf{一条曲线 $y(t)$}}——\textbf{不是\textbf{一个数}}。
+
+\subsection{斜率场 / Slope Field——把 ODE 画出来}
+
+\textbf{斜率场是 ODE 最直观的可视化}：
+
+\begin{itemize}
+\item 在平面 $(t, y)$ 上的\textbf{每一点}——\textbf{画一根短斜线}——\textbf{斜率 $= f(t, y)$}
+\item 一个\textbf{初值 $(t_0, y_0)$}——\textbf{决定了一条曲线}——\textbf{沿着斜率场"流"下去}
+\end{itemize}
+
+\textbf{初值不同——曲线不同}——\textbf{这就是"初值问题"（IVP）的画面}。
+
+\subsection{相图 / Phase Portrait——把"轨迹"画出来}
+
+对\textbf{二阶 ODE 或 ODE 系统}——\textbf{斜率场不够用}——\textbf{我们画相图}：
+
+\begin{itemize}
+\item 横轴 $x$、纵轴 $\dot x$——\textbf{每一个状态是平面上的一个点}
+\item \textbf{解 $\to$ 平面上的一条轨迹}——\textbf{时间是"运动方向"}
+\end{itemize}
+
+\textbf{相图能一眼看出}：
+
+\begin{itemize}
+\item 系统是\textbf{稳定的}吗？（所有轨迹收敛到某点 $\to$ \textbf{吸引子}）
+\item 系统会\textbf{振荡}吗？（轨迹绕圈 $\to$ \textbf{极限环}）
+\item 系统会\textbf{发散}吗？（轨迹飞出去 $\to$ \textbf{不稳定}）
+\end{itemize}
+
+\textbf{这是同济不讲的"几何视角"}——\textbf{却是动力系统的现代主流语言}。
+
+\section{数学 / The Math}
+
+\subsection{一阶 ODE / First-Order ODEs}
+
+\textbf{一般形式}：
+\[
+\frac{dy}{dx} = f(x, y)
+\]
+
+\textbf{三种最常见的可解形式}——\textbf{背一遍——其余交给数值}：
+
+\medskip
+
+\textbf{(1) 可分离变量 / Separable}：
+
+\[
+\frac{dy}{dx} = g(x) h(y) \;\Longrightarrow\; \int \frac{dy}{h(y)} = \int g(x) \, dx + C
+\]
+
+\textbf{例}：$\dfrac{dy}{dx} = -k y$（指数衰减）$\;\Rightarrow\;y = y_0 e^{-kx}$。
+
+\textbf{应用}：\textbf{放射性衰变、电容放电、Newton 冷却定律}。
+
+\medskip
+
+\textbf{(2) 一阶线性 / First-Order Linear}：
+
+\[
+\frac{dy}{dx} + P(x) y = Q(x)
+\]
+
+\textbf{解法——乘"积分因子" $\mu(x) = e^{\int P(x) dx}$}：
+
+\[
+y = \frac{1}{\mu(x)}\left[\int \mu(x) Q(x) \, dx + C\right]
+\]
+
+\textbf{应用}：\textbf{RC 电路的充电过程、混合溶液的浓度变化}。
+
+\medskip
+
+\textbf{(3) Bernoulli 方程 / Bernoulli Equation}（\textbf{1695 年由 Jakob Bernoulli 提出}）：
+
+\[
+\frac{dy}{dx} + P(x) y = Q(x) y^n \quad (n \neq 0, 1)
+\]
+
+\textbf{解法——令 $z = y^{1-n}$——化成一阶线性}。
+
+\textbf{应用}：\textbf{Logistic 增长模型}（$n=2$）——\textbf{种群生态、SIR 传染病}。
+
+\begin{example}[Newton 冷却定律 / Newton's Law of Cooling]
+一杯 90°C 的咖啡放在 20°C 的房间——\textbf{温度变化率与温差成正比}：
+\[
+\frac{dT}{dt} = -k(T - T_{\text{环境}}), \quad T(0) = 90
+\]
+\textbf{这是可分离 + 线性双重身份}。解：
+\[
+T(t) = T_{\text{环境}} + (T_0 - T_{\text{环境}}) e^{-kt} = 20 + 70 e^{-kt}
+\]
+\textbf{这就是为什么咖啡总是先快、后慢地冷下来}——\textbf{指数衰减是物理界的"母模板"}。
+\end{example}
+
+\subsection{二阶线性 ODE / Second-Order Linear ODEs}
+
+\textbf{一般形式}：
+\[
+a y'' + b y' + c y = f(x)
+\]
+
+\textbf{解的结构}（\textbf{这是同济讲对了的地方}）：
+
+\[
+y(x) = \underbrace{y_h(x)}_{\text{齐次解}} + \underbrace{y_p(x)}_{\text{特解}}
+\]
+
+\subsubsection{齐次方程 / Homogeneous}
+
+\[
+a y'' + b y' + c y = 0
+\]
+
+\textbf{试探解 $y = e^{\lambda x}$}——代入——得\textbf{特征方程}：
+\[
+a \lambda^2 + b \lambda + c = 0
+\]
+
+\textbf{三种情况}：
+
+\begin{enumerate}
+\item \textbf{两个不同实根} $\lambda_1, \lambda_2$：$y_h = C_1 e^{\lambda_1 x} + C_2 e^{\lambda_2 x}$ —— \textbf{过阻尼振动}
+\item \textbf{重根} $\lambda$：$y_h = (C_1 + C_2 x) e^{\lambda x}$ —— \textbf{临界阻尼}
+\item \textbf{共轭复根} $\alpha \pm i\beta$：$y_h = e^{\alpha x}(C_1 \cos\beta x + C_2 \sin\beta x)$ —— \textbf{欠阻尼振动}
+\end{enumerate}
+
+\textbf{这三种情况——对应物理上的三种"振动行为"}——\textbf{这是 ODE 和物理的第一次"语义对齐"}。
+
+\subsubsection{非齐次：待定系数法 / Method of Undetermined Coefficients}
+
+对 $a y'' + b y' + c y = f(x)$ —— \textbf{$f(x)$ 形式决定 $y_p$ 形式}：
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{$f(x)$ 的形式} & \textbf{试探 $y_p$} \\
+\midrule
+$P_n(x)$（多项式） & $Q_n(x)$（同次多项式） \\
+$e^{\alpha x}$ & $A e^{\alpha x}$ \\
+$\sin\beta x, \cos\beta x$ & $A\cos\beta x + B\sin\beta x$ \\
+$e^{\alpha x}\sin\beta x$ 等 & $e^{\alpha x}(A\cos\beta x + B\sin\beta x)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{口诀}：\textbf{"什么形式来——什么形式去"}——\textbf{除非和齐次解共振——共振要乘 $x$}。
+
+\subsubsection{常数变易法 / Variation of Parameters}
+
+\textbf{若 $f(x)$ 形式怪}——\textbf{用常数变易}：
+\[
+y_p(x) = -y_1(x) \int \frac{y_2(x) f(x)}{a W(x)} dx + y_2(x) \int \frac{y_1(x) f(x)}{a W(x)} dx
+\]
+其中 $W = y_1 y_2' - y_1' y_2$ 是\textbf{Wronskian 行列式}——\textbf{它衡量两个解"线性无关到什么程度"}。
+
+\subsection{ODE 系统 / Systems of ODEs}
+
+\textbf{一般形式}（用向量）：
+\[
+\frac{d\bm{y}}{dt} = \bm{f}(t, \bm{y}), \quad \bm{y} \in \mathbb{R}^n
+\]
+
+\textbf{重要事实}——\textbf{任何 $n$ 阶 ODE 都能化成 $n$ 维的一阶 ODE 系统}：
+
+二阶 ODE $y'' + p y' + q y = 0$ —— 令 $y_1 = y, y_2 = y'$ —— 化成：
+\[
+\begin{pmatrix} \dot y_1 \\ \dot y_2 \end{pmatrix} = \begin{pmatrix} 0 & 1 \\ -q & -p \end{pmatrix} \begin{pmatrix} y_1 \\ y_2 \end{pmatrix}
+\]
+
+\textbf{这就是数值求解器只支持一阶系统的原因}——\textbf{所有高阶 ODE 先化成一阶}。
+
+\subsubsection{线性系统的稳定性 / Stability of Linear Systems}
+
+\textbf{$\dot{\bm{y}} = A \bm{y}$——稳定性由 $A$ 的特征值决定}：
+
+\begin{itemize}
+\item \textbf{所有特征值实部 $< 0$}：\textbf{稳定}（轨迹收敛到原点）
+\item \textbf{有特征值实部 $> 0$}：\textbf{不稳定}（轨迹发散）
+\item \textbf{纯虚根}：\textbf{中心}（轨迹绕圆/椭圆）
+\end{itemize}
+
+\textbf{这是\textbf{线性代数和 ODE 的"接口"}}——\textbf{为什么我们要学特征值？因为它告诉我们一个系统会不会"爆"}。
+
+\subsection{数值解法 / Numerical Methods}
+
+\subsubsection{Euler 法 / Euler's Method}
+
+\textbf{最简单的数值解法}——\textbf{Newton 1687 年就用过}：
+
+\[
+y_{n+1} = y_n + h \cdot f(t_n, y_n)
+\]
+
+\textbf{几何意义}：\textbf{在当前点画切线——走一步}。
+
+\textbf{误差}：\textbf{每步 $O(h^2)$——总误差 $O(h)$}——\textbf{$h$ 减半——精度只翻一倍}——\textbf{慢}。
+
+\subsubsection{Runge--Kutta 4 阶法 / RK4}
+
+\textbf{工业界默认的数值求解器}——\textbf{由 Carl Runge 和 Wilhelm Kutta 在 1900 年前后发明}：
+
+\begin{align}
+k_1 &= f(t_n, y_n) \\
+k_2 &= f(t_n + h/2, y_n + h k_1 / 2) \\
+k_3 &= f(t_n + h/2, y_n + h k_2 / 2) \\
+k_4 &= f(t_n + h, y_n + h k_3) \\
+y_{n+1} &= y_n + \frac{h}{6}(k_1 + 2k_2 + 2k_3 + k_4)
+\end{align}
+
+\textbf{误差}：\textbf{每步 $O(h^5)$——总误差 $O(h^4)$}——\textbf{$h$ 减半——精度翻 16 倍}——\textbf{这就是为什么 RK4 是默认选择}。
+
+\textbf{现代版}：\textbf{\texttt{scipy.integrate.solve\_ivp(method='RK45')}}——\textbf{它是带自适应步长的 5 阶 Runge--Kutta}——\textbf{你只需要写微分方程的右端、给初值、范围——剩下全交给它}。
+
+\begin{remark}[工业现实]
+\textbf{99\% 的工程 ODE 都是数值解}——\textbf{解析解只在两个地方有用}：
+\begin{itemize}
+\item \textbf{教材考试}（包括考研）
+\item \textbf{你要做\textbf{参数研究}}——比如"阻尼比 $\zeta$ 从 0.1 到 1.0 变化时，振荡频率怎么变"——\textbf{这时解析解更直观}
+\end{itemize}
+\textbf{其余}——\textbf{打开 SciPy——10 行搞定}。
+\end{remark}
+
+\section{Aha 例子：阻尼振子 与 RLC 电路的同构 / Aha: Damped Oscillator ≡ RLC Circuit}
+
+\textbf{场景}——\textbf{你是机械工程师}——\textbf{设计一辆车的悬架}：
+
+\[
+m \ddot{x} + c \dot{x} + k x = F(t)
+\]
+
+\textbf{$m$ 是车身质量、$c$ 是减震器阻尼、$k$ 是弹簧刚度、$F(t)$ 是路面冲击}。
+
+\medskip
+
+\textbf{同时}——\textbf{你的同事是电气工程师}——\textbf{设计一个 RLC 滤波器}：
+
+\[
+L \ddot{q} + R \dot{q} + \frac{1}{C} q = V(t)
+\]
+
+\textbf{$L$ 是电感、$R$ 是电阻、$C$ 是电容、$V(t)$ 是输入电压、$q$ 是电荷}。
+
+\medskip
+
+\textbf{两个方程长得一模一样}——\textbf{这不是巧合}——\textbf{这是 ODE 在告诉你}：
+
+\medskip
+
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+\textbf{机械} & \textbf{电气} & \textbf{角色} \\
+\midrule
+质量 $m$ & 电感 $L$ & 储存\textbf{动能 / 磁能}（"惯性"） \\
+阻尼 $c$ & 电阻 $R$ & 耗散能量 \\
+弹簧 $k$ & 电容倒数 $1/C$ & 储存\textbf{势能 / 电场能}（"恢复力"） \\
+位移 $x$ & 电荷 $q$ & 状态变量 \\
+速度 $\dot x$ & 电流 $\dot q = i$ & 状态变量的变化率 \\
+外力 $F$ & 电压 $V$ & 外部驱动 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{tcolorbox}[ahabox={Aha: 同一个 ODE——同时是机械振动 和 电路滤波}]
+\textbf{你以为电路和机械是两门课}——\textbf{老师把它们分开教}——\textbf{教材封面不一样、单位不一样、符号不一样}。
+
+\medskip
+
+\textbf{但它们的"数学骨架"是同一个二阶线性 ODE}：
+
+\[
+\ddot{y} + 2\zeta \omega_n \dot{y} + \omega_n^2 y = u(t)
+\]
+
+\textbf{其中}：
+\begin{itemize}
+\item $\omega_n = \sqrt{k/m} = 1/\sqrt{LC}$ —— \textbf{自然频率}
+\item $\zeta = \dfrac{c}{2\sqrt{km}} = \dfrac{R}{2}\sqrt{\dfrac{C}{L}}$ —— \textbf{阻尼比}
+\end{itemize}
+
+\medskip
+
+\textbf{$\zeta$ 这一个数——决定了系统所有"性格"}：
+
+\begin{itemize}
+\item $\zeta = 0$：\textbf{无阻尼——永远振荡}（理想 LC 振荡器、单摆）
+\item $0 < \zeta < 1$：\textbf{欠阻尼——振荡衰减}（汽车悬架、铃铛）
+\item $\zeta = 1$：\textbf{临界阻尼——最快回归}（关门器、相机镜头电机）
+\item $\zeta > 1$：\textbf{过阻尼——缓慢回归}（液压门、太软的弹簧）
+\end{itemize}
+
+\medskip
+
+\textbf{这就是 ODE 的"母语威力"}——\textbf{一个方程——同时描述\textbf{机械、电气、声学、生物}的振动}——\textbf{你学会了一个——就学会了一切}。
+
+\medskip
+
+\textbf{大学课表把它分成 6 门课}——\textbf{每门课用不同的符号}——\textbf{但骨子里是同一个 ODE}——\textbf{这就是"打通"要做的事}。
+\end{tcolorbox}
+
+\textbf{解决问题的 Python 代码}：
+
+\begin{lstlisting}[language=Python]
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+# 物理参数 (车辆悬架)
+m, c, k = 300.0, 1200.0, 30000.0   # kg, N·s/m, N/m
+omega_n = np.sqrt(k/m)             # 自然频率
+zeta    = c / (2*np.sqrt(k*m))     # 阻尼比
+print(f"omega_n = {omega_n:.2f} rad/s,  zeta = {zeta:.3f}")
+
+# 写成一阶系统：y = [x, x_dot]
+def rhs(t, y, F):
+    x, xdot = y
+    xddot = (F(t) - c*xdot - k*x) / m
+    return [xdot, xddot]
+
+# 外部冲击：t=0 时 1000 N 阶跃
+F = lambda t: 1000.0 if t > 0 else 0.0
+
+# 数值求解：RK45 + 自适应步长
+sol = solve_ivp(rhs, t_span=(0, 2.0), y0=[0, 0],
+                args=(F,), max_step=0.001, dense_output=True)
+
+t = np.linspace(0, 2, 2000)
+x = sol.sol(t)[0]
+plt.plot(t, x*1000); plt.xlabel('t [s]'); plt.ylabel('x [mm]')
+plt.title(f'Damped oscillator: zeta = {zeta:.3f}'); plt.grid(True)
+\end{lstlisting}
+
+\textbf{把这段代码改成"RLC 电路"}——\textbf{只换一行}：
+
+\begin{lstlisting}[language=Python]
+# 同样的代码——换成 RLC：只改物理参数
+L, R, C = 0.1, 50.0, 10e-6        # H, Ohm, F
+omega_n = 1/np.sqrt(L*C)
+zeta    = (R/2) * np.sqrt(C/L)
+# rhs 也是 [q, q_dot]：L*q_ddot + R*q_dot + q/C = V(t)
+\end{lstlisting}
+
+\textbf{这就是"同构"的力量}——\textbf{一个求解器——通吃两个学科}。
+
+\subsection{Aha 续：SIR 模型与 COVID-19}
+
+\textbf{2020 年初}——\textbf{所有人突然变成了"流行病学家"}——\textbf{每天讨论 R0、群体免疫}。
+
+背后的数学——\textbf{是 1927 年 Kermack \& McKendrick 提出的 SIR 模型}——\textbf{一个 3 维 ODE 系统}：
+
+\begin{align}
+\dot{S} &= -\beta \, S I / N \\
+\dot{I} &= \beta \, S I / N - \gamma I \\
+\dot{R} &= \gamma I
+\end{align}
+
+\textbf{$S$ = 易感者、$I$ = 感染者、$R$ = 康复者、$N = S + I + R$ 总人口}。
+
+\textbf{$\beta$ = 接触传播率、$\gamma$ = 康复率}——\textbf{基本再生数 $R_0 = \beta/\gamma$}。
+
+\begin{lstlisting}[language=Python]
+def sir(t, y, beta, gamma, N):
+    S, I, R = y
+    dS = -beta * S * I / N
+    dI =  beta * S * I / N - gamma * I
+    dR =  gamma * I
+    return [dS, dI, dR]
+
+# COVID-19 早期估计 (示意值)
+N, beta, gamma = 1e7, 0.35, 0.10
+R0 = beta / gamma           # 基本再生数 ≈ 3.5
+
+sol = solve_ivp(sir, (0, 200), [N-1, 1, 0],
+                args=(beta, gamma, N), dense_output=True)
+\end{lstlisting}
+
+\textbf{这就是\textbf{2020 年 3 月各国政府决策依据的"母方程"}}——\textbf{它是 ODE 系统——不是单个 ODE}——\textbf{它有相图}——\textbf{它告诉你"封城（降低 $\beta$）会让峰值推后并压低"}。
+
+\textbf{一个 1927 年的 ODE}——\textbf{在 2020 年决定了全球 70 亿人的生活}。
+
+\section{现代视角：神经 ODE 与可微仿真 / Modern: Neural ODEs and Differentiable Simulation}
+
+\textbf{ODE 在 21 世纪有了第二次青春}——\textbf{它和深度学习"联姻"了}。
+
+\subsection{Neural ODE（2018 年 NeurIPS 最佳论文）}
+
+\textbf{ResNet} 里残差块的形式 $y_{n+1} = y_n + f(y_n, \theta_n)$ —— 像不像 Euler 法 $y_{n+1} = y_n + h \cdot f(y_n)$？
+
+\textbf{Chen 等人 2018 年的洞察}——\textbf{把网络层数 $\to \infty$、步长 $h \to 0$}——\textbf{ResNet 就变成 ODE}：
+
+\[
+\frac{d\bm{h}(t)}{dt} = f(\bm{h}(t), t, \theta)
+\]
+
+\textbf{学习这个"右端 $f$"——就是 Neural ODE}。\textbf{优点}：连续深度、内存恒定（用伴随方法反传梯度）。
+
+\subsection{可微物理仿真}
+
+\textbf{\texttt{diffrax}（JAX）、\texttt{torchdiffeq}（PyTorch）}——\textbf{把 ODE 求解器变成"可求导的"}——\textbf{这样你可以\textbf{用梯度下降优化物理系统的参数}}：
+
+\begin{itemize}
+\item 用\textbf{真实测量数据}——\textbf{反演弹簧刚度 $k$}
+\item 用\textbf{目标轨迹}——\textbf{优化无人机控制律}
+\item 用\textbf{化学反应曲线}——\textbf{反演反应速率常数}
+\end{itemize}
+
+\textbf{这是\textbf{科学计算 + 机器学习}的结合点}——\textbf{现在叫"科学机器学习（SciML）"}——\textbf{是 2030 年代最热的方向之一}。
+
+\subsection{时间线}
+
+\begin{itemize}
+\item \textbf{1690}：\textbf{Bernoulli 兄弟}——\textbf{ODE 的几何起源}（悬链线）
+\item \textbf{1736}：\textbf{Euler}——\textbf{发明 Euler 法}
+\item \textbf{1900}：\textbf{Runge \& Kutta}——\textbf{RK4 现代数值方法}
+\item \textbf{1927}：\textbf{Kermack \& McKendrick}——\textbf{SIR 模型}
+\item \textbf{1963}：\textbf{Lorenz}——\textbf{偶然发现混沌}（蝴蝶效应）
+\item \textbf{2018}：\textbf{Neural ODE}——\textbf{深度学习与 ODE 合体}
+\end{itemize}
+
+\textbf{ODE 不是死的}——\textbf{它每隔一代人就被"重新发明"一次}。
+
+\section{代码与思考 / Code and Exercises}
+
+\subsection{配套模块 \texttt{ode.py}}
+
+GitHub 上的 \texttt{modules/ode.py} 包含\textbf{6 个 demo}：
+
+\begin{enumerate}
+\item \texttt{demo\_first\_order()}——可视化 Newton 冷却定律——\textbf{解析解 vs 数值解}
+\item \texttt{demo\_damped\_oscillator()}——\textbf{扫描 $\zeta$ 从 0.1 到 2.0}——画出\textbf{欠/临界/过阻尼}三种行为
+\item \texttt{demo\_rlc\_vs\_mass\_spring()}——\textbf{本章 Aha 例子}：同一个求解器跑两个物理系统——证明它们同构
+\item \texttt{demo\_phase\_portrait()}——\textbf{画相图}：用 \texttt{matplotlib.quiver} 画矢量场 + 几条典型轨迹
+\item \texttt{demo\_sir\_covid()}——\textbf{SIR 模型}：扫描 $R_0$ 从 1.5 到 4.0——\textbf{演示"封城（降低 $\beta$）"的效果}
+\item \texttt{demo\_euler\_vs\_rk4()}——\textbf{比较 Euler 法和 RK4}的精度——\textbf{画 log--log 误差——步长曲线}
+\end{enumerate}
+
+\textbf{使用}：
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/inaturelz-coder/math-rendu
+cd math-rendu
+pip install -r requirements.txt
+python modules/ode.py
+\end{lstlisting}
+
+\subsection{思考题 / Exercises}
+
+\begin{enumerate}
+\item \textbf{[直觉]} 用一句话解释为什么\textbf{Newton 冷却定律}产生的是\textbf{指数衰减}——不许用积分。
+\item \textbf{[计算]} 解一阶线性方程 $y' + 2y = e^{-x}$，初值 $y(0)=1$。再用 \texttt{solve\_ivp} 数值验证。
+\item \textbf{[计算]} 求 $y'' - 3y' + 2y = e^{3x}$ 的通解（待定系数法）。
+\item \textbf{[物理]} 单摆方程 $\ddot{\theta} + (g/L)\sin\theta = 0$ \textbf{不是线性 ODE}——小角度近似下退化为 SHM。用 \texttt{solve\_ivp} 比较\textbf{非线性精确解}和\textbf{线性近似解}在初角 $\theta_0 = 60°$ 时的差异。
+\item \textbf{[代码]} 实现你自己的 RK4 求解器（不用 SciPy），求解 $\dot y = -y + \sin t$，$y(0)=0$，与 SciPy 的 \texttt{RK45} 对比误差。
+\item \textbf{[应用]} 用 SIR 模型——给定 $R_0 = 2.5, \gamma = 1/14$——\textbf{画出疫情曲线}——并\textbf{找到峰值时刻和峰值感染人数}。\textbf{若 30 天后突然封城（让 $\beta$ 减半）}——\textbf{画对比曲线}。
+\end{enumerate}
+
+\section{本章小结 / Chapter Summary}
+
+\begin{tcolorbox}[essbox={本章核心}]
+\begin{itemize}
+\item \textbf{ODE 的本质}——"\textbf{用变化率描述未来}"——给当下、定演化
+\item \textbf{一阶}——\textbf{指数家族}——衰变、冷却、Logistic 增长
+\item \textbf{二阶线性}——\textbf{振动家族}——\textbf{特征方程 $a\lambda^2+b\lambda+c=0$ 的三种根 = 三种振动行为}
+\item \textbf{系统}——任何高阶 ODE 都化成一阶系统——\textbf{稳定性看 $A$ 的特征值}
+\item \textbf{相图}——\textbf{ODE 的"几何视角"}——一眼看出稳定性、吸引子、极限环
+\item \textbf{数值}——\textbf{Euler 易懂 / RK4 实用}——现代版 \texttt{solve\_ivp(method='RK45')}
+\item \textbf{同构}——\textbf{机械振动 ≡ RLC 电路}——\textbf{ODE 是工程师的母语}
+\item \textbf{现代}——\textbf{Neural ODE + 可微仿真——ODE 与深度学习联姻}
+\end{itemize}
+\end{tcolorbox}
+
+\textbf{下一章——偏微分方程}——\textbf{我们从"时间一维"走到"时间+空间多维"}——\textbf{见到\textbf{热方程、波方程、Laplace 方程}}——\textbf{并理解为什么 Fourier 变换是 PDE 的"瑞士军刀"}。
+
+\clearpage

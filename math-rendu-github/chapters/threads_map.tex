@@ -1,0 +1,164 @@
+% =====================================================================
+%  数学版全书脉络图 / Math Threads Map
+%  二脉 = 分析（任脉）+ 代数（督脉）
+% =====================================================================
+
+\cleardoublepage
+\thispagestyle{empty}
+
+\vspace*{1cm}
+
+\begin{center}
+{\huge\bfseries 全书脉络图 \par}
+\vspace{0.2cm}
+{\large\itshape The Map of Two Meridians of Engineering Math \par}
+\end{center}
+
+\vspace{0.8cm}
+
+\section*{两条脉——分析与代数}
+
+\textbf{这本书叫}"\textbf{打通工科数学任督二脉}"——\textbf{"二脉"不是修辞}——\textbf{工科数学的两条根本脉络}：
+
+\begin{center}
+\fbox{\parbox{0.85\textwidth}{\centering
+\textbf{\Large 任脉 = 分析 Analysis} \quad \quad \textbf{\Large 督脉 = 代数 Algebra} \\[8pt]
+\textit{连续 vs 离散 \quad / \quad 极限 vs 结构 \quad / \quad 变化率 vs 变换}
+}}
+\end{center}
+
+\vspace{0.5cm}
+
+\textbf{为什么是这两条}——\textbf{回到数学史}：
+
+\textbf{17 世纪}——\textbf{Newton + Leibniz 发明微积分}——\textbf{开启分析}（任脉的起点）。
+
+\textbf{19 世纪}——\textbf{Cayley + Hamilton + Sylvester 发明矩阵代数}——\textbf{开启线性代数}（督脉的起点）。
+
+\textbf{20 世纪}——\textbf{Hilbert 把两条脉拼起来}——\textbf{泛函分析 = 分析 × 代数}——\textbf{量子力学的数学骨架}。
+
+\textbf{21 世纪}——\textbf{机器学习 = 优化（分析）× 矩阵（代数）}——\textbf{两条脉在同一个公式 $\theta_{t+1} = \theta_t - \eta \nabla L(\theta_t)$ 里相遇}。
+
+\section*{任脉 / 分析 — 五条支脉}
+
+\textbf{任脉}贯穿\textbf{Ch 1-5, 9-11}——\textbf{覆盖工科数学里所有"连续"的部分}：
+
+\begin{center}
+\begin{tabular}{|c|p{4.5cm}|p{5.5cm}|}
+\hline
+\textbf{支脉} & \textbf{主题} & \textbf{覆盖章节} \\
+\hline
+任 · 一 & 极限与微积分（一元） & Ch 1 微积分入门 \\
+\hline
+任 · 二 & 多元微积分 & Ch 2 多元微积分 / Ch 3 矢量分析 \\
+\hline
+任 · 三 & 微分方程 & Ch 4 ODE / Ch 5 PDE \\
+\hline
+任 · 四 & 复变 + Fourier & Ch 9 复变函数 \\
+\hline
+任 · 五 & 概率与不确定性 & Ch 10 概率 / Ch 11 统计 \\
+\hline
+\end{tabular}
+\end{center}
+
+\section*{督脉 / 代数 — 三条支脉}
+
+\textbf{督脉}贯穿\textbf{Ch 6-8}——\textbf{覆盖所有"线性结构"的部分}：
+
+\begin{center}
+\begin{tabular}{|c|p{4.5cm}|p{5.5cm}|}
+\hline
+\textbf{支脉} & \textbf{主题} & \textbf{覆盖章节} \\
+\hline
+督 · 一 & 线代入门 & Ch 6（矩阵 = 线性变换） \\
+\hline
+督 · 二 & 线代核心 & Ch 7（本征值 + 谱定理） \\
+\hline
+督 · 三 & 线代应用 & Ch 8（SVD + PCA + PageRank） \\
+\hline
+\end{tabular}
+\end{center}
+
+\section*{交汇——任督相通的两章}
+
+\textbf{Ch 12 数值方法}：\textbf{把分析问题（积分、ODE、根）转化为代数运算（矩阵求逆、本征值）}——\textbf{这是分析与代数相遇的工程层}。
+
+\textbf{Ch 13 优化}：\textbf{用分析的工具（梯度、Hessian）求解代数的问题（二次型、最小化）}——\textbf{这是 21 世纪工程数学的核心}——\textbf{ML 训练的全部数学都在这里}。
+
+\section*{二脉 × 章节对照表}
+
+\textbf{下表标出每章属于哪条脉}——\textbf{$\bullet$ 是主脉}——\textbf{$\circ$ 是支援}——\textbf{$\star$ 是任督相通}：
+
+\vspace{0.3cm}
+
+\begin{center}
+\small
+\begin{tabular}{|c|p{2.6cm}|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{脉} & \textbf{支脉} & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 \\
+\hline
+\multirow{5}{*}{\parbox{0.9cm}{\centering\textbf{任·分析}}}
+& 微积分一元   & $\bullet$ &   &   &   &   &   &   &   &   &   &   & $\circ$ & $\circ$ & \\
+\cline{2-16}
+& 多元/矢量    & & $\bullet$ & $\bullet$ &   &   &   &   &   &   &   &   & $\circ$ & $\circ$ & \\
+\cline{2-16}
+& ODE/PDE      & &   &   & $\bullet$ & $\bullet$ &   &   &   &   &   &   & $\circ$ &   & \\
+\cline{2-16}
+& 复变/Fourier & &   &   &   & $\circ$ &   &   &   & $\bullet$ &   &   & $\circ$ &   & \\
+\cline{2-16}
+& 概率/统计    & &   &   &   &   &   &   & $\circ$ &   & $\bullet$ & $\bullet$ &   & $\circ$ & $\circ$ \\
+\hline
+\multirow{3}{*}{\parbox{0.9cm}{\centering\textbf{督·代数}}}
+& 线代入门     & &   &   &   &   & $\bullet$ &   &   &   &   &   & $\circ$ &   & \\
+\cline{2-16}
+& 线代核心     & &   &   &   &   &   & $\bullet$ & $\circ$ &   & $\circ$ &   & $\circ$ & $\circ$ & \\
+\cline{2-16}
+& 线代应用     & &   &   &   &   &   &   & $\bullet$ &   & $\circ$ & $\circ$ & $\circ$ & $\circ$ & \\
+\hline
+\multirow{2}{*}{\parbox{0.9cm}{\centering\textbf{相通}}}
+& 数值方法     & &   &   &   &   &   &   &   &   &   &   & $\star$ & $\circ$ & \\
+\cline{2-16}
+& 优化         & & $\circ$ &   &   &   &   & $\circ$ & $\circ$ &   & $\circ$ &   & $\circ$ & $\star$ & \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{0.3cm}
+
+\begin{center}
+\footnotesize
+\textbf{$\bullet$} = 这章是该支脉的核心打通点 \qquad
+$\circ$ = 这章涉及该支脉 \qquad
+$\star$ = 任督相通点
+\end{center}
+
+\section*{阅读建议}
+
+\textbf{第一遍阅读}（按章号顺序）：\textbf{Ch 1 $\to$ Ch 13}——\textbf{遇到 $\bullet$ 就重点学}——\textbf{遇到 $\circ$ 注意它和前面 $\bullet$ 的呼应}。
+
+\textbf{第二遍阅读}（追一条脉）：
+
+\begin{itemize}
+\item \textbf{追任脉分析}：Ch 1 $\to$ Ch 2 $\to$ Ch 4 $\to$ Ch 5 $\to$ Ch 9 $\to$ Ch 10——\textbf{从一元导数到 PDE 到 Fourier 到概率}
+\item \textbf{追督脉代数}：Ch 6 $\to$ Ch 7 $\to$ Ch 8——\textbf{从矩阵到本征值到 SVD/PCA/PageRank}——\textbf{是个完整三部曲}
+\item \textbf{追任督相通}：Ch 2 + Ch 6 $\to$ Ch 7 + Ch 9 $\to$ Ch 12 $\to$ Ch 13——\textbf{Jacobian + 厄米矩阵 + 数值线代 + 优化 = ML 的全部数学}
+\end{itemize}
+
+\section*{读法速成路线}
+
+\begin{itemize}
+\item \textbf{补线代（最常见需求）}：Ch 6-8 三章 + Ch 13 优化
+\item \textbf{补 ML 数学}：Ch 2-3（梯度）+ Ch 6-8（矩阵）+ Ch 10-11（概率）+ Ch 13（SGD/Adam）
+\item \textbf{补 PDE（科学计算）}：Ch 1-5 + Ch 12 数值
+\item \textbf{补现代数学（数据科学方向）}：Ch 8 SVD + Ch 10 概率 + Ch 13 优化
+\end{itemize}
+
+\vspace{0.5cm}
+
+\textbf{打通任脉}——\textbf{你看懂了所有"连续 + 变化率"的工程数学}。
+
+\textbf{打通督脉}——\textbf{你看懂了所有"高维 + 结构"的工程数学}。
+
+\textbf{打通任督二脉}——\textbf{两条脉相通的地方都熟}——\textbf{整本工科数学的"任督二脉"由此通畅}——\textbf{再看 PyTorch / numpy / scipy 的源码}——\textbf{你能识别每一行用的是哪条脉的工具}。
+
+\clearpage
