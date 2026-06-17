@@ -135,4 +135,3 @@ math-rendu/
 
 **Email**: lizhou_alfred2011@hotmail.com
 
-数学是活的——但它需要有人来贯通。
